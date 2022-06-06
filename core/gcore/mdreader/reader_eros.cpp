@@ -37,6 +37,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 #include "cpl_string.h"
+#include "cpl_time.h"
 
 CPL_CVSID("$Id$")
 
@@ -213,8 +214,9 @@ void GDALMDReaderEROS::LoadMetadata()
     if(nullptr != pszDate)
     {
         char buffer[80];
-        time_t timeMid = GetAcquisitionTimeFromString(CPLStripQuotes(pszDate));
-        strftime (buffer, 80, MD_DATETIMEFORMAT, localtime(&timeMid));
+        GIntBig timeMid = GetAcquisitionTimeFromString(CPLStripQuotes(pszDate));
+        struct tm tmBuf;
+        strftime (buffer, 80, MD_DATETIMEFORMAT, CPLUnixTimeToYMDHMS(timeMid, &tmBuf));
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_ACQDATETIME, buffer);
     }
@@ -230,26 +232,19 @@ char** GDALMDReaderEROS::LoadImdTxtFile()
         return nullptr;
 
     char** papszIMD = nullptr;
-    char szName[22];
-    int i, j;
 
-    for(i = 0; papszLines[i] != nullptr; i++)
+    for(int i = 0; papszLines[i] != nullptr; i++)
     {
         const char *pszLine = papszLines[i];
         if( CPLStrnlen(pszLine, 21) >= 21 )
         {
-            for(j = 0; j < 21; j++)
+            char szName[22];
+            memcpy(szName, pszLine, 21);
+            szName[21] = 0;
+            char* pszSpace = strchr(szName, ' ');
+            if(pszSpace)
             {
-                if(pszLine[j] == ' ' )
-                {
-                    break;
-                }
-                szName[j] = pszLine[j];
-            }
-
-            if(j > 0)
-            {
-                szName[j] = 0;
+                *pszSpace = 0;
                 papszIMD = CSLAddNameValue(papszIMD, szName, pszLine + 20);
             }
         }
@@ -263,7 +258,7 @@ char** GDALMDReaderEROS::LoadImdTxtFile()
 /**
  * GetAcqisitionTimeFromString()
  */
-time_t GDALMDReaderEROS::GetAcquisitionTimeFromString(
+GIntBig GDALMDReaderEROS::GetAcquisitionTimeFromString(
         const char* pszDateTime)
 {
     if(nullptr == pszDateTime)
@@ -293,5 +288,5 @@ time_t GDALMDReaderEROS::GetAcquisitionTimeFromString(
     tmDateTime.tm_year = iYear - 1900;
     tmDateTime.tm_isdst = -1;
 
-    return mktime(&tmDateTime);
+    return CPLYMDHMSToUnixTime(&tmDateTime);
 }

@@ -42,9 +42,9 @@ void OGRRegisterAll()
 
 void OGRRegisterAllInternal()
 {
-#ifdef DB2_ENABLED
-    RegisterOGRDB2();
-#endif
+    // NOTE: frmts/drivers.ini in the same directory should be kept in same
+    // order as this file
+
 #ifdef SHAPE_ENABLED
     RegisterOGRShape();
 #endif
@@ -69,14 +69,8 @@ void OGRRegisterAllInternal()
 #ifdef VRT_ENABLED
     RegisterOGRVRT();
 #endif
-#ifdef REC_ENABLED
-    RegisterOGRREC();
-#endif
 #ifdef MEM_ENABLED
     RegisterOGRMEM();
-#endif
-#ifdef BNA_ENABLED
-    RegisterOGRBNA();
 #endif
 #ifdef CSV_ENABLED
     RegisterOGRCSV();
@@ -115,22 +109,12 @@ void OGRRegisterAllInternal()
 #ifdef SQLITE_ENABLED
     RegisterOGRSQLite();
 #endif
-#ifdef DODS_ENABLED
-    RegisterOGRDODS();
-#endif
 #ifdef ODBC_ENABLED
     RegisterOGRODBC();
 #endif
 #ifdef WASP_ENABLED
     RegisterOGRWAsP();
 #endif
-
-/* Register before PGeo and Geomedia drivers */
-/* that don't work well on Linux */
-#ifdef MDB_ENABLED
-    RegisterOGRMDB();
-#endif
-
 #ifdef PGEO_ENABLED
     RegisterOGRPGeo();
 #endif
@@ -149,18 +133,12 @@ void OGRRegisterAllInternal()
 #ifdef OCI_ENABLED
     RegisterOGROCI();
 #endif
-#ifdef INGRES_ENABLED
-    RegisterOGRIngres();
-#endif
 /* Register OpenFileGDB before FGDB as it is more capable for read-only */
 #ifdef OPENFILEGDB_ENABLED
     RegisterOGROpenFileGDB();
 #endif
 #ifdef FGDB_ENABLED
     RegisterOGRFileGDB();
-#endif
-#ifdef XPLANE_ENABLED
-    RegisterOGRXPlane();
 #endif
 #ifdef DWG_ENABLED
     RegisterOGRDWG();
@@ -174,14 +152,8 @@ void OGRRegisterAllInternal()
 #ifdef CAD_ENABLED
     RegisterOGRCAD();
 #endif
-#ifdef GRASS_ENABLED
-    RegisterOGRGRASS();
-#endif
 #ifdef FLATGEOBUF_ENABLED
     RegisterOGRFlatGeobuf();
-#endif
-#ifdef FME_ENABLED
-    RegisterOGRFME();
 #endif
 #ifdef IDB_ENABLED
     RegisterOGRIDB();
@@ -191,9 +163,6 @@ void OGRRegisterAllInternal()
 #endif
 #ifdef GEORSS_ENABLED
     RegisterOGRGeoRSS();
-#endif
-#ifdef GTM_ENABLED
-    RegisterOGRGTM();
 #endif
 #ifdef VFK_ENABLED
     RegisterOGRVFK();
@@ -208,12 +177,6 @@ void OGRRegisterAllInternal()
 #ifdef GPSBABEL_ENABLED
     RegisterOGRGPSBabel();
 #endif
-#ifdef SUA_ENABLED
-    RegisterOGRSUA();
-#endif
-#ifdef OPENAIR_ENABLED
-    RegisterOGROpenAir();
-#endif
 #ifdef PDS_ENABLED
     RegisterOGRPDS();
 #endif
@@ -224,38 +187,14 @@ void OGRRegisterAllInternal()
 #ifdef SOSI_ENABLED
     RegisterOGRSOSI();
 #endif
-#ifdef HTF_ENABLED
-    RegisterOGRHTF();
-#endif
-#ifdef AERONAVFAA_ENABLED
-    RegisterOGRAeronavFAA();
-#endif
-#ifdef GEOMEDIA_ENABLED
-    RegisterOGRGeomedia();
-#endif
 #ifdef EDIGEO_ENABLED
     RegisterOGREDIGEO();
 #endif
 #ifdef SVG_ENABLED
     RegisterOGRSVG();
 #endif
-#ifdef COUCHDB_ENABLED
-    RegisterOGRCouchDB();
-#endif
-#ifdef CLOUDANT_ENABLED
-    RegisterOGRCloudant();
-#endif
 #ifdef IDRISI_ENABLED
     RegisterOGRIdrisi();
-#endif
-#ifdef ARCGEN_ENABLED
-    RegisterOGRARCGEN();
-#endif
-#ifdef SEGUKOOA_ENABLED
-    RegisterOGRSEGUKOOA();
-#endif
-#ifdef SEGY_ENABLED
-    RegisterOGRSEGY();
 #endif
 #ifdef XLS_ENABLED
     RegisterOGRXLS();
@@ -268,9 +207,6 @@ void OGRRegisterAllInternal()
 #endif
 #ifdef ELASTIC_ENABLED
     RegisterOGRElastic();
-#endif
-#ifdef WALK_ENABLED
-    RegisterOGRWalk();
 #endif
 #ifdef CARTO_ENABLED
     RegisterOGRCarto();
@@ -296,9 +232,6 @@ void OGRRegisterAllInternal()
 #ifdef MONGODBV3_ENABLED
     RegisterOGRMongoDBv3();
 #endif
-#ifdef MONGODB_ENABLED
-    RegisterOGRMongoDB();
-#endif
 #ifdef VDV_ENABLED
     RegisterOGRVDV();
 #endif
@@ -314,6 +247,20 @@ void OGRRegisterAllInternal()
 #ifdef MAPML_ENABLED
     RegisterOGRMapML();
 #endif
+#ifdef HANA_ENABLED
+    RegisterOGRHANA();
+#endif
+#ifdef PARQUET_ENABLED
+    RegisterOGRParquet();
+#endif
+#ifdef ARROW_ENABLED
+    RegisterOGRArrow();
+#endif
+
+    // NOTE: you need to generally insert your own driver before that line.
+
+    // NOTE: frmts/drivers.ini in the same directory should be kept in same
+    // order as this file
 
 /* Put TIGER and AVCBIN at end since they need poOpenInfo->GetSiblingFiles() */
 #ifdef TIGER_ENABLED

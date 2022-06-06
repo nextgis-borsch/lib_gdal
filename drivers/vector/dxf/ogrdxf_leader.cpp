@@ -29,7 +29,7 @@
 
 #include "ogr_dxf.h"
 #include "cpl_conv.h"
-#include "alg/gdallinearsystem.h"
+#include "../../../alg/gdallinearsystem.h"
 #include <stdexcept>
 #include <algorithm>
 
@@ -302,11 +302,11 @@ struct DXFMLEADERVertex {
 };
 
 struct DXFMLEADERLeader {
-    double                   dfLandingX;
-    double                   dfLandingY;
-    double                   dfDoglegVectorX;
-    double                   dfDoglegVectorY;
-    double                   dfDoglegLength;
+    double                   dfLandingX = 0;
+    double                   dfLandingY = 0;
+    double                   dfDoglegVectorX = 0;
+    double                   dfDoglegVectorY = 0;
+    double                   dfDoglegLength = 0;
     std::vector<std::pair<DXFTriple, DXFTriple>> aoDoglegBreaks;
     std::vector<std::vector<DXFMLEADERVertex>> aaoLeaderLines;
 };
@@ -318,7 +318,9 @@ struct DXFMLEADERLeader {
 OGRDXFFeature *OGRDXFLayer::TranslateMLEADER()
 
 {
-    char szLineBuf[257];
+    // The MLEADER line buffer has to be very large, as the text contents
+    // (group code 304) do not wrap and may be arbitrarily long
+    char szLineBuf[4096];
     int nCode = 0;
 
     // This is a dummy feature object used to store style properties
@@ -524,7 +526,7 @@ OGRDXFFeature *OGRDXFLayer::TranslateMLEADER()
             {
               case 303:
                 nSection = MLS_CONTEXT_DATA;
-                aoLeaders.push_back( oLeader );
+                aoLeaders.emplace_back( std::move(oLeader) );
                 oLeader = DXFMLEADERLeader();
                 break;
 
@@ -578,8 +580,8 @@ OGRDXFFeature *OGRDXFLayer::TranslateMLEADER()
             {
               case 305:
                 nSection = MLS_LEADER;
-                oLeader.aaoLeaderLines.push_back( oLeaderLine );
-                oLeaderLine.clear();
+                oLeader.aaoLeaderLines.emplace_back( std::move(oLeaderLine) );
+                oLeaderLine = std::vector<DXFMLEADERVertex>();
                 break;
 
               case 10:
@@ -841,7 +843,7 @@ OGRDXFFeature *OGRDXFLayer::TranslateMLEADER()
             poBlockFeature = InsertBlockReference( osBlockName,
                 oBlockTransformer, poBlockFeature );
 
-            if( !oBlockAttributes.empty() && 
+            if( !oBlockAttributes.empty() &&
                 poOverallFeature->GetFieldIndex( "BlockAttributes" ) != -1 )
             {
                 std::vector<char *> apszAttribs;

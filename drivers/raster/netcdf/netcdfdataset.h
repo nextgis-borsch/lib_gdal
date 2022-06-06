@@ -30,12 +30,14 @@
 #ifndef NETCDFDATASET_H_INCLUDED_
 #define NETCDFDATASET_H_INCLUDED_
 
+#include <array>
 #include <ctime>
 #include <cfloat>
 #include <cstdlib>
 #include <functional>
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "cpl_mem_cache.h"
@@ -49,6 +51,7 @@
 #include "ogr_spatialref.h"
 #include "ogrsf_frmts.h"
 #include "netcdfuffd.h"
+#include "netcdf_cf_constants.h"
 
 #if defined(DEBUG) || defined(FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION) || defined(ALLOW_FORMAT_DUMPS)
 // Whether to support opening a ncdump file as a file dataset
@@ -98,8 +101,10 @@
 static const size_t NCDF_MAX_STR_LEN = 8192;
 #define NCDF_CONVENTIONS     "Conventions"
 #define NCDF_CONVENTIONS_CF_V1_5  "CF-1.5"
+#define GDAL_DEFAULT_NCDF_CONVENTIONS NCDF_CONVENTIONS_CF_V1_5
 #define NCDF_CONVENTIONS_CF_V1_6  "CF-1.6"
 #define NCDF_CONVENTIONS_CF_V1_8  "CF-1.8"
+#define NCDF_CRS_WKT         "crs_wkt"
 #define NCDF_SPATIAL_REF     "spatial_ref"
 #define NCDF_GEOTRANSFORM    "GeoTransform"
 #define NCDF_DIMNAME_X       "x"
@@ -107,6 +112,8 @@ static const size_t NCDF_MAX_STR_LEN = 8192;
 #define NCDF_DIMNAME_LON     "lon"
 #define NCDF_DIMNAME_LAT     "lat"
 #define NCDF_LONLAT          "lon lat"
+#define NCDF_DIMNAME_RLON    "rlon" // rotated longitude
+#define NCDF_DIMNAME_RLAT    "rlat" // rotated latitude
 
 /* netcdf file types, as in libcdi/cdo and compat w/netcdf.h */
 typedef enum
@@ -174,112 +181,6 @@ static const int NCDF_DEFLATE_LEVEL    = 1;  /* best time/size ratio */
 #endif
 #endif
 
-/* -------------------------------------------------------------------- */
-/*       CF-1 or NUG (NetCDF User's Guide) defs                         */
-/* -------------------------------------------------------------------- */
-
-/* CF: http://cf-pcmdi.llnl.gov/documents/cf-conventions/1.5/cf-conventions.html */
-/* NUG: http://www.unidata.ucar.edu/software/netcdf/docs/netcdf.html#Variables */
-#define CF_STD_NAME          "standard_name"
-#define CF_LNG_NAME          "long_name"
-#define CF_UNITS             "units"
-#define CF_ADD_OFFSET        "add_offset"
-#define CF_SCALE_FACTOR      "scale_factor"
-/* should be SRS_UL_METER but use meter now for compat with gtiff files */
-#define CF_UNITS_M           "metre"
-#define CF_UNITS_D           SRS_UA_DEGREE
-#define CF_PROJ_X_VAR_NAME   "x"
-#define CF_PROJ_Y_VAR_NAME   "y"
-#define CF_PROJ_X_COORD      "projection_x_coordinate"
-#define CF_PROJ_Y_COORD      "projection_y_coordinate"
-#define CF_PROJ_X_COORD_LONG_NAME "x coordinate of projection"
-#define CF_PROJ_Y_COORD_LONG_NAME "y coordinate of projection"
-#define CF_GRD_MAPPING_NAME  "grid_mapping_name"
-#define CF_GRD_MAPPING       "grid_mapping"
-#define CF_COORDINATES       "coordinates"
-
-#define CF_LONGITUDE_VAR_NAME      "lon"
-#define CF_LONGITUDE_STD_NAME      "longitude"
-#define CF_LONGITUDE_LNG_NAME      "longitude"
-#define CF_LATITUDE_VAR_NAME       "lat"
-#define CF_LATITUDE_STD_NAME       "latitude"
-#define CF_LATITUDE_LNG_NAME       "latitude"
-#define CF_DEGREES_NORTH           "degrees_north"
-#define CF_DEGREES_EAST            "degrees_east"
-
-#define CF_AXIS            "axis"
-/* #define CF_BOUNDS          "bounds" */
-/* #define CF_ORIG_UNITS      "original_units" */
-
-/* -------------------------------------------------------------------- */
-/*      CF-1 convention standard variables related to                   */
-/*      mapping & projection - see http://cf-pcmdi.llnl.gov/            */
-/* -------------------------------------------------------------------- */
-
-/* projection types */
-#define CF_PT_AEA                    "albers_conical_equal_area"
-#define CF_PT_AE                     "azimuthal_equidistant"
-#define CF_PT_CEA                    "cylindrical_equal_area"
-#define CF_PT_LAEA                   "lambert_azimuthal_equal_area"
-#define CF_PT_LCEA                   "lambert_cylindrical_equal_area"
-#define CF_PT_LCC                    "lambert_conformal_conic"
-#define CF_PT_TM                     "transverse_mercator"
-#define CF_PT_LATITUDE_LONGITUDE     "latitude_longitude"
-#define CF_PT_MERCATOR               "mercator"
-#define CF_PT_ORTHOGRAPHIC           "orthographic"
-#define CF_PT_POLAR_STEREO           "polar_stereographic"
-#define CF_PT_STEREO                 "stereographic"
-#define CF_PT_GEOS                   "geostationary"
-
-/* projection parameters */
-#define CF_PP_STD_PARALLEL           "standard_parallel"
-/* CF uses only "standard_parallel" */
-#define CF_PP_STD_PARALLEL_1         "standard_parallel_1"
-#define CF_PP_STD_PARALLEL_2         "standard_parallel_2"
-#define CF_PP_CENTRAL_MERIDIAN       "central_meridian"
-#define CF_PP_LONG_CENTRAL_MERIDIAN  "longitude_of_central_meridian"
-#define CF_PP_LON_PROJ_ORIGIN        "longitude_of_projection_origin"
-#define CF_PP_LAT_PROJ_ORIGIN        "latitude_of_projection_origin"
-/* #define PROJ_X_ORIGIN             "projection_x_coordinate_origin" */
-/* #define PROJ_Y_ORIGIN             "projection_y_coordinate_origin" */
-#define CF_PP_EARTH_SHAPE            "GRIB_earth_shape"
-#define CF_PP_EARTH_SHAPE_CODE       "GRIB_earth_shape_code"
-/* scale_factor is not CF, there are two possible translations  */
-/* for WKT scale_factor : SCALE_FACTOR_MERIDIAN and SCALE_FACTOR_ORIGIN */
-#define CF_PP_SCALE_FACTOR_MERIDIAN  "scale_factor_at_central_meridian"
-#define CF_PP_SCALE_FACTOR_ORIGIN    "scale_factor_at_projection_origin"
-#define CF_PP_VERT_LONG_FROM_POLE    "straight_vertical_longitude_from_pole"
-#define CF_PP_FALSE_EASTING          "false_easting"
-#define CF_PP_FALSE_NORTHING         "false_northing"
-#define CF_PP_EARTH_RADIUS           "earth_radius"
-#define CF_PP_EARTH_RADIUS_OLD       "spherical_earth_radius_meters"
-#define CF_PP_INVERSE_FLATTENING     "inverse_flattening"
-#define CF_PP_LONG_PRIME_MERIDIAN    "longitude_of_prime_meridian"
-#define CF_PP_SEMI_MAJOR_AXIS        "semi_major_axis"
-#define CF_PP_SEMI_MINOR_AXIS        "semi_minor_axis"
-#define CF_PP_VERT_PERSP             "vertical_perspective" /*not used yet */
-#define CF_PP_PERSPECTIVE_POINT_HEIGHT "perspective_point_height"
-#define CF_PP_SWEEP_ANGLE_AXIS        "sweep_angle_axis"
-#define CF_PP_GRID_NORTH_POLE_LONGITUDE "grid_north_pole_longitude"
-#define CF_PP_GRID_NORTH_POLE_LATITUDE  "grid_north_pole_latitude"
-#define CF_PP_NORTH_POLE_GRID_LONGITUDE "north_pole_grid_longitude"
-
-/* Simple Geometries Special Names from CF-1.8 Draft - Chapter 7 section Geometries */
-#define CF_SG_GEOMETRY               "geometry"
-#define CF_SG_GEOMETRY_DIMENSION     "geometry_dimension"
-#define CF_SG_GEOMETRY_TYPE          "geometry_type"
-#define CF_SG_INTERIOR_RING          "interior_ring"
-#define CF_SG_NODES                  "nodes"
-#define CF_SG_NODE_COORDINATES       "node_coordinates"
-#define CF_SG_NODE_COUNT             "node_count"
-#define CF_SG_PART_NODE_COUNT        "part_node_count"
-#define CF_SG_TYPE_LINE              "line"
-#define CF_SG_TYPE_POINT             "point"
-#define CF_SG_TYPE_POLY              "polygon"
-#define CF_SG_X_AXIS                 "X"
-#define CF_SG_Y_AXIS                 "Y"
-#define CF_SG_Z_AXIS                 "Z"
-
 /* Some additional metadata */
 #define OGR_SG_ORIGINAL_LAYERNAME        "ogr_layer_name"
 
@@ -287,18 +188,18 @@ static const int NCDF_DEFLATE_LEVEL    = 1;  /* best time/size ratio */
 /*         CF-1 Coordinate Type Naming (Chapter 4.  Coordinate Types )  */
 /* -------------------------------------------------------------------- */
 static const char* const papszCFLongitudeVarNames[] = { CF_LONGITUDE_VAR_NAME, "longitude", nullptr };
-static const char* const papszCFLongitudeAttribNames[] = { CF_UNITS, CF_STD_NAME, CF_AXIS, nullptr };
-static const char* const papszCFLongitudeAttribValues[] = { CF_DEGREES_EAST, CF_LONGITUDE_STD_NAME, "X", nullptr };
+static const char* const papszCFLongitudeAttribNames[] = { CF_UNITS, CF_UNITS, CF_UNITS, CF_STD_NAME, CF_AXIS, CF_LNG_NAME, nullptr };
+static const char* const papszCFLongitudeAttribValues[] = { CF_DEGREES_EAST, CF_DEGREE_EAST, CF_DEGREES_E, CF_LONGITUDE_STD_NAME, "X", CF_LONGITUDE_LNG_NAME, nullptr };
 static const char* const papszCFLatitudeVarNames[] = { CF_LATITUDE_VAR_NAME, "latitude", nullptr };
-static const char* const papszCFLatitudeAttribNames[] = { CF_UNITS, CF_STD_NAME, CF_AXIS, nullptr };
-static const char* const papszCFLatitudeAttribValues[] = { CF_DEGREES_NORTH, CF_LATITUDE_STD_NAME, "Y", nullptr };
+static const char* const papszCFLatitudeAttribNames[] = { CF_UNITS, CF_UNITS, CF_UNITS, CF_STD_NAME, CF_AXIS, CF_LNG_NAME, nullptr };
+static const char* const papszCFLatitudeAttribValues[] = { CF_DEGREES_NORTH, CF_DEGREE_NORTH, CF_DEGREES_N, CF_LATITUDE_STD_NAME, "Y", CF_LATITUDE_LNG_NAME, nullptr };
 
 static const char* const papszCFProjectionXVarNames[] = { CF_PROJ_X_VAR_NAME, "xc", nullptr };
-static const char* const papszCFProjectionXAttribNames[] = { CF_STD_NAME, nullptr };
-static const char* const papszCFProjectionXAttribValues[] = { CF_PROJ_X_COORD, nullptr };
+static const char* const papszCFProjectionXAttribNames[] = { CF_STD_NAME, CF_AXIS, nullptr };
+static const char* const papszCFProjectionXAttribValues[] = { CF_PROJ_X_COORD, "X", nullptr };
 static const char* const papszCFProjectionYVarNames[] = { CF_PROJ_Y_VAR_NAME, "yc", nullptr };
-static const char* const papszCFProjectionYAttribNames[] = { CF_STD_NAME, nullptr };
-static const char* const papszCFProjectionYAttribValues[] = { CF_PROJ_Y_COORD, nullptr };
+static const char* const papszCFProjectionYAttribNames[] = { CF_STD_NAME, CF_AXIS, nullptr };
+static const char* const papszCFProjectionYAttribValues[] = { CF_PROJ_Y_COORD, "Y", nullptr };
 
 static const char* const papszCFVerticalAttribNames[] = { CF_AXIS, "positive", "positive", nullptr };
 static const char* const papszCFVerticalAttribValues[] = { "Z", "up", "down", nullptr };
@@ -586,25 +487,8 @@ static const oNetcdfSRS_PP poOrthoMappings[] = {
 //    * false_easting
 //    * false_northing
 
-/*
-   (http://www.remotesensing.org/geotiff/proj_list/polar_stereographic.html)
-
-   Note: Projection parameters for this projection are quite different in CF-1 from
-     OGC WKT/GeoTiff (for the latter, see above).
-   From our best understanding, this projection requires more than a straight mapping:
-     - As defined below, 'latitude_of_origin' (WKT) -> 'standard_parallel' (CF-1)
-       and 'central_meridian' (WKT) -> 'straight_vertical_longitude_from_pole' (CF-1)
-     - Then the 'latitude_of_projection_origin' in CF-1 must be set to either +90 or -90,
-       depending on the sign of 'latitude_of_origin' in WKT.
-   CF allows the use of standard_parallel (lat_ts in proj4) OR scale_factor (k0 in proj4).
-   This is analogous to the B and A variants (resp.) in EPSG guidelines.
-   When importing a CF file with scale_factor, we compute standard_parallel using
-     Snyder eq. 22-7 with k=1 and lat=standard_parallel.
-   Currently OGR does NOT relate the scale factor with the standard parallel, so we
-   use the default. It seems that proj4 uses lat_ts (standard_parallel) and not k0.
-*/
 static const oNetcdfSRS_PP poPSmappings[] = {
-    {CF_PP_STD_PARALLEL_1, SRS_PP_LATITUDE_OF_ORIGIN},
+    /* {CF_PP_STD_PARALLEL_1, SRS_PP_LATITUDE_OF_ORIGIN}, */
     /* {CF_PP_SCALE_FACTOR_ORIGIN, SRS_PP_SCALE_FACTOR},   */
     {CF_PP_VERT_LONG_FROM_POLE, SRS_PP_CENTRAL_MERIDIAN},
     {CF_PP_FALSE_EASTING, SRS_PP_FALSE_EASTING },
@@ -832,9 +716,14 @@ class netCDFDataset final: public GDALPamDataset
 #ifdef ENABLE_UFFD
     cpl_uffd_context *pCtx = nullptr;
 #endif
+    VSILFILE     *fpVSIMEM = nullptr;
     int           nSubDatasets;
     char          **papszSubDatasets;
     char          **papszMetadata;
+
+    // Used to report metadata found in Sentinel 5
+    std::map<std::string, CPLStringList> m_oMapDomainToJSon{};
+
     CPLStringList papszDimName;
     bool          bBottomUp;
     NetCDFFormatEnum eFormat;
@@ -853,9 +742,12 @@ class netCDFDataset final: public GDALPamDataset
     nccfdriver::OGR_NCScribe FieldScribe;
     nccfdriver::WBufferManager bufManager;
 
+    bool         bWriteGDALVersion = true;
+    bool         bWriteGDALHistory = true;
+
     /* projection/GT */
-    double       adfGeoTransform[6];
-    char         *pszProjection;
+    double       m_adfGeoTransform[6];
+    char         *m_pszProjection = nullptr;
     int          nXDimID;
     int          nYDimID;
     bool         bIsProjected;
@@ -864,10 +756,10 @@ class netCDFDataset final: public GDALPamDataset
 
     /* state vars */
     bool         bDefineMode;
-    bool         bSetProjection;
-    bool         bSetGeoTransform;
-    bool         bAddedProjectionVarsDefs;
-    bool         bAddedProjectionVarsData;
+    bool         m_bHasProjection = false;
+    bool         m_bHasGeoTransform = false;
+    bool         m_bAddedProjectionVarsDefs = false;
+    bool         m_bAddedProjectionVarsData = false;
     bool         bAddedGridMappingRef;
 
     /* create vars */
@@ -926,11 +818,11 @@ class netCDFDataset final: public GDALPamDataset
 
     static double       rint( double );
 
-    double       FetchCopyParm( const char *pszGridMappingValue,
-                                const char *pszParm, double dfDefault,
+    double       FetchCopyParam( const char *pszGridMappingValue,
+                                const char *pszParam, double dfDefault,
                                 bool *pbFound=nullptr );
 
-    char **      FetchStandardParallels( const char *pszGridMappingValue );
+    std::vector<std::string> FetchStandardParallels( const char *pszGridMappingValue );
 
     const char *FetchAttr( const char *pszVarFullName, const char *pszAttr );
     const char *FetchAttr( int nGroupId, int nVarId, const char *pszAttr );
@@ -968,7 +860,10 @@ class netCDFDataset final: public GDALPamDataset
 
     CPLErr FilterVars( int nCdfId, bool bKeepRasters, bool bKeepVectors,
                        char **papszIgnoreVars, int *pnRasterVars,
-                       int *pnGroupId, int *pnVarId, int *pnIgnoredVars );
+                       int *pnGroupId, int *pnVarId, int *pnIgnoredVars,
+                       // key is (dim1Id, dim2Id, nc_type varType)
+                       // value is (groupId, varId)
+                       std::map<std::array<int, 3>, std::vector<std::pair<int, int>>>& oMap2DDimsToGroupAndVar);
     CPLErr CreateGrpVectorLayers( int nCdfId, CPLString osFeatureType,
                                   std::vector<int> anPotentialVectorVarID,
                                   std::map<int, int> oMapDimIdToCount,
@@ -978,12 +873,15 @@ class netCDFDataset final: public GDALPamDataset
 
     CPLErr DetectAndFillSGLayers( int ncid );
     CPLErr LoadSGVarIntoLayer( int ncid, int nc_basevarId );
-    
+
 
 #ifdef NETCDF_HAS_NC4
     static GDALDataset *OpenMultiDim( GDALOpenInfo * );
     std::shared_ptr<GDALGroup> m_poRootGroup{};
 #endif
+
+    void SetGeoTransformNoUpdate( double * );
+    void SetProjectionNoUpdate( const char* );
 
   protected:
 
@@ -1016,6 +914,9 @@ class netCDFDataset final: public GDALPamDataset
 
     virtual char      **GetMetadataDomainList() override;
     char ** GetMetadata( const char * ) override;
+
+    virtual CPLErr SetMetadataItem( const char* pszName, const char* pszValue, const char* pszDomain = "" ) override;
+    virtual CPLErr SetMetadata( char** papszMD, const char* pszDomain = "" ) override;
 
     virtual int  TestCapability(const char* pszCap) override;
 
@@ -1182,6 +1083,7 @@ class netCDFLayer final: public OGRLayer
 
 const char* NCDFGetProjectedCFUnit(const OGRSpatialReference *poSRS);
 void NCDFWriteLonLatVarsAttributes(nccfdriver::netCDFVID& vcdf, int nVarLonID, int nVarLatID);
+void NCDFWriteRLonRLatVarsAttributes(nccfdriver::netCDFVID& vcdf, int nVarRLonID, int nVarRLatID);
 void NCDFWriteXYVarsAttributes(nccfdriver::netCDFVID& vcdf, int nVarXID, int nVarYID,
                                       OGRSpatialReference* poSRS);
 int NCDFWriteSRSVariable(int cdfid, const OGRSpatialReference* poSRS,
@@ -1212,6 +1114,8 @@ bool NCDFIsVarVerticalCoord( int nCdfId, int nVarId,
                                     const char *pszVarName );
 bool NCDFIsVarTimeCoord( int nCdfId, int nVarId,
                                 const char *pszVarName );
+
+std::string NCDFReadMetadataAsJson(int cdfid);
 
 extern CPLMutex *hNCMutex;
 

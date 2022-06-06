@@ -41,6 +41,7 @@
 #include "cpl_error.h"
 #include "cpl_minixml.h"
 #include "cpl_string.h"
+#include "cpl_time.h"
 
 CPL_CVSID("$Id$")
 
@@ -275,9 +276,10 @@ void GDALMDReaderPleiades::LoadMetadata()
             pszTime = "00:00:00.0Z";
 
         char buffer[80];
-        time_t timeMid = GetAcquisitionTimeFromString(CPLSPrintf( "%sT%s",
+        GIntBig timeMid = GetAcquisitionTimeFromString(CPLSPrintf( "%sT%s",
                                                      pszDate, pszTime));
-        strftime (buffer, 80, MD_DATETIMEFORMAT, localtime(&timeMid));
+        struct tm tmBuf;
+        strftime (buffer, 80, MD_DATETIMEFORMAT, CPLUnixTimeToYMDHMS(timeMid, &tmBuf));
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_ACQDATETIME, buffer);
     }
@@ -327,6 +329,15 @@ char** GDALMDReaderPleiades::LoadRPCXmlFile()
     {
         papszRawRPCList = ReadXMLToList(pGRFMNode->psChild, papszRawRPCList);
     }
+    else
+    {
+        pGRFMNode = CPLSearchXMLNode(pNode, "=Rational_Function_Model");
+
+        if(pGRFMNode != nullptr)
+        {
+            papszRawRPCList = ReadXMLToList(pGRFMNode->psChild, papszRawRPCList);
+        }
+    }
 
     if( nullptr == papszRawRPCList )
     {
@@ -373,14 +384,14 @@ char** GDALMDReaderPleiades::LoadRPCXmlFile()
     char** papszRPB = nullptr;
     for( int i = 0; apszRPBMap[i] != nullptr; i += 2 )
     {
+        const char *pszValue = CSLFetchNameValue(papszRawRPCList,
+                                                 apszRPBMap[i + 1]);
         // Pleiades RPCs use "center of upper left pixel is 1,1" convention, convert to
         // Digital globe convention of "center of upper left pixel is 0,0".
-        if (i == 0 || i == 2)
+        if ((i == 0 || i == 2) && pszValue)
         {
             CPLString osField;
-            const char *pszOffset = CSLFetchNameValue(papszRawRPCList,
-                                                    apszRPBMap[i + 1]);
-            double dfVal = CPLAtofM( pszOffset ) -1.0 ;
+            double dfVal = CPLAtofM( pszValue ) -1.0 ;
             if( i == 0 )
                 dfVal += nLineOffShift;
             else
@@ -390,9 +401,7 @@ char** GDALMDReaderPleiades::LoadRPCXmlFile()
         }
         else
         {
-            papszRPB = CSLAddNameValue(papszRPB, apszRPBMap[i],
-                                    CSLFetchNameValue(papszRawRPCList,
-                                                        apszRPBMap[i + 1]));
+            papszRPB = CSLAddNameValue(papszRPB, apszRPBMap[i], pszValue);
         }
     }
 
@@ -408,8 +417,16 @@ char** GDALMDReaderPleiades::LoadRPCXmlFile()
             // supplies geographic coordinates (lon, lat) and an altitude (alt)"""
             const char* pszValue = CSLFetchNameValue(papszRawRPCList,
                  CPLSPrintf("Inverse_Model.%s_%d", apszRPCTXT20ValItems[i], j));
-            if(nullptr != pszValue)
+            if(nullptr != pszValue){
                 value = value + " " + CPLString(pszValue);
+            }
+            else {
+                 pszValue = CSLFetchNameValue(papszRawRPCList,
+                 CPLSPrintf("GroundtoImage_Values.%s_%d", apszRPCTXT20ValItems[i], j));
+                 if(nullptr != pszValue){
+                    value = value + " " + CPLString(pszValue);
+                 }
+            }
         }
         papszRPB = CSLAddNameValue(papszRPB, apszRPCTXT20ValItems[i], value);
     }

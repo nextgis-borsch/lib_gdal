@@ -35,6 +35,7 @@
 #include <string>
 #include <cassert>
 #include <cstring>
+#include <memory>
 
 using namespace PCIDSK;
 
@@ -93,6 +94,9 @@ void CPCIDSKEphemerisSegment::Load()
 
     seg_data.SetSize((int)data_size - 1024);
 
+    if(data_size == 1024)
+        return;
+
     ReadFromFile(seg_data.buffer, 0, data_size - 1024);
 
     // We test the name of the binary segment before starting to read
@@ -121,9 +125,10 @@ void CPCIDSKEphemerisSegment::Write(void)
         return;
     }
 
+    EphemerisToBinary( mpoEphemeris, 0);
+
     seg_data.Put("ORBIT   ",0,8);
 
-    EphemerisToBinary( mpoEphemeris, 0);
     WriteToFile(seg_data.buffer,0,seg_data.buffer_size);
 
     mbModified = false;
@@ -552,13 +557,10 @@ EphemerisSeg_t *
 CPCIDSKEphemerisSegment::BinaryToEphemeris( int nStartBlock )
 
 {
-    EphemerisSeg_t *l_segment;
     int             i;
     int nPos = nStartBlock;
 
-    l_segment = new EphemerisSeg_t();
-
-    try {
+    std::unique_ptr<EphemerisSeg_t> l_segment(new EphemerisSeg_t());
 
 /* -------------------------------------------------------------------- */
 /*      Process first block.                                            */
@@ -714,7 +716,7 @@ CPCIDSKEphemerisSegment::BinaryToEphemeris( int nStartBlock )
     }
 
 /* -------------------------------------------------------------------- */
-/*      6th and 7th block of ORBIT l_segment are blank.                 */
+/*      6th and 7th block of ORBIT segment are blank.                   */
 /*      Read in the 8th block.                                          */
 /* -------------------------------------------------------------------- */
     nPos = nStartBlock + 7*512;
@@ -732,13 +734,13 @@ CPCIDSKEphemerisSegment::BinaryToEphemeris( int nStartBlock )
                               seg_data.Get(nPos,8));
 
 /* -------------------------------------------------------------------- */
-/*      Orbit l_segment is a Satellite Attitude Segment(ATTITUDE) only  */
+/*      Orbit segment is a Satellite Attitude Segment(ATTITUDE) only    */
 /*      for SPOT 1A.                                                    */
 /* -------------------------------------------------------------------- */
     if (l_segment->Type == OrbAttitude)
     {
         AttitudeSeg_t  *AttitudeSeg;
-        int             nBlock, nData;
+        int            nBlock, nData;
 
         AttitudeSeg = l_segment->AttitudeSeg = new AttitudeSeg_t();
 
@@ -790,12 +792,12 @@ CPCIDSKEphemerisSegment::BinaryToEphemeris( int nStartBlock )
         {
             return (EphemerisSeg_t*)ThrowPCIDSKExceptionPtr("Number of data line read (%d) "
                      "does not matches with what is specified in "
-                     "the l_segment (%d).\n", nData,
+                     "the segment (%d).\n", nData,
                      AttitudeSeg->NumberOfLine);
         }
     }
 /* -------------------------------------------------------------------- */
-/*      Radar l_segment (LATLONG)                                       */
+/*      Radar segment (LATLONG)                                         */
 /* -------------------------------------------------------------------- */
     else if (l_segment->Type == OrbLatLong)
     {
@@ -924,25 +926,19 @@ CPCIDSKEphemerisSegment::BinaryToEphemeris( int nStartBlock )
         {
             return (EphemerisSeg_t*)ThrowPCIDSKExceptionPtr("Number "
                      "of data lines read (%d) does not match with"
-                     "\nwhat is specified in l_segment (%d).\n", nData,
+                     "\nwhat is specified in segment (%d).\n", nData,
                      RadarSeg->NumberData);
         }
     }
 /* -------------------------------------------------------------------- */
-/*      AVHRR l_segment                                                 */
+/*      AVHRR segment                                                   */
 /* -------------------------------------------------------------------- */
     else if (l_segment->Type == OrbAvhrr)
     {
-        ReadAvhrrEphemerisSegment( nStartBlock, l_segment);
+        ReadAvhrrEphemerisSegment( nStartBlock, l_segment.get());
     }
 
-    }
-    catch( const PCIDSKException& )
-    {
-        delete l_segment;
-        throw;
-    }
-    return l_segment;
+    return l_segment.release();
 }
 
 /************************************************************************/
@@ -1103,7 +1099,7 @@ CPCIDSKEphemerisSegment::EphemerisToBinary( EphemerisSeg_t * psOrbit,
             for (i=0; i<20; i++)
             {
                 seg_data.Put(psOrbit->SPCoeff1B[i],
-                                    nPos+j,22,"%22.14f");
+                                     nPos+j,22,"%22.14f");
                 j += 22;
             }
         }
@@ -1116,7 +1112,7 @@ CPCIDSKEphemerisSegment::EphemerisToBinary( EphemerisSeg_t * psOrbit,
             for (i=0; i<20; i++)
             {
                 seg_data.Put(psOrbit->SPCoeff1B[i],
-                                    nPos+j,22,"%22.14f");
+                                     nPos+j,22,"%22.14f");
                 j += 22;
             }
 
@@ -1162,7 +1158,7 @@ CPCIDSKEphemerisSegment::EphemerisToBinary( EphemerisSeg_t * psOrbit,
     if (psOrbit->Type == OrbAttitude)
     {
         AttitudeSeg_t *AttitudeSeg;
-        int            nBlock, nData;
+        int             nBlock, nData;
 
         AttitudeSeg = psOrbit->AttitudeSeg;
 
@@ -1208,7 +1204,7 @@ CPCIDSKEphemerisSegment::EphemerisToBinary( EphemerisSeg_t * psOrbit,
                512 * AttitudeSeg->NumberBlockData);
 
 /* -------------------------------------------------------------------- */
-/*      rite out the line required.                                     */
+/*      Write out the line required.                                    */
 /* -------------------------------------------------------------------- */
         for (nBlock=0, nData=0; nBlock<AttitudeSeg->NumberBlockData;
              nBlock++)
@@ -1310,7 +1306,7 @@ CPCIDSKEphemerisSegment::EphemerisToBinary( EphemerisSeg_t * psOrbit,
                 int             offset;
                 char            *currentptr, *currentindex;
                 double          tmp, tmpDouble;
-                const double million = 1000000.0;
+                const double    million = 1000000.0;
                 int32           tmpInt;
 
 /* -------------------------------------------------------------------- */
@@ -1395,5 +1391,3 @@ CPCIDSKEphemerisSegment::EphemerisToBinary( EphemerisSeg_t * psOrbit,
         WriteAvhrrEphemerisSegment(nStartBlock + 8*512 , psOrbit);
     }
 }
-
-

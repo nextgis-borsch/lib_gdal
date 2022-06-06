@@ -49,7 +49,7 @@ class OGRLayerWithTransaction final: public OGRLayerDecorator
 
         OGRLayerWithTransaction(OGRDataSourceWithTransaction* poDS,
                                 OGRLayer* poBaseLayer);
-    virtual ~OGRLayerWithTransaction();
+    virtual ~OGRLayerWithTransaction() override;
 
     virtual const char *GetName() override { return GetDescription(); }
     virtual OGRFeatureDefn *GetLayerDefn() override;
@@ -67,6 +67,8 @@ class OGRLayerWithTransaction final: public OGRLayerDecorator
     virtual OGRFeature *GetFeature( GIntBig nFID ) override;
     virtual OGRErr      ISetFeature( OGRFeature *poFeature ) override;
     virtual OGRErr      ICreateFeature( OGRFeature *poFeature ) override;
+
+    virtual OGRErr      Rename(const char* pszNewName) override;
 };
 
 class OGRDataSourceWithTransaction final: public OGRDataSource
@@ -94,7 +96,7 @@ class OGRDataSourceWithTransaction final: public OGRDataSource
                                           int bTakeOwnershipDataSource,
                                           int bTakeOwnershipTransactionBehavior);
 
-    virtual     ~OGRDataSourceWithTransaction();
+    virtual     ~OGRDataSourceWithTransaction() override;
 
     int                 IsInTransaction() const { return m_bInTransaction; }
 
@@ -104,6 +106,7 @@ class OGRDataSourceWithTransaction final: public OGRDataSource
     virtual OGRLayer    *GetLayer(int) override;
     virtual OGRLayer    *GetLayerByName(const char *) override;
     virtual OGRErr      DeleteLayer(int) override;
+    virtual bool        IsLayerPrivate(int iLayer) const override;
 
     virtual int         TestCapability( const char * ) override;
 
@@ -125,11 +128,22 @@ class OGRDataSourceWithTransaction final: public OGRDataSource
                                     const char *pszDialect ) override;
     virtual void        ReleaseResultSet( OGRLayer * poResultsSet ) override;
 
-    virtual void        FlushCache() override;
+    virtual void        FlushCache(bool bAtClosing) override;
 
     virtual OGRErr      StartTransaction(int bForce=FALSE) override;
     virtual OGRErr      CommitTransaction() override;
     virtual OGRErr      RollbackTransaction() override;
+
+    virtual std::vector<std::string> GetFieldDomainNames(CSLConstList papszOptions = nullptr) const override;
+    virtual const OGRFieldDomain* GetFieldDomain(const std::string& name) const override;
+    virtual bool        AddFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain,
+                                       std::string& failureReason) override;
+    virtual bool        DeleteFieldDomain(const std::string& name,
+                                          std::string& failureReason) override;
+    virtual bool        UpdateFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain,
+                                          std::string& failureReason) override;
+
+    virtual std::shared_ptr<GDALGroup> GetRootGroup() const override;
 
     virtual char      **GetMetadata( const char * pszDomain = "" ) override;
     virtual CPLErr      SetMetadata( char ** papszMetadata,
@@ -273,6 +287,12 @@ OGRErr      OGRDataSourceWithTransaction::DeleteLayer(int iIndex)
     return eErr;
 }
 
+bool OGRDataSourceWithTransaction::IsLayerPrivate(int iLayer) const
+{
+    if( !m_poBaseDataSource ) return false;
+    return m_poBaseDataSource->IsLayerPrivate(iLayer);
+}
+
 int         OGRDataSourceWithTransaction::TestCapability( const char * pszCap )
 {
     if( !m_poBaseDataSource ) return FALSE;
@@ -337,10 +357,10 @@ void        OGRDataSourceWithTransaction::ReleaseResultSet( OGRLayer * poResults
     m_poBaseDataSource->ReleaseResultSet(poResultsSet);
 }
 
-void      OGRDataSourceWithTransaction::FlushCache()
+void      OGRDataSourceWithTransaction::FlushCache(bool bAtClosing)
 {
     if( !m_poBaseDataSource ) return;
-    return m_poBaseDataSource->FlushCache();
+    return m_poBaseDataSource->FlushCache(bAtClosing);
 }
 
 OGRErr OGRDataSourceWithTransaction::StartTransaction(int bForce)
@@ -423,6 +443,42 @@ OGRErr OGRDataSourceWithTransaction::RollbackTransaction()
     if( bHasReopenedDS )
         RemapLayers();
     return eErr;
+}
+
+std::vector<std::string> OGRDataSourceWithTransaction::GetFieldDomainNames(CSLConstList papszOptions) const
+{
+    if( !m_poBaseDataSource ) return std::vector<std::string>();
+    return m_poBaseDataSource->GetFieldDomainNames(papszOptions);
+}
+
+const OGRFieldDomain* OGRDataSourceWithTransaction::GetFieldDomain(const std::string& name) const
+{
+    if( !m_poBaseDataSource ) return nullptr;
+    return m_poBaseDataSource->GetFieldDomain(name);
+}
+
+bool OGRDataSourceWithTransaction::AddFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain, std::string& failureReason)
+{
+    if( !m_poBaseDataSource ) return false;
+    return m_poBaseDataSource->AddFieldDomain(std::move(domain), failureReason);
+}
+
+bool OGRDataSourceWithTransaction::DeleteFieldDomain(const std::string &name, std::string &failureReason)
+{
+    if( !m_poBaseDataSource ) return false;
+    return m_poBaseDataSource->DeleteFieldDomain(name, failureReason);
+}
+
+bool OGRDataSourceWithTransaction::UpdateFieldDomain(std::unique_ptr<OGRFieldDomain> &&domain, std::string &failureReason)
+{
+    if( !m_poBaseDataSource ) return false;
+    return m_poBaseDataSource->UpdateFieldDomain(std::move(domain), failureReason);
+}
+
+std::shared_ptr<GDALGroup> OGRDataSourceWithTransaction::GetRootGroup() const
+{
+    if( !m_poBaseDataSource ) return nullptr;
+    return m_poBaseDataSource->GetRootGroup();
 }
 
 char      **OGRDataSourceWithTransaction::GetMetadata( const char * pszDomain )
@@ -601,5 +657,18 @@ OGRErr       OGRLayerWithTransaction::ICreateFeature( OGRFeature *poFeature )
     OGRErr eErr = m_poDecoratedLayer->CreateFeature(poSrcFeature);
     poFeature->SetFID(poSrcFeature->GetFID());
     delete poSrcFeature;
+    return eErr;
+}
+
+OGRErr OGRLayerWithTransaction::Rename(const char* pszNewName)
+{
+    if( !m_poDecoratedLayer ) return OGRERR_FAILURE;
+    OGRErr eErr = m_poDecoratedLayer->Rename(pszNewName);
+    if( eErr == OGRERR_NONE )
+    {
+        SetDescription( m_poDecoratedLayer->GetDescription() );
+        if( m_poFeatureDefn )
+            m_poFeatureDefn->SetName( m_poDecoratedLayer->GetLayerDefn()->GetName() );
+    }
     return eErr;
 }

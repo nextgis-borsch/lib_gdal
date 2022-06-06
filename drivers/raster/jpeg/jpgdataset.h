@@ -31,8 +31,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#undef ENABLE_LIBJPEG_NO_RETURN
-
 #include "cpl_port.h"
 
 // TODO(schwehr): Run IWYU.
@@ -172,7 +170,7 @@ class JPGDatasetCommon CPL_NON_FINAL: public GDALPamDataset
     int           nInternalOverviewsToFree;
     GDALDataset **papoInternalOverviews;
     JPGDatasetCommon* poActiveDS = nullptr; /* only valid in parent DS */
-    JPGDatasetCommon** ppoActiveDS = nullptr; /* &poActiveDS of poActiveDS frmo parentDS */
+    JPGDatasetCommon** ppoActiveDS = nullptr; /* &poActiveDS of poActiveDS from parentDS */
     void          InitInternalOverviews();
     GDALDataset  *InitEXIFOverview();
 
@@ -182,18 +180,17 @@ class JPGDatasetCommon CPL_NON_FINAL: public GDALPamDataset
     int    nGCPCount;
     GDAL_GCP *pasGCPList;
 
-    VSILFILE   *fpImage;
+    VSILFILE   *m_fpImage;
     GUIntBig nSubfileOffset;
 
     int    nLoadedScanline;
-    GByte  *pabyScanline;
+    GByte  *m_pabyScanline;
 
     bool   bHasReadEXIFMetadata;
     bool   bHasReadXMPMetadata;
     bool   bHasReadICCMetadata;
+    bool   bHasReadFLIRMetadata = false;
     char   **papszMetadata;
-    char   **papszSubDatasets;
-    bool   bigendian;
     int    nExifOffset;
     int    nInterOffset;
     int    nGPSOffset;
@@ -202,6 +199,14 @@ class JPGDatasetCommon CPL_NON_FINAL: public GDALPamDataset
     int    nTIFFHEADER;
     bool   bHasDoneJpegCreateDecompress;
     bool   bHasDoneJpegStartDecompress;
+
+    int    m_nSubdatasetCount = 0;
+
+    // FLIR raw thermal image
+    bool   m_bRawThermalLittleEndian = false;
+    int    m_nRawThermalImageWidth = 0;
+    int    m_nRawThermalImageHeight = 0;
+    std::vector<GByte> m_abyRawThermalImage{};
 
     virtual CPLErr LoadScanline(int, GByte* outBuffer = nullptr) = 0;
     virtual void   StopDecompress() = 0;
@@ -216,8 +221,12 @@ class JPGDatasetCommon CPL_NON_FINAL: public GDALPamDataset
     void   CheckForMask();
     void   DecompressMask();
 
+    void   LoadForMetadataDomain( const char *pszDomain );
+
     void   ReadEXIFMetadata();
     void   ReadXMPMetadata();
+    void   ReadFLIRMetadata();
+    GDALDataset* OpenFLIRRawThermalImage();
 
     bool   bHasCheckedForMask;
     JPGMaskBand *poMaskBand;
@@ -229,7 +238,7 @@ class JPGDatasetCommon CPL_NON_FINAL: public GDALPamDataset
 
     // Color space exposed by GDAL.  Not necessarily the in_color_space nor
     // the out_color_space of JPEG library.
-    J_COLOR_SPACE eGDALColorSpace;
+    /*J_COLOR_SPACE*/ int eGDALColorSpace;
 
     bool   bIsSubfile;
     bool   bHasTriedLoadWorldFileOrTab;
@@ -268,7 +277,7 @@ class JPGDatasetCommon CPL_NON_FINAL: public GDALPamDataset
 
     virtual char **GetFileList(void) override;
 
-    virtual void FlushCache(void) override;
+    virtual void FlushCache(bool bAtClosing) override;
 
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
@@ -294,6 +303,7 @@ class JPGDataset final: public JPGDatasetCommon
     struct jpeg_progress_mgr sJProgress;
 
     virtual CPLErr LoadScanline(int, GByte* outBuffer) override;
+    CPLErr         StartDecompress();
     virtual void   StopDecompress() override;
     virtual CPLErr Restart() override;
     virtual int GetDataPrecision() override { return sDInfo.data_precision; }

@@ -98,7 +98,7 @@ class ADRGDataset final: public GDALPamDataset
 
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create(const char* pszFilename, int nXSize, int nYSize,
-                               int nBands, GDALDataType eType, char **papszOptions);
+                               int nBandsIn, GDALDataType eType, char **papszOptions);
 
     static double GetLongitudeFromString(const char* str);
     static double GetLatitudeFromString(const char* str);
@@ -569,7 +569,7 @@ ADRGDataset::~ADRGDataset()
 
     if( bCreation )
     {
-        GDALPamDataset::FlushCache();
+        GDALPamDataset::FlushCache(true);
 
         /* Write header and padding of image */
         VSIFSeekL(fdIMG, 0, SEEK_SET);
@@ -1648,7 +1648,7 @@ GDALDataset *ADRGDataset::Open( GDALOpenInfo * poOpenInfo )
 GDALDataset *ADRGDataset::Create( const char* pszFilename,
                                   int nXSize,
                                   int nYSize,
-                                  int nBands,
+                                  int nBandsIn,
                                   GDALDataType eType,
                                   CPL_UNUSED char **papszOptions )
 {
@@ -1662,12 +1662,12 @@ GDALDataset *ADRGDataset::Create( const char* pszFilename,
         return nullptr;
     }
 
-    if( nBands != 3 )
+    if( nBandsIn != 3 )
     {
         CPLError( CE_Failure, CPLE_NotSupported,
                   "ADRG driver doesn't support %d bands. "
                   "Must be 3 (rgb) bands.",
-                  nBands );
+                  nBandsIn );
         return nullptr;
     }
 
@@ -2108,7 +2108,7 @@ void ADRGDataset::WriteTHFFile()
                                                   "RTY!RID",
                                                   "(A(3),A(2))");
         sizeOfFields[nFields++] += WriteFieldDecl(fd, '1', '6', "TRANSMITTAL_HEADER_FIELD", /* VDR */
-                                                  "MSD!VOO!ADR!NOV!SQN!NOF!URF!EDN!DAT",
+                                                  "MSD!VOO!ADR!NOV!SQN!NOF!URF!END!DAT",
                                                   "(A(1),A(200),A(1),I(1),I(1),I(3),A(16),I(3),A(12))");
         sizeOfFields[nFields++] += WriteFieldDecl(fd, '1', '6', "DATA_SET_DESCRIPTION_FIELD", /* FDR */
                                                   "NAM!STR!PRT!SWO!SWA!NEO!NEA",
@@ -2166,7 +2166,7 @@ void ADRGDataset::WriteTHFFile()
         sizeOfFields[nFields] += WriteSubFieldInt(fd, 1, 3); /* NOF */
         // URF - DMA stock number for this CDROM
         sizeOfFields[nFields] += WriteSubFieldStr(fd, "", 16);
-        sizeOfFields[nFields] += WriteSubFieldInt(fd, 1, 3); /* EDN */
+        sizeOfFields[nFields] += WriteSubFieldInt(fd, 1, 3); /* END */
         sizeOfFields[nFields] +=
             WriteSubFieldStr(fd, "017,19940101", 12); // DAT - Publication date
         sizeOfFields[nFields] += WriteFieldTerminator(fd);

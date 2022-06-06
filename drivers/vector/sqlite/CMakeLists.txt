@@ -61,6 +61,8 @@ if(ENABLE_SQLITE_GPKG)
         ogrsqlitesqlfunctions.h
         rasterlite2_header.h
         ogrsqliteutility.h
+        ogrsqlitebase.h
+        ogrsqlitevfs.h
     )
 
     set(LIB_CSOURCES

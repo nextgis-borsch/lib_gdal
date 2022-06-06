@@ -50,13 +50,19 @@
 #include "cpl_multiproc.h"
 #include "cpl_string.h"
 #include "cpl_vsi.h"
+#ifdef GDAL_CMAKE_BUILD
+#include "gdal_version_full/gdal_version.h"
+#else
 #include "gdal_version.h"
+#endif
 #include "gdal.h"
 #include "gdal_mdreader.h"
 #include "gdal_priv.h"
 #include "ogr_core.h"
 #include "ogr_spatialref.h"
 #include "ogr_geos.h"
+
+#include "proj.h"
 
 CPL_CVSID("$Id$")
 
@@ -105,6 +111,8 @@ static int GetDataTypeElementSizeBits( GDALDataType eDataType )
 
       case GDT_Float64:
       case GDT_CFloat64:
+      case GDT_UInt64:
+      case GDT_Int64:
         return 64;
 
       default:
@@ -175,6 +183,9 @@ GDALDataTypeUnion( GDALDataType eType1, GDALDataType eType2 )
 GDALDataType CPL_STDCALL GDALDataTypeUnionWithValue(
     GDALDataType eDT, double dValue, int bComplex )
 {
+    if( eDT == GDT_Float32 && !bComplex && static_cast<float>(dValue) == dValue )
+        return eDT;
+
     const GDALDataType eDT2 = GDALFindDataTypeForValue(dValue, bComplex);
     return GDALDataTypeUnion(eDT, eDT2);
 }
@@ -205,6 +216,10 @@ static int GetMinBitsForValue(double dValue)
         if( dValue <= std::numeric_limits<GUInt32>::max() &&
             dValue >= std::numeric_limits<GUInt32>::min() )
             return 32;
+
+        if( dValue <= static_cast<double>(std::numeric_limits<std::uint64_t>::max()) &&
+            dValue >= static_cast<double>(std::numeric_limits<std::uint64_t>::min()) )
+            return 64;
     }
     else if( static_cast<float>(dValue) == dValue )
     {
@@ -258,6 +273,9 @@ GDALDataType CPL_STDCALL GDALFindDataType(
         if( bSigned ) return GDT_Int32;
         return GDT_UInt32;
     }
+
+    if( nBits == 64 && !bFloating && !bComplex )
+        return bSigned ? GDT_Int64 : GDT_UInt64;
 
     if( bComplex )
         return GDT_CFloat64;
@@ -323,6 +341,8 @@ int CPL_STDCALL GDALGetDataTypeSizeBytes( GDALDataType eDataType )
       case GDT_Float64:
       case GDT_CInt32:
       case GDT_CFloat32:
+      case GDT_UInt64:
+      case GDT_Int64:
         return 8;
 
       case GDT_CFloat64:
@@ -454,6 +474,8 @@ int CPL_STDCALL GDALDataTypeIsInteger( GDALDataType eDataType )
       case GDT_UInt32:
       case GDT_CInt16:
       case GDT_CInt32:
+      case GDT_UInt64:
+      case GDT_Int64:
         return TRUE;
 
       default:
@@ -479,6 +501,7 @@ int CPL_STDCALL GDALDataTypeIsSigned( GDALDataType eDataType )
       case GDT_Byte:
       case GDT_UInt16:
       case GDT_UInt32:
+      case GDT_UInt64:
         return FALSE;
 
       default:
@@ -511,7 +534,7 @@ int CPL_STDCALL GDALDataTypeIsConversionLossy( GDALDataType eTypeFrom,
 
     if( GDALDataTypeIsInteger(eTypeTo) )
     {
-        // E.g. float32 -> int32 
+        // E.g. float32 -> int32
         if( GDALDataTypeIsFloating(eTypeFrom) )
             return TRUE;
 
@@ -536,7 +559,15 @@ int CPL_STDCALL GDALDataTypeIsConversionLossy( GDALDataType eTypeFrom,
 
     if( eTypeTo == GDT_Float32 && (eTypeFrom == GDT_Int32 ||
                                    eTypeFrom == GDT_UInt32 ||
+                                   eTypeFrom == GDT_Int64 ||
+                                   eTypeFrom == GDT_UInt64 ||
                                    eTypeFrom == GDT_Float64) )
+    {
+        return TRUE;
+    }
+
+    if( eTypeTo == GDT_Float64 && (eTypeFrom == GDT_Int64 ||
+                                   eTypeFrom == GDT_UInt64) )
     {
         return TRUE;
     }
@@ -584,6 +615,12 @@ const char * CPL_STDCALL GDALGetDataTypeName( GDALDataType eDataType )
 
       case GDT_Int32:
         return "Int32";
+
+      case GDT_UInt64:
+        return "UInt64";
+
+      case GDT_Int64:
+        return "Int64";
 
       case GDT_Float32:
         return "Float32";
@@ -650,12 +687,12 @@ template<class T> static inline void ClampAndRound(
 {
     // TODO(schwehr): Rework this template.  ::min() versus ::lowest.
 
-    if (dfValue < std::numeric_limits<T>::min())
+    if (dfValue < static_cast<double>(std::numeric_limits<T>::min()))
     {
         bClamped = true;
         dfValue = static_cast<double>(std::numeric_limits<T>::min());
     }
-    else if (dfValue > std::numeric_limits<T>::max())
+    else if (dfValue > static_cast<double>(std::numeric_limits<T>::max()))
     {
         bClamped = true;
         dfValue = static_cast<double>(std::numeric_limits<T>::max());
@@ -670,7 +707,7 @@ template<class T> static inline void ClampAndRound(
 /**
  * \brief Adjust a value to the output data type
  *
- * Adjustment consist in clamping to minimum/maxmimum values of the data type
+ * Adjustment consist in clamping to minimum/maximum values of the data type
  * and rounding for integral types.
  *
  * @param eDT target data type.
@@ -704,6 +741,12 @@ double GDALAdjustValueToDataType(
         case GDT_UInt32:
             ClampAndRound<GUInt32>(dfValue, bClamped, bRounded);
             break;
+        case GDT_Int64:
+            ClampAndRound<std::int64_t>(dfValue, bClamped, bRounded);
+            break;
+        case GDT_UInt64:
+            ClampAndRound<std::uint64_t>(dfValue, bClamped, bRounded);
+            break;
         case GDT_Float32:
         {
             if( !CPLIsFinite(dfValue) )
@@ -725,7 +768,7 @@ double GDALAdjustValueToDataType(
             }
             else
             {
-                // Intentionaly loose precision.
+                // Intentionally loose precision.
                 // TODO(schwehr): Is the double cast really necessary?
                 // If so, why?  What will fail?
                 dfValue = static_cast<double>(static_cast<float>(dfValue));
@@ -1118,6 +1161,12 @@ GDALGetRandomRasterSample( GDALRasterBandH hBand, int nSamples,
                     break;
                   case GDT_Int32:
                     dfValue = reinterpret_cast<const GInt32*>(pDataRef)[iOffset];
+                    break;
+                  case GDT_UInt64:
+                    dfValue = static_cast<double>(reinterpret_cast<const std::uint64_t*>(pDataRef)[iOffset]);
+                    break;
+                  case GDT_Int64:
+                    dfValue = static_cast<double>(reinterpret_cast<const std::int64_t*>(pDataRef)[iOffset]);
                     break;
                   case GDT_Float32:
                     dfValue = reinterpret_cast<const float*>(pDataRef)[iOffset];
@@ -2206,6 +2255,13 @@ const char * CPL_STDCALL GDALVersionInfo( const char *pszRequest )
         osBuildInfo += CPLString("GEOS_VERSION=") + GEOS_CAPI_VERSION + "\n";
 #endif
 #endif
+        osBuildInfo += CPLSPrintf("PROJ_BUILD_VERSION=%d.%d.%d\n",
+                                  PROJ_VERSION_MAJOR,
+                                  PROJ_VERSION_MINOR,
+                                  PROJ_VERSION_PATCH);
+        osBuildInfo += CPLSPrintf("PROJ_RUNTIME_VERSION=%s\n",
+                                  proj_info().version);
+
         CPLFree(CPLGetTLS(CTLS_VERSIONINFO));
         CPLSetTLS(CTLS_VERSIONINFO, CPLStrdup(osBuildInfo), TRUE );
         return static_cast<char *>( CPLGetTLS(CTLS_VERSIONINFO) );
@@ -2254,7 +2310,7 @@ const char * CPL_STDCALL GDALVersionInfo( const char *pszRequest )
         if (!pszResultLicence)
         {
             pszResultLicence = CPLStrdup(
-                     "GDAL/OGR is released under the MIT/X license.\n"
+                     "GDAL/OGR is released under the MIT license.\n"
                      "The LICENSE.TXT distributed with GDAL/OGR should\n"
                      "contain additional details.\n" );
         }
@@ -3212,7 +3268,7 @@ GDALGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
                         CSLFetchNameValue( papszMD, GDAL_DMD_HELPTOPIC ) );
 
             if( CPLFetchBool( papszMD, GDAL_DMD_SUBDATASETS, false ) )
-                printf( "  Supports: Subdatasets\n" );/*ok*/
+                printf( "  Supports: Raster subdatasets\n" );/*ok*/
             if( CPLFetchBool( papszMD, GDAL_DCAP_OPEN, false ) )
                 printf( "  Supports: Open() - Open existing dataset.\n" );/*ok*/
             if( CPLFetchBool( papszMD, GDAL_DCAP_CREATE, false ) )
@@ -3244,6 +3300,15 @@ GDALGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
                 printf( "  No support for geometries.\n" );/*ok*/
             if( CPLFetchBool( papszMD, GDAL_DCAP_FEATURE_STYLES, false ) )
                 printf( "  Supports: Feature styles.\n" );/*ok*/
+            if( CPLFetchBool( papszMD, GDAL_DCAP_COORDINATE_EPOCH, false ) )
+                printf( "  Supports: Coordinate epoch.\n" );/*ok*/
+            if( CPLFetchBool( papszMD, GDAL_DCAP_MULTIPLE_VECTOR_LAYERS, false ) )
+                printf( "  Supports: Multiple vector layers.\n" );/*ok*/
+            if( CPLFetchBool( papszMD, GDAL_DCAP_FIELD_DOMAINS, false ) )
+                printf( "  Supports: Reading field domains.\n" );/*ok*/
+            if( CSLFetchNameValue( papszMD, GDAL_DMD_CREATION_FIELD_DOMAIN_TYPES ) )
+              printf( "  Creation field domain types: %s\n",/*ok*/
+                      CSLFetchNameValue( papszMD, GDAL_DMD_CREATION_FIELD_DOMAIN_TYPES ) );
 
             for( const char* key: { GDAL_DMD_CREATIONOPTIONLIST,
                                     GDAL_DMD_MULTIDIM_DATASET_CREATIONOPTIONLIST,
@@ -3316,6 +3381,7 @@ GDALGeneralCmdLineProcessor( int nArgc, char ***ppapszArgv, int nOptions )
         {
             printf( "Generic GDAL utility command options:\n" );/*ok*/
             printf( "  --version: report version of GDAL in use.\n" );/*ok*/
+            printf( "  --build: report detailed information about GDAL in use.\n" );/*ok*/
             printf( "  --license: report GDAL license info.\n" );/*ok*/
             printf( "  --formats: report all configured format drivers.\n" );/*ok*/
             printf( "  --format [format]: details of one format.\n" );/*ok*/
@@ -3411,13 +3477,31 @@ static bool _FetchDblFromMD( CSLConstList papszMD, const char *pszKey,
 
 /** Extract RPC info from metadata, and apply to an RPCInfo structure.
  *
- * The inverse of this function is RPCInfoToMD() in alg/gdal_rpc.cpp
+ * The inverse of this function is RPCInfoV1ToMD() in alg/gdal_rpc.cpp
  *
  * @param papszMD Dictionary of metadata representing RPC
  * @param psRPC (output) Pointer to structure to hold the RPC values.
  * @return TRUE in case of success. FALSE in case of failure.
  */
-int CPL_STDCALL GDALExtractRPCInfo( CSLConstList papszMD, GDALRPCInfo *psRPC )
+int CPL_STDCALL GDALExtractRPCInfoV1( CSLConstList papszMD, GDALRPCInfoV1 *psRPC )
+
+{
+    GDALRPCInfoV2 sRPC;
+    if( !GDALExtractRPCInfoV2(papszMD, &sRPC) )
+        return FALSE;
+    memcpy(psRPC, &sRPC, sizeof(GDALRPCInfoV1) );
+    return TRUE;
+}
+
+/** Extract RPC info from metadata, and apply to an RPCInfo structure.
+ *
+ * The inverse of this function is RPCInfoV2ToMD() in alg/gdal_rpc.cpp
+ *
+ * @param papszMD Dictionary of metadata representing RPC
+ * @param psRPC (output) Pointer to structure to hold the RPC values.
+ * @return TRUE in case of success. FALSE in case of failure.
+ */
+int CPL_STDCALL GDALExtractRPCInfoV2( CSLConstList papszMD, GDALRPCInfoV2 *psRPC )
 
 {
     if( CSLFetchNameValue( papszMD, RPC_LINE_NUM_COEFF ) == nullptr )
@@ -3433,6 +3517,8 @@ int CPL_STDCALL GDALExtractRPCInfo( CSLConstList papszMD, GDALRPCInfo *psRPC )
         return FALSE;
     }
 
+    _FetchDblFromMD( papszMD, RPC_ERR_BIAS, &(psRPC->dfERR_BIAS), 1, -1.0 );
+    _FetchDblFromMD( papszMD, RPC_ERR_RAND, &(psRPC->dfERR_RAND), 1, -1.0 );
     _FetchDblFromMD( papszMD, RPC_LINE_OFF, &(psRPC->dfLINE_OFF), 1, 0.0 );
     _FetchDblFromMD( papszMD, RPC_LINE_SCALE, &(psRPC->dfLINE_SCALE), 1, 1.0 );
     _FetchDblFromMD( papszMD, RPC_SAMP_OFF, &(psRPC->dfSAMP_OFF), 1, 0.0 );
@@ -3833,7 +3919,7 @@ void GDALDeserializeGCPListFromXML( CPLXMLNode* psGCPList,
         if( pszRawProj && pszRawProj[0] )
         {
             *ppoGCP_SRS = new OGRSpatialReference();
-            (*ppoGCP_SRS)->SetFromUserInput( pszRawProj );
+            (*ppoGCP_SRS)->SetFromUserInput( pszRawProj, OGRSpatialReference::SET_FROM_USER_INPUT_LIMITATIONS );
 
             const char* pszMapping =
                 CPLGetXMLValue(psGCPList, "dataAxisToSRSAxisMapping", nullptr);
@@ -4132,5 +4218,121 @@ double GDALAdjustNoDataCloseToFloatMax(double dfVal)
         return -kMaxFloat;
     if( std::fabs(dfVal - kMaxFloat) < 1e-10 * kMaxFloat )
         return kMaxFloat;
+    return dfVal;
+}
+
+/************************************************************************/
+/*                        GDALCopyNoDataValue()                         */
+/************************************************************************/
+
+void GDALCopyNoDataValue(GDALRasterBand* poDstBand,
+                         GDALRasterBand* poSrcBand)
+{
+
+    int bSuccess;
+    const auto eSrcDataType = poSrcBand->GetRasterDataType();
+    const auto eDstDataType = poDstBand->GetRasterDataType();
+    if( eSrcDataType == GDT_Int64 )
+    {
+        const auto nNoData = poSrcBand->GetNoDataValueAsInt64( &bSuccess );
+        if( bSuccess )
+        {
+            if( eDstDataType == GDT_Int64 )
+            {
+                poDstBand->SetNoDataValueAsInt64(nNoData);
+            }
+            else if( eDstDataType == GDT_UInt64 )
+            {
+                if( nNoData >= 0 )
+                    poDstBand->SetNoDataValueAsUInt64(static_cast<uint64_t>(nNoData));
+            }
+            else if( nNoData == static_cast<int64_t>(static_cast<double>(nNoData)) )
+            {
+                poDstBand->SetNoDataValue(static_cast<double>(nNoData));
+            }
+        }
+    }
+    else if( eSrcDataType == GDT_UInt64 )
+    {
+        const auto nNoData = poSrcBand->GetNoDataValueAsUInt64( &bSuccess );
+        if( bSuccess )
+        {
+            if( eDstDataType == GDT_UInt64 )
+            {
+                poDstBand->SetNoDataValueAsUInt64(nNoData);
+            }
+            else if( eDstDataType == GDT_Int64 )
+            {
+                if( nNoData < static_cast<uint64_t>(std::numeric_limits<int64_t>::max()))
+                {
+                    poDstBand->SetNoDataValueAsInt64(static_cast<int64_t>(nNoData));
+                }
+            }
+            else if( nNoData == static_cast<uint64_t>(static_cast<double>(nNoData)) )
+            {
+                poDstBand->SetNoDataValue(static_cast<double>(nNoData));
+            }
+        }
+    }
+    else
+    {
+        const auto dfNoData = poSrcBand->GetNoDataValue( &bSuccess );
+        if( bSuccess )
+        {
+            if( eDstDataType == GDT_Int64 )
+            {
+                if( dfNoData >= static_cast<double>(std::numeric_limits<int64_t>::min()) &&
+                    dfNoData <= static_cast<double>(std::numeric_limits<int64_t>::max()) &&
+                    dfNoData == static_cast<double>(static_cast<int64_t>(dfNoData)) )
+                {
+                    poDstBand->SetNoDataValueAsInt64(static_cast<int64_t>(dfNoData));
+                }
+            }
+            else if( eDstDataType == GDT_UInt64 )
+            {
+                if( dfNoData >= static_cast<double>(std::numeric_limits<uint64_t>::min()) &&
+                    dfNoData <= static_cast<double>(std::numeric_limits<uint64_t>::max()) &&
+                    dfNoData == static_cast<double>(static_cast<uint64_t>(dfNoData)) )
+                {
+                    poDstBand->SetNoDataValueAsInt64(static_cast<uint64_t>(dfNoData));
+                }
+            }
+            else
+            {
+                poDstBand->SetNoDataValue( dfNoData );
+            }
+        }
+    }
+}
+
+/************************************************************************/
+/*                     GDALGetNoDataValueCastToDouble()                 */
+/************************************************************************/
+
+double GDALGetNoDataValueCastToDouble(int64_t nVal)
+{
+    const double dfVal = static_cast<double>(nVal);
+    if( static_cast<int64_t>(dfVal) != nVal )
+    {
+        CPLError(CE_Warning, CPLE_AppDefined,
+                 "GetNoDataValue() returns an approximate value of the "
+                 "true nodata value = " CPL_FRMT_GIB ". Use "
+                 "GetNoDataValueAsInt64() instead",
+                 static_cast<GIntBig>(nVal));
+    }
+    return dfVal;
+}
+
+double GDALGetNoDataValueCastToDouble(uint64_t nVal)
+{
+    const double dfVal = static_cast<double>(nVal);
+    if( static_cast<uint64_t>(dfVal) != nVal )
+    {
+        CPLError(CE_Warning, CPLE_AppDefined,
+                 "GetNoDataValue() returns an approximate value of the "
+                 "true nodata value = " CPL_FRMT_GUIB ". Use "
+                 "GetNoDataValueAsUInt64() instead",
+                 static_cast<GUIntBig>(nVal));
+    }
     return dfVal;
 }

@@ -41,7 +41,6 @@ if(ENABLE_PLSCENES)
 
     set(LIB_HHEADERS_PRIV
         ogr_plscenes.h
-        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h
         ${CMAKE_SOURCE_DIR}/drivers/vector/geojson/ogrgeojsonreader.h
     )
 

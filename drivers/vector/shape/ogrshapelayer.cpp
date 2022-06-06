@@ -243,12 +243,12 @@ OGRShapeLayer::OGRShapeLayer( OGRShapeDataSource* poDSIn,
         {
             poSRSClone->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         }
-        OGRShapeGeomFieldDefn* poGeomFieldDefn =
-            new OGRShapeGeomFieldDefn(pszFullName, eType, bSRSSetIn, poSRSClone);
+        auto poGeomFieldDefn =
+            cpl::make_unique<OGRShapeGeomFieldDefn>(pszFullName, eType, bSRSSetIn, poSRSClone);
         if( poSRSClone )
             poSRSClone->Release();
         poFeatureDefn->SetGeomType(wkbNone);
-        poFeatureDefn->AddGeomFieldDefn(poGeomFieldDefn, FALSE);
+        poFeatureDefn->AddGeomFieldDefn(std::move(poGeomFieldDefn));
     }
 
     SetDescription( poFeatureDefn->GetName() );
@@ -1402,7 +1402,8 @@ int OGRShapeLayer::GetFeatureCountWithSpatialFilterOnly()
                 if( psShape )
                 {
                     poGeometry = SHPReadOGRObject( hSHP, iShape, psShape );
-                    poGeometry->getEnvelope( &sGeomEnv );
+                    if( poGeometry )
+                        poGeometry->getEnvelope( &sGeomEnv );
                     psShape = nullptr;
                 }
             }
@@ -1662,6 +1663,9 @@ int OGRShapeLayer::TestCapability( const char * pszCap )
         return bUpdateAccess;
 
     if( EQUAL(pszCap,OLCAlterFieldDefn) )
+        return bUpdateAccess;
+
+    if( EQUAL(pszCap,OLCRename) )
         return bUpdateAccess;
 
     if( EQUAL(pszCap,OLCIgnoreFields) )
@@ -2180,33 +2184,6 @@ OGRSpatialReference *OGRShapeGeomFieldDefn::GetSpatialRef() const
         }
         CSLDestroy( papszLines );
 
-        // Some new? shapefiles have  EPSG authority nodes (#6485) Use
-        // them  to  'import'  TOWGS84  from EPSG  definition,  if  no
-        // TOWGS84 is present in the  .prj (which should be the case).
-        // We  could  potentially import  more,  or  just replace  the
-        // entire definition
-        const char* pszAuthorityName = nullptr;
-        const char* pszAuthorityCode = nullptr;
-        double adfTOWGS84[7] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
-        if( poSRS != nullptr &&
-            poSRS->GetTOWGS84(adfTOWGS84, 7) == OGRERR_FAILURE &&
-            (pszAuthorityName = poSRS->GetAuthorityName(nullptr)) != nullptr &&
-            EQUAL(pszAuthorityName, "EPSG") &&
-            (pszAuthorityCode = poSRS->GetAuthorityCode(nullptr)) != nullptr )
-        {
-            const int nEPSGCode = atoi(pszAuthorityCode);
-            OGRSpatialReference oSRS;
-            if( oSRS.importFromEPSG(nEPSGCode) == OGRERR_NONE &&
-                oSRS.GetTOWGS84(adfTOWGS84, 7) == OGRERR_NONE )
-            {
-                CPLDebug(
-                    "Shape", "Importing TOWGS84 node from EPSG definition");
-                poSRS->SetTOWGS84(adfTOWGS84[0], adfTOWGS84[1], adfTOWGS84[2],
-                                  adfTOWGS84[3], adfTOWGS84[4], adfTOWGS84[5],
-                                  adfTOWGS84[6]);
-            }
-        }
-
         if( poSRS )
         {
             if( CPLTestBool(CPLGetConfigOption("USE_OSR_FIND_MATCHES", "YES")) )
@@ -2217,10 +2194,43 @@ OGRSpatialReference *OGRShapeGeomFieldDefn::GetSpatialRef() const
                     poSRS->FindMatches(nullptr, &nEntries, &panConfidence);
                 if( nEntries == 1 && panConfidence[0] >= 90 )
                 {
+                    std::vector<double> adfTOWGS84(7);
+                    if( poSRS->GetTOWGS84(&adfTOWGS84[0], 7) != OGRERR_NONE )
+                    {
+                        adfTOWGS84.clear();
+                    }
+
                     poSRS->Release();
                     poSRS = reinterpret_cast<OGRSpatialReference*>(pahSRS[0]);
                     poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
                     CPLFree(pahSRS);
+
+                    auto poBaseGeogCRS = std::unique_ptr<OGRSpatialReference>(
+                        poSRS->CloneGeogCS());
+
+                    // If the base geographic SRS of the SRS is EPSG:4326
+                    // with TOWGS84[0,0,0,0,0,0], then just use the official
+                    // SRS code
+                    // Same with EPSG:4258 (ETRS89), since it's the only known
+                    // TOWGS84[] style transformation to WGS 84, and given the
+                    // "fuzzy" nature of both ETRS89 and WGS 84, there's little
+                    // chance that a non-NULL TOWGS84[] will emerge.
+                    const char* pszAuthorityName = nullptr;
+                    const char* pszAuthorityCode = nullptr;
+                    const char* pszBaseAuthorityName = nullptr;
+                    const char* pszBaseAuthorityCode = nullptr;
+                    if( adfTOWGS84 == std::vector<double>(7) &&
+                        (pszAuthorityName = poSRS->GetAuthorityName(nullptr)) != nullptr &&
+                        EQUAL(pszAuthorityName, "EPSG") &&
+                        (pszAuthorityCode = poSRS->GetAuthorityCode(nullptr)) != nullptr &&
+                        (pszBaseAuthorityName = poBaseGeogCRS->GetAuthorityName(nullptr)) != nullptr &&
+                        EQUAL(pszBaseAuthorityName, "EPSG") &&
+                        (pszBaseAuthorityCode = poBaseGeogCRS->GetAuthorityCode(nullptr)) != nullptr &&
+                        (EQUAL(pszBaseAuthorityCode, "4326") ||
+                         EQUAL(pszBaseAuthorityCode, "4258")) )
+                    {
+                        poSRS->importFromEPSG(atoi(pszAuthorityCode));
+                    }
                 }
                 else
                 {
@@ -2492,7 +2502,7 @@ OGRErr OGRShapeLayer::CreateSpatialIndex( int nMaxDepth )
 /* -------------------------------------------------------------------- */
     SHPDestroyTree( psTree );
 
-    CheckForQIX();
+    CPL_IGNORE_RET_VAL(CheckForQIX());
 
     return OGRERR_NONE;
 }
@@ -3507,9 +3517,97 @@ void OGRShapeLayer::UpdateFollowingDeOrRecompression()
     CPLString osDSDir = poDS->GetTemporaryUnzipDir();
     if( osDSDir.empty() )
         osDSDir = poDS->GetVSIZipPrefixeDir();
+
+    if( GetSpatialRef() != nullptr )
+    {
+        OGRShapeGeomFieldDefn* poGeomFieldDefn =
+            cpl::down_cast<OGRShapeGeomFieldDefn*>(GetLayerDefn()->GetGeomFieldDefn(0));
+        poGeomFieldDefn->SetPrjFilename(
+            CPLFormFilename(osDSDir.c_str(),
+                            CPLGetFilename(poGeomFieldDefn->GetPrjFilename().c_str()),
+                            nullptr));
+    }
+
     char* pszNewFullName = CPLStrdup(
         CPLFormFilename(osDSDir, CPLGetFilename(pszFullName), nullptr));
     CPLFree(pszFullName);
     pszFullName = pszNewFullName;
     CloseUnderlyingLayer();
+}
+
+/************************************************************************/
+/*                           Rename()                                   */
+/************************************************************************/
+
+OGRErr OGRShapeLayer::Rename(const char* pszNewName)
+{
+    if( !TestCapability(OLCRename) )
+        return OGRERR_FAILURE;
+
+    if( poDS->GetLayerByName(pszNewName) != nullptr )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Layer %s already exists",
+                 pszNewName);
+        return OGRERR_FAILURE;
+    }
+
+    if( !poDS->UncompressIfNeeded() )
+        return OGRERR_FAILURE;
+
+    CPLStringList oFileList;
+    AddToFileList(oFileList);
+
+    const std::string osDirname = CPLGetPath(pszFullName);
+    for( int i = 0; i < oFileList.size(); ++i )
+    {
+        const std::string osRenamedFile =
+            CPLFormFilename(osDirname.c_str(), pszNewName, CPLGetExtension(oFileList[i]));
+        VSIStatBufL sStat;
+        if( VSIStatL(osRenamedFile.c_str(), &sStat) == 0 )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "File %s already exists",
+                     osRenamedFile.c_str());
+            return OGRERR_FAILURE;
+        }
+    }
+
+    CloseUnderlyingLayer();
+
+    for( int i = 0; i < oFileList.size(); ++i )
+    {
+        const std::string osRenamedFile =
+            CPLFormFilename(osDirname.c_str(), pszNewName, CPLGetExtension(oFileList[i]));
+        if( VSIRename( oFileList[i], osRenamedFile.c_str() ) != 0 )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "Cannot rename %s to %s",
+                     oFileList[i],
+                     osRenamedFile.c_str());
+            return OGRERR_FAILURE;
+        }
+    }
+
+    if( GetSpatialRef() != nullptr )
+    {
+        OGRShapeGeomFieldDefn* poGeomFieldDefn =
+            cpl::down_cast<OGRShapeGeomFieldDefn*>(GetLayerDefn()->GetGeomFieldDefn(0));
+        poGeomFieldDefn->SetPrjFilename(
+            CPLFormFilename(osDirname.c_str(), pszNewName,
+                            CPLGetExtension(poGeomFieldDefn->GetPrjFilename().c_str())));
+    }
+
+    char* pszNewFullName = CPLStrdup(
+        CPLFormFilename(osDirname.c_str(), pszNewName, CPLGetExtension(pszFullName)));
+    CPLFree(pszFullName);
+    pszFullName = pszNewFullName;
+
+    if( !ReopenFileDescriptors() )
+        return OGRERR_FAILURE;
+
+    SetDescription(pszNewName);
+    poFeatureDefn->SetName(pszNewName);
+
+    return OGRERR_NONE;
 }

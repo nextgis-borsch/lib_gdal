@@ -86,8 +86,13 @@ GeoRasterWrapper::GeoRasterWrapper() :
     nPyramidMaxLevel    = 0;
     nBlockCount         = 0L;
     nGDALBlockBytes     = 0L;
+#ifdef JPEG_SUPPORTED
     sDInfo.global_state = 0;
     sCInfo.global_state = 0;
+    memset(&sCInfo, 0, sizeof(sCInfo));
+    memset(&sDInfo, 0, sizeof(sDInfo));
+    memset(&sJErr, 0, sizeof(sJErr));
+#endif
     bHasBitmapMask      = false;
     nBlockBytes         = 0L;
     bFlushBlock         = false;
@@ -109,9 +114,6 @@ GeoRasterWrapper::GeoRasterWrapper() :
     pasGCPList          = nullptr;
     nGCPCount           = 0;
     bFlushGCP           = false;
-    memset(&sCInfo, 0, sizeof(sCInfo));
-    memset(&sDInfo, 0, sizeof(sDInfo));
-    memset(&sJErr, 0, sizeof(sJErr));
 }
 
 //  ---------------------------------------------------------------------------
@@ -159,7 +161,7 @@ GeoRasterWrapper::~GeoRasterWrapper()
     }
 
     CPLDestroyXMLNode( phMetadata );
-
+#ifdef JPEG_SUPPORTED
     if( sDInfo.global_state )
     {
         jpeg_destroy_decompress( &sDInfo );
@@ -169,7 +171,7 @@ GeoRasterWrapper::~GeoRasterWrapper()
     {
         jpeg_destroy_compress( &sCInfo );
     }
-
+#endif
     if( poConnection )
     {
         delete poConnection;
@@ -262,12 +264,12 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId, bool bUpdate 
     {
         /* In an external procedure environment, before opening any
          * dataset, the caller must pass the with_context as an
-         * string metadata item OCI_CONTEXT_PTR to the driver. */ 
+         * string metadata item OCI_CONTEXT_PTR to the driver. */
 
         OCIExtProcContext* with_context = nullptr;
 
         const char* pszContext = GDALGetMetadataItem(
-                                           GDALGetDriverByName("GEORASTER"), 
+                                           GDALGetDriverByName("GEORASTER"),
                                           "OCI_CONTEXT_PTR", nullptr );
 
         if( pszContext )
@@ -284,7 +286,7 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId, bool bUpdate 
                                                 papszParam[2] );
     }
 
-    if( ! poGRW->poConnection || 
+    if( ! poGRW->poConnection ||
         ! poGRW->poConnection->Succeeded() )
     {
         CSLDestroy( papszParam );
@@ -323,7 +325,7 @@ GeoRasterWrapper* GeoRasterWrapper::Open( const char* pszStringId, bool bUpdate 
         else
         {
             poGRW->sSchema = "";
-            poGRW->sOwner  = poGRW->poConnection->GetUser();
+            poGRW->sOwner  = poGRW->poConnection->GetSessionUser();
         }
 
         CSLDestroy( papszSchema );
@@ -608,7 +610,7 @@ bool GeoRasterWrapper::Create( char* pszDescription,
         }
         else
         {
-             snprintf( szDescription, sizeof(szDescription), 
+             snprintf( szDescription, sizeof(szDescription),
                 "(%s MDSYS.SDO_GEORASTER)", sColumn.c_str() );
         }
 
@@ -1155,8 +1157,10 @@ void GeoRasterWrapper::PrepareToOverwrite( void )
     bCreateObjectTable  = false;
     nPyramidMaxLevel    = 0;
     nBlockCount         = 0L;
+#ifdef JPEG_SUPPORTED
     sDInfo.global_state = 0;
     sCInfo.global_state = 0;
+#endif
     bHasBitmapMask      = false;
     bWriteOnly          = false;
     bBlocking           = true;
@@ -1975,7 +1979,13 @@ bool GeoRasterWrapper::GetDataBlock( int nBand,
 
         if( STARTS_WITH_CI(sCompressionType.c_str(), "JPEG") )
         {
+#ifdef JPEG_SUPPORTED
             UncompressJpeg( nBytesRead );
+#else
+            CPLError(CE_Failure, CPLE_NotSupported,
+                     "JPEG compression not supported in this build of the GeoRaster driver");
+            return false;
+#endif
         }
         else if ( EQUAL( sCompressionType.c_str(), "DEFLATE" ) )
         {
@@ -2116,7 +2126,13 @@ bool GeoRasterWrapper::SetDataBlock( int nBand,
 
             if( STARTS_WITH_CI(sCompressionType.c_str(), "JPEG") )
             {
+#ifdef JPEG_SUPPORTED
                 UncompressJpeg( nBytesRead );
+#else
+                CPLError(CE_Failure, CPLE_NotSupported,
+                         "JPEG compression not supported in this build of the GeoRaster driver");
+                return false;
+#endif
             }
             else if ( EQUAL( sCompressionType.c_str(), "DEFLATE" ) )
             {
@@ -2205,7 +2221,13 @@ bool GeoRasterWrapper::FlushBlock( long nCacheBlock )
     {
         if( STARTS_WITH_CI(sCompressionType.c_str(), "JPEG") )
         {
+#ifdef JPEG_SUPPORTED
             nFlushBlockSize = CompressJpeg();
+#else
+            CPLError(CE_Failure, CPLE_NotSupported,
+                     "JPEG compression not supported in this build of the GeoRaster driver");
+            return false;
+#endif
         }
         else if ( EQUAL( sCompressionType.c_str(), "DEFLATE" ) )
         {
@@ -2289,7 +2311,7 @@ void GeoRasterWrapper::LoadNoDataValues( void )
     }
 
     //  -------------------------------------------------------------------
-    //  Load NoDatas from list of values and list of value ranges
+    //  Load NoData from list of values and list of value ranges
     //  -------------------------------------------------------------------
 
     CPLXMLNode* phObjNoData = CPLGetXMLNode( phLayerInfo, "objectLayer.NODATA" );
@@ -2323,15 +2345,15 @@ void GeoRasterWrapper::GetSpatialReference()
     int i;
 
     CPLXMLNode* phSRSInfo = CPLGetXMLNode( phMetadata, "spatialReferenceInfo" );
-    
+
     if( phSRSInfo == nullptr )
     {
         return;
     }
-    
-    const char* pszMCL = CPLGetXMLValue( phSRSInfo, "modelCoordinateLocation", 
+
+    const char* pszMCL = CPLGetXMLValue( phSRSInfo, "modelCoordinateLocation",
                                                     "CENTER" );
-    
+
     if( EQUAL( pszMCL, "CENTER" ) )
     {
       eModelCoordLocation = MCL_CENTER;
@@ -2342,7 +2364,7 @@ void GeoRasterWrapper::GetSpatialReference()
     }
 
     const char* pszModelType = CPLGetXMLValue( phSRSInfo, "modelType", "None" );
-    
+
     if( EQUAL( pszModelType, "FunctionalFitting" ) == false )
     {
         return;
@@ -2364,7 +2386,7 @@ void GeoRasterWrapper::GetSpatialReference()
 
     int nNumCoeff = atoi( CPLGetXMLValue( phPolynomial, "nCoefficients", "0" ));
 
-    if ( nNumCoeff != 3 ) 
+    if ( nNumCoeff != 3 )
     {
         return;
     }
@@ -2377,7 +2399,7 @@ void GeoRasterWrapper::GetSpatialReference()
         return;
     }
 
-    char** papszCeoff = CSLTokenizeString2( pszPolyCoeff, " ", 
+    char** papszCeoff = CSLTokenizeString2( pszPolyCoeff, " ",
                                            CSLT_STRIPLEADSPACES );
 
     if( CSLCount( papszCeoff ) < 3 )
@@ -2387,7 +2409,7 @@ void GeoRasterWrapper::GetSpatialReference()
     }
 
     double adfPCoef[3];
-    
+
     for( i = 0; i < 3; i++ )
     {
         adfPCoef[i] = CPLAtof( papszCeoff[i] );
@@ -2415,7 +2437,7 @@ void GeoRasterWrapper::GetSpatialReference()
         CSLDestroy(papszCeoff);
         return;
     }
-    
+
     double adfRCoef[3];
 
     for( i = 0; i < 3; i++ )
@@ -2431,7 +2453,7 @@ void GeoRasterWrapper::GetSpatialReference()
     double adfVal[6] = {1.0, 0.0, 0.0, 1.0, 0.0, 0.0};
 
     double dfDet = adfRCoef[1] * adfPCoef[2] - adfRCoef[2] * adfPCoef[1];
-   
+
     if( CPLIsEqual( dfDet, 0.0 ) )
     {
         dfDet = 0.0000000001; // to avoid divide by zero
@@ -2448,12 +2470,12 @@ void GeoRasterWrapper::GetSpatialReference()
     //  -------------------------------------------------------------------
     //  Adjust Model Coordinate Location
     //  -------------------------------------------------------------------
-    
+
     if ( eModelCoordLocation == MCL_CENTER )
     {
        adfVal[2] -= ( adfVal[0] / 2.0 );
        adfVal[5] -= ( adfVal[4] / 2.0 );
-    }    
+    }
 
     dfXCoefficient[0] = adfVal[0];
     dfXCoefficient[1] = adfVal[1];
@@ -2461,7 +2483,7 @@ void GeoRasterWrapper::GetSpatialReference()
     dfYCoefficient[0] = adfVal[3];
     dfYCoefficient[1] = adfVal[4];
     dfYCoefficient[2] = adfVal[5];
-    
+
     //  -------------------------------------------------------------------
     //  Apply ULTCoordinate
     //  -------------------------------------------------------------------
@@ -2477,7 +2499,7 @@ void GeoRasterWrapper::GetSpatialReference()
 
 void GeoRasterWrapper::GetGCP()
 {
-    CPLXMLNode* psGCP = CPLGetXMLNode( phMetadata, 
+    CPLXMLNode* psGCP = CPLGetXMLNode( phMetadata,
                 "spatialReferenceInfo.gcpGeoreferenceModel.gcp" );
 
     CPLXMLNode* psFirst = psGCP;
@@ -2705,8 +2727,10 @@ void GeoRasterWrapper::GetRPC()
         return;
     }
 
-    phRPC = (GDALRPCInfo*) VSIMalloc( sizeof(GDALRPCInfo) );
+    phRPC = (GDALRPCInfoV2*) VSIMalloc( sizeof(GDALRPCInfoV2) );
 
+    phRPC->dfERR_BIAS = -1.0;
+    phRPC->dfERR_RAND = -1.0;
     phRPC->dfLINE_OFF     = CPLAtof( CPLGetXMLValue( phPolyModel, "rowOff", "0" ) );
     phRPC->dfSAMP_OFF     = CPLAtof( CPLGetXMLValue( phPolyModel, "columnOff", "0" ) );
     phRPC->dfLONG_OFF     = CPLAtof( CPLGetXMLValue( phPolyModel, "xOff", "0" ) );
@@ -3505,7 +3529,7 @@ bool GeoRasterWrapper::FlushMetadata()
         {
             if ( nExtentSRID == 0 )
             {
-                nExtentSRID = nIdxSRID; 
+                nExtentSRID = nIdxSRID;
             }
             else
             {
@@ -3519,6 +3543,11 @@ bool GeoRasterWrapper::FlushMetadata()
                     nExtentSRID = 0;
                 }
             }
+        }
+        else
+        {
+            if (nExtentSRID == 0)
+                nExtentSRID = nSRID;
         }
 
         delete poStmt;
@@ -3977,6 +4006,7 @@ void GeoRasterWrapper::PackNBits( GByte* pabyData ) const
     CPLFree( pabyBuffer );
 }
 
+#ifdef JPEG_SUPPORTED
 //  ---------------------------------------------------------------------------
 //                                                             UncompressJpeg()
 //  ---------------------------------------------------------------------------
@@ -4263,6 +4293,7 @@ unsigned long GeoRasterWrapper::CompressJpeg( void )
 
     return (unsigned long) nSize;
 }
+#endif
 
 //  ---------------------------------------------------------------------------
 //                                                          UncompressDeflate()

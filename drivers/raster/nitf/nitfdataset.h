@@ -72,6 +72,10 @@ class NITFDataset final: public GDALPamDataset
 
     GDALDataset *poJ2KDataset;
     int         bJP2Writing;
+    vsi_l_offset m_nImageOffset = 0;
+    int         m_nIMIndex = 0;
+    int         m_nImageCount = 0;
+    vsi_l_offset m_nICOffset = 0;
 
     GDALDataset *poJPEGDataset;
 
@@ -114,6 +118,7 @@ class NITFDataset final: public GDALPamDataset
 
     char       **papszTextMDToWrite;
     char       **papszCgmMDToWrite;
+    CPLStringList aosCreationOptions;
 
     int          bInLoadXML;
 
@@ -173,13 +178,15 @@ class NITFDataset final: public GDALPamDataset
     virtual char      **GetMetadata( const char * pszDomain = "" ) override;
     virtual const char *GetMetadataItem( const char * pszName,
                                          const char * pszDomain = "" ) override;
-    virtual void   FlushCache() override;
+    virtual void   FlushCache(bool bAtClosing) override;
     virtual CPLErr IBuildOverviews( const char *, int, int *,
                                     int, int *, GDALProgressFunc, void * ) override;
 
     static int          Identify( GDALOpenInfo * );
-    static GDALDataset *OpenInternal( GDALOpenInfo *, GDALDataset *poWritableJ2KDataset,
-                              int bOpenForCreate);
+    static NITFDataset *OpenInternal( GDALOpenInfo *,
+                                      GDALDataset *poWritableJ2KDataset,
+                                      bool bOpenForCreate,
+                                      int nIMIndex );
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *
     NITFCreateCopy( const char *pszFilename, GDALDataset *poSrcDS,
@@ -263,7 +270,7 @@ class NITFProxyPamRasterBand CPL_NON_FINAL: public GDALPamRasterBand
         /*virtual CPLErr      SetMetadataItem( const char * pszName,
                                             const char * pszValue,
                                             const char * pszDomain = "" );*/
-        virtual CPLErr FlushCache() override;
+        virtual CPLErr FlushCache(bool bAtClosing) override;
         /*virtual char **GetCategoryNames();*/
         virtual double GetNoDataValue( int *pbSuccess = nullptr ) override;
         virtual double GetMinimum( int *pbSuccess = nullptr ) override;

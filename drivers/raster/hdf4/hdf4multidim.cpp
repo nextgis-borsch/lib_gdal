@@ -38,6 +38,10 @@
 #include <map>
 #include <set>
 
+#if defined(__clang__) || defined(_MSC_VER)
+#define COMPILER_WARNS_ABOUT_ABSTRACT_VBASE_INIT
+#endif
+
 extern CPLMutex *hHDF4Mutex;
 extern const char * const pszGDALSignature;
 
@@ -48,12 +52,13 @@ extern const char * const pszGDALSignature;
 class HDF4SharedResources
 {
     friend class ::HDF4Dataset;
-    int32       m_hSD;
+    int32       m_hSD = -1;
     std::string m_osFilename;
     CPLStringList m_aosOpenOptions;
+    std::shared_ptr<GDALPamMultiDim> m_poPAM{};
 
 public:
-    HDF4SharedResources() = default;
+    explicit HDF4SharedResources(const std::string& osFilename);
     ~HDF4SharedResources();
 
     int32       GetSDHandle() const { return m_hSD; }
@@ -61,6 +66,8 @@ public:
     const char*        FetchOpenOption(const char* pszName, const char* pszDefault) const {
         return m_aosOpenOptions.FetchNameValueDef(pszName, pszDefault);
     }
+
+    const std::shared_ptr<GDALPamMultiDim>& GetPAM() { return m_poPAM; }
 };
 
 /************************************************************************/
@@ -240,7 +247,7 @@ public:
 /*                            HDF4SwathArray                            */
 /************************************************************************/
 
-class HDF4SwathArray final: public GDALMDArray
+class HDF4SwathArray final: public GDALPamMDArray
 {
     std::shared_ptr<HDF4SharedResources> m_poShared;
     std::shared_ptr<HDF4SwathHandle> m_poSwathHandle;
@@ -284,6 +291,8 @@ public:
     }
 
     bool IsWritable() const override { return false; }
+
+    const std::string& GetFilename() const override { return m_poShared->GetFilename(); }
 
     const std::vector<std::shared_ptr<GDALDimension>>& GetDimensions() const override { return m_dims; }
 
@@ -439,7 +448,7 @@ public:
 /*                          HDF4EOSGridArray                            */
 /************************************************************************/
 
-class HDF4EOSGridArray final: public GDALMDArray
+class HDF4EOSGridArray final: public GDALPamMDArray
 {
     std::shared_ptr<HDF4SharedResources> m_poShared;
     std::shared_ptr<HDF4GDHandle> m_poGDHandle;
@@ -483,6 +492,8 @@ public:
     }
 
     bool IsWritable() const override { return false; }
+
+    const std::string& GetFilename() const override { return m_poShared->GetFilename(); }
 
     const std::vector<std::shared_ptr<GDALDimension>>& GetDimensions() const override { return m_dims; }
 
@@ -550,7 +561,7 @@ public:
         m_poShared(poShared)
     {
     }
-    
+
     void SetIsGDALDataset() { m_bIsGDALDataset = true; }
     void SetGlobalAttributes(const std::vector<std::shared_ptr<GDALAttribute>>& attrs) { m_oGlobalAttributes = attrs; }
 
@@ -565,7 +576,7 @@ public:
 /*                            HDF4SDSArray                              */
 /************************************************************************/
 
-class HDF4SDSArray final: public GDALMDArray
+class HDF4SDSArray final: public GDALPamMDArray
 {
     std::shared_ptr<HDF4SharedResources> m_poShared;
     int32 m_iSDS;
@@ -619,6 +630,8 @@ public:
     void SetGlobalAttributes(const std::vector<std::shared_ptr<GDALAttribute>>& attrs) { m_oGlobalAttributes = attrs; }
 
     bool IsWritable() const override { return false; }
+
+    const std::string& GetFilename() const override { return m_poShared->GetFilename(); }
 
     const std::vector<std::shared_ptr<GDALDimension>>& GetDimensions() const override { return m_dims; }
 
@@ -698,7 +711,7 @@ public:
 /*                            HDF4GRArray                               */
 /************************************************************************/
 
-class HDF4GRArray final: public GDALMDArray
+class HDF4GRArray final: public GDALPamMDArray
 {
     std::shared_ptr<HDF4SharedResources> m_poShared;
     std::shared_ptr<HDF4GRHandle> m_poGRHandle;
@@ -742,6 +755,8 @@ public:
     }
 
     bool IsWritable() const override { return false; }
+
+    const std::string& GetFilename() const override { return m_poShared->GetFilename(); }
 
     const std::vector<std::shared_ptr<GDALDimension>>& GetDimensions() const override { return m_dims; }
 
@@ -852,6 +867,16 @@ public:
 
     const GDALExtendedDataType &GetDataType() const override { return m_dt; }
 };
+
+/************************************************************************/
+/*                        HDF4SharedResources()                         */
+/************************************************************************/
+
+HDF4SharedResources::HDF4SharedResources(const std::string& osFilename):
+    m_osFilename(osFilename),
+    m_poPAM(std::make_shared<GDALPamMultiDim>(osFilename))
+{
+}
 
 /************************************************************************/
 /*                        ~HDF4SharedResources()                        */
@@ -1382,7 +1407,7 @@ HDF4SwathArray::HDF4SwathArray(const std::string& osParentName,
                    int32 iNumType,
                    const std::vector<std::shared_ptr<GDALDimension>>& groupDims):
     GDALAbstractMDArray(osParentName, osName),
-    GDALMDArray(osParentName, osName),
+    GDALPamMDArray(osParentName, osName, poShared->GetPAM()),
     m_poShared(poShared),
     m_poSwathHandle(poSwathHandle),
     m_dt( iNumType == DFNT_CHAR8 ?
@@ -1665,10 +1690,12 @@ HDF4AbstractAttribute::HDF4AbstractAttribute(const std::string& osParentName,
                              const std::shared_ptr<HDF4SharedResources>& poShared,
                              int32 iNumType,
                              int32 nValues):
+#if !defined(COMPILER_WARNS_ABOUT_ABSTRACT_VBASE_INIT)
     GDALAbstractMDArray(osParentName, osName),
+#endif
     GDALAttribute(osParentName, osName),
     m_poShared(poShared),
-    m_dt( iNumType == DFNT_CHAR8 ? 
+    m_dt( iNumType == DFNT_CHAR8 ?
             GDALExtendedDataType::CreateString() :
             GDALExtendedDataType::Create(HDF4Dataset::GetDataType(iNumType)) ),
     m_nValues(nValues)
@@ -1778,10 +1805,10 @@ std::vector<std::shared_ptr<GDALDimension>> HDF4EOSGridGroup::GetDimensions(CSLC
     int32 iProjCode = 0;
     int32 iZoneCode = 0;
     int32 iSphereCode = 0;
-    double adfProjParms[15];
+    double adfProjParams[15];
 
     GDprojinfo( m_poGDHandle->m_handle, &iProjCode, &iZoneCode,
-                &iSphereCode, adfProjParms);
+                &iSphereCode, adfProjParams);
 
     int32 nXSize = 0;
     int32 nYSize = 0;
@@ -2026,7 +2053,7 @@ HDF4EOSGridArray::HDF4EOSGridArray(const std::string& osParentName,
                    int32 iNumType,
                    const std::vector<std::shared_ptr<GDALDimension>>& groupDims):
     GDALAbstractMDArray(osParentName, osName),
-    GDALMDArray(osParentName, osName),
+    GDALPamMDArray(osParentName, osName, poShared->GetPAM()),
     m_poShared(poShared),
     m_poGDHandle(poGDHandle),
     m_dt( iNumType == DFNT_CHAR8 ?
@@ -2226,14 +2253,14 @@ std::shared_ptr<OGRSpatialReference> HDF4EOSGridArray::GetSpatialRef() const
     int32 iProjCode = 0;
     int32 iZoneCode = 0;
     int32 iSphereCode = 0;
-    double adfProjParms[15];
+    double adfProjParams[15];
 
     if( GDprojinfo( m_poGDHandle->m_handle, &iProjCode, &iZoneCode,
-                    &iSphereCode, adfProjParms) >= 0 )
+                    &iSphereCode, adfProjParams) >= 0 )
     {
         auto poSRS(std::make_shared<OGRSpatialReference>());
         poSRS->importFromUSGS( iProjCode, iZoneCode,
-                                    adfProjParms, iSphereCode,
+                                    adfProjParams, iSphereCode,
                                     USGS_ANGLE_RADIANS );
         int iDimY = -1;
         int iDimX = -1;
@@ -2564,7 +2591,7 @@ HDF4SDSArray::HDF4SDSArray(const std::string& osParentName,
                    int32 nAttrs,
                    bool bIsGDALDS):
     GDALAbstractMDArray(osParentName, osName),
-    GDALMDArray(osParentName, osName),
+    GDALPamMDArray(osParentName, osName, poShared->GetPAM()),
     m_poShared(poShared),
     m_iSDS(iSDS),
     m_dt( iNumType == DFNT_CHAR8 ?
@@ -2599,7 +2626,7 @@ HDF4SDSArray::HDF4SDSArray(const std::string& osParentName,
         if( !bFound )
         {
             m_dims.push_back(std::make_shared<GDALDimension>(
-                std::string(), 
+                std::string(),
                 CPLSPrintf("dim%d", i),
                 std::string(), std::string(), aiDimSizes[i]));
         }
@@ -2736,7 +2763,7 @@ std::shared_ptr<OGRSpatialReference> HDF4SDSArray::GetSpatialRef() const
         if( !osProjection.empty() )
         {
             auto poSRS(std::make_shared<OGRSpatialReference>());
-            poSRS->SetFromUserInput(osProjection.c_str());
+            poSRS->SetFromUserInput(osProjection.c_str(), OGRSpatialReference::SET_FROM_USER_INPUT_LIMITATIONS_get());
             poSRS->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
             if( poSRS->GetDataAxisToSRSAxisMapping() == std::vector<int>{ 2, 1 } )
                 poSRS->SetDataAxisToSRSAxisMapping({ 1, 2 });
@@ -2887,7 +2914,7 @@ HDF4GRArray::HDF4GRArray(const std::string& osParentName,
                    int32 iNumType,
                    int32 nAttrs):
     GDALAbstractMDArray(osParentName, osName),
-    GDALMDArray(osParentName, osName),
+    GDALPamMDArray(osParentName, osName, poShared->GetPAM()),
     m_poShared(poShared),
     m_poGRHandle(poGRHandle),
     m_dt( iNumType == DFNT_CHAR8 ?
@@ -2898,12 +2925,12 @@ HDF4GRArray::HDF4GRArray(const std::string& osParentName,
     for( int i = 0; i < static_cast<int>(aiDimSizes.size()); i++ )
     {
         m_dims.push_back(std::make_shared<GDALDimension>(
-            std::string(), 
+            std::string(),
             i == 0 ? "y" : "x",
             std::string(), std::string(), aiDimSizes[i]));
     }
     m_dims.push_back(std::make_shared<GDALDimension>(
-            std::string(), 
+            std::string(),
             "bands",
             std::string(), std::string(), nBands));
 }
@@ -3022,7 +3049,7 @@ bool HDF4GRArray::IRead(const GUInt64* arrayStartIdx,
         arrayStartIdx[2] == 0 && count[2] == m_dims[2]->GetSize() &&
         arrayStep[2] == 1 )
     {
-        auto status = 
+        auto status =
             GRreadimage(m_poGRHandle->m_iGR,
                         &sw_start[0], &sw_stride[0], &sw_edge[0],
                         pabyDstBuffer);
@@ -3101,11 +3128,11 @@ HDF4GRPalette::HDF4GRPalette(const std::string& osParentName,
     m_nValues(nValues)
 {
     m_dims.push_back(std::make_shared<GDALDimension>(
-            std::string(), 
+            std::string(),
             "index",
             std::string(), std::string(), nValues));
     m_dims.push_back(std::make_shared<GDALDimension>(
-            std::string(), 
+            std::string(),
             "component",
             std::string(), std::string(), 3));
 }
@@ -3154,8 +3181,7 @@ void HDF4Dataset::OpenMultiDim(const char* pszFilename,
 {
     // under hHDF4Mutex
 
-    auto poShared = std::make_shared<HDF4SharedResources>();
-    poShared->m_osFilename = pszFilename;
+    auto poShared = std::make_shared<HDF4SharedResources>(pszFilename);
     poShared->m_hSD = hSD;
     poShared->m_aosOpenOptions = papszOpenOptionsIn;
 

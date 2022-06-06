@@ -29,6 +29,7 @@
  ****************************************************************************/
 
 #include "cpl_port.h"
+
 #include "gt_citation.h"
 
 #include <cstddef>
@@ -361,7 +362,7 @@ void SetLinearUnitCitation( std::map<geokey_t, std::string>& oMapAsciiKeys,
 /************************************************************************/
 void SetGeogCSCitation( GTIF * psGTIF,
                         std::map<geokey_t, std::string>& oMapAsciiKeys,
-                        OGRSpatialReference *poSRS,
+                        const OGRSpatialReference *poSRS,
                         const char* angUnitName, int nDatum, short nSpheroid )
 {
     bool bRewriteGeogCitation = false;

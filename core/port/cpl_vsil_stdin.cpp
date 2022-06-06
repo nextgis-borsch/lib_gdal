@@ -95,7 +95,8 @@ class VSIStdinFilesystemHandler final : public VSIFilesystemHandler
 
     VSIVirtualHandle *Open( const char *pszFilename,
                             const char *pszAccess,
-                            bool bSetError ) override;
+                            bool bSetError,
+                            CSLConstList /* papszOptions */ ) override;
     int Stat( const char *pszFilename, VSIStatBufL *pStatBuf,
               int nFlags ) override;
 };
@@ -340,7 +341,8 @@ VSIStdinFilesystemHandler::~VSIStdinFilesystemHandler()
 VSIVirtualHandle *
 VSIStdinFilesystemHandler::Open( const char *pszFilename,
                                  const char *pszAccess,
-                                 bool /* bSetError */ )
+                                 bool /* bSetError */,
+                                 CSLConstList /* papszOptions */ )
 
 {
     if( strcmp(pszFilename, "/vsistdin/") != 0 )
@@ -407,16 +409,20 @@ int VSIStdinFilesystemHandler::Stat( const char * pszFilename,
 /*                       VSIInstallStdinHandler()                       */
 /************************************************************************/
 
-/**
- * \brief Install /vsistdin/ file system handler
- *
- * A special file handler is installed that allows reading from the standard
- * input stream.
- *
- * The file operations available are of course limited to Read() and
- * forward Seek() (full seek in the first MB of a file).
- *
- * @since GDAL 1.8.0
+/*!
+ \brief Install /vsistdin/ file system handler
+
+ A special file handler is installed that allows reading from the standard
+ input stream.
+
+ The file operations available are of course limited to Read() and
+ forward Seek() (full seek in the first MB of a file).
+
+ \verbatim embed:rst
+ See :ref:`/vsistdin/ documentation <vsistdin>`
+ \endverbatim
+
+ @since GDAL 1.8.0
  */
 void VSIInstallStdinHandler()
 

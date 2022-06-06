@@ -137,7 +137,7 @@ class OGRODSDataSource final: public GDALDataset
     VSILFILE*           fpSettings;
     std::string         osCurrentConfigTableName;
     std::string         osConfigName;
-    int                 nFlags;
+    int                 nVerticalSplitFlags;
     std::set<std::string> osSetLayerHasSplitter;
     void                AnalyseSettings();
 
@@ -156,6 +156,8 @@ class OGRODSDataSource final: public GDALDataset
     int                 nRowsRepeated;
     int                 nCurCol;
     int                 nCellsRepeated;
+    // Accumulated memory allocations related to repeated cells.
+    size_t              m_nAccRepeatedMemory = 0;
     bool                bEndTableParsing;
 
     OGRODSLayer        *poCurLayer;
@@ -214,7 +216,7 @@ class OGRODSDataSource final: public GDALDataset
                                 char ** papszOptions ) override;
     virtual OGRErr      DeleteLayer(int iLayer) override;
 
-    virtual void        FlushCache() override;
+    virtual void        FlushCache(bool bAtClosing) override;
 
     void startElementCbk(const char *pszName, const char **ppszAttr);
     void endElementCbk(const char *pszName);

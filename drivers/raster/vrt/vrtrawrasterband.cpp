@@ -82,7 +82,7 @@ VRTRawRasterBand::VRTRawRasterBand( GDALDataset *poDSIn, int nBandIn,
 VRTRawRasterBand::~VRTRawRasterBand()
 
 {
-    FlushCache();
+    FlushCache(true);
     ClearRawLink();
 }
 
@@ -349,11 +349,10 @@ CPLVirtualMem * VRTRawRasterBand::GetVirtualMemAuto( GDALRWFlag eRWFlag,
 
 CPLErr VRTRawRasterBand::XMLInit( CPLXMLNode * psTree,
                                   const char *pszVRTPath,
-                                  void* pUniqueHandle,
                                   std::map<CPLString, GDALDataset*>& oMapSharedSources )
 
 {
-    const CPLErr eErr = VRTRasterBand::XMLInit( psTree, pszVRTPath, pUniqueHandle,
+    const CPLErr eErr = VRTRasterBand::XMLInit( psTree, pszVRTPath,
                                                 oMapSharedSources );
     if( eErr != CE_None )
         return eErr;

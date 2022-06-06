@@ -52,6 +52,8 @@
 
 CPL_CVSID("$Id$")
 
+#define DIV_ROUND_UP(a, b) ( ((a) % (b)) == 0 ? ((a) / (b)) : (((a) / (b)) + 1) )
+
 #define TEST_BIT(ar, bit)                       (ar[(bit) / 8] & (1 << ((bit) % 8)))
 #define BIT_ARRAY_SIZE_IN_BYTES(bitsize)        (((bitsize)+7)/8)
 
@@ -210,15 +212,15 @@ int FileGDBTable::GetFieldIdx(const std::string& osName) const
 /*                          ReadVarUInt()                               */
 /************************************************************************/
 
-template < class OutType, class ControleType >
+template < class OutType, class ControlType >
 static int ReadVarUInt(GByte*& pabyIter, GByte* pabyEnd, OutType& nOutVal)
 {
     const int errorRetValue = FALSE;
-    if( !(ControleType::check_bounds) )
+    if( !(ControlType::check_bounds) )
     {
         /* nothing */
     }
-    else if( ControleType::verbose_error )
+    else if( ControlType::verbose_error )
     {
         returnErrorIf(pabyIter >= pabyEnd);
     }
@@ -239,11 +241,11 @@ static int ReadVarUInt(GByte*& pabyIter, GByte* pabyEnd, OutType& nOutVal)
     OutType nVal = ( b & 0x7F );
     while( true )
     {
-        if( !(ControleType::check_bounds) )
+        if( !(ControlType::check_bounds) )
         {
             /* nothing */
         }
-        else if( ControleType::verbose_error )
+        else if( ControlType::verbose_error )
         {
             returnErrorIf(pabyLocalIter >= pabyEnd);
         }
@@ -272,50 +274,50 @@ static int ReadVarUInt(GByte*& pabyIter, GByte* pabyEnd, OutType& nOutVal)
     }
 }
 
-struct ControleTypeVerboseErrorTrue
+struct ControlTypeVerboseErrorTrue
 {
     // cppcheck-suppress unusedStructMember
-    static const EMULATED_BOOL check_bounds = true;
+    static const bool check_bounds = true;
     // cppcheck-suppress unusedStructMember
-    static const EMULATED_BOOL verbose_error = true;
+    static const bool verbose_error = true;
 };
 
-struct ControleTypeVerboseErrorFalse
+struct ControlTypeVerboseErrorFalse
 {
     // cppcheck-suppress unusedStructMember
-    static const EMULATED_BOOL check_bounds = true;
+    static const bool check_bounds = true;
     // cppcheck-suppress unusedStructMember
-    static const EMULATED_BOOL verbose_error = false;
+    static const bool verbose_error = false;
 };
 
-struct ControleTypeNone
+struct ControlTypeNone
 {
     // cppcheck-suppress unusedStructMember
-    static const EMULATED_BOOL check_bounds = false;
+    static const bool check_bounds = false;
     // cppcheck-suppress unusedStructMember
-    static const EMULATED_BOOL verbose_error = false;
+    static const bool verbose_error = false;
 };
 
 static int ReadVarUInt32(GByte*& pabyIter, GByte* pabyEnd, GUInt32& nOutVal)
 {
-    return ReadVarUInt<GUInt32, ControleTypeVerboseErrorTrue>(pabyIter, pabyEnd, nOutVal);
+    return ReadVarUInt<GUInt32, ControlTypeVerboseErrorTrue>(pabyIter, pabyEnd, nOutVal);
 }
 
 static void ReadVarUInt32NoCheck(GByte*& pabyIter, GUInt32& nOutVal)
 {
     GByte* pabyEnd = nullptr;
-    ReadVarUInt<GUInt32, ControleTypeNone>(pabyIter, pabyEnd, nOutVal);
+    ReadVarUInt<GUInt32, ControlTypeNone>(pabyIter, pabyEnd, nOutVal);
 }
 
 static int ReadVarUInt32Silent(GByte*& pabyIter, GByte* pabyEnd, GUInt32& nOutVal)
 {
-    return ReadVarUInt<GUInt32, ControleTypeVerboseErrorFalse>(pabyIter, pabyEnd, nOutVal);
+    return ReadVarUInt<GUInt32, ControlTypeVerboseErrorFalse>(pabyIter, pabyEnd, nOutVal);
 }
 
 static void ReadVarUInt64NoCheck(GByte*& pabyIter, GUIntBig& nOutVal)
 {
     GByte* pabyEnd = nullptr;
-    ReadVarUInt<GUIntBig, ControleTypeNone>(pabyIter, pabyEnd, nOutVal);
+    ReadVarUInt<GUIntBig, ControlTypeNone>(pabyIter, pabyEnd, nOutVal);
 }
 
 /************************************************************************/
@@ -338,7 +340,8 @@ int FileGDBTable::IsLikelyFeatureAtOffset(vsi_l_offset nOffset,
         nRowBlobLength > 10 * (nFileSize / nValidRecordCount) )
     {
         /* Is it a deleted record ? */
-        if( (int)nRowBlobLength < 0 && nRowBlobLength != 0x80000000U )
+        if( (nRowBlobLength >> (8 * sizeof(nRowBlobLength) - 1)) != 0 &&
+            nRowBlobLength != 0x80000000U )
         {
             nRowBlobLength = (GUInt32) (-(int)nRowBlobLength);
             if( nRowBlobLength < (GUInt32)nNullableFieldsSizeInBytes ||
@@ -397,8 +400,15 @@ int FileGDBTable::IsLikelyFeatureAtOffset(vsi_l_offset nOffset,
                 break;
             }
 
-            /* Only 4 bytes ? */
-            case FGFT_RASTER: nRequiredLength += sizeof(GInt32); break;
+            case FGFT_RASTER:
+            {
+                const FileGDBRasterField* rasterField = cpl::down_cast<const FileGDBRasterField*>(apoFields[i]);
+                if( rasterField->GetType() == FileGDBRasterField::Type::MANAGED )
+                    nRequiredLength += sizeof(GInt32);
+                else
+                    nRequiredLength += 1; /* varuint32 so at least one byte */
+                break;
+            }
 
             case FGFT_INT16: nRequiredLength += sizeof(GInt16); break;
             case FGFT_INT32: nRequiredLength += sizeof(GInt32); break;
@@ -472,8 +482,25 @@ int FileGDBTable::IsLikelyFeatureAtOffset(vsi_l_offset nOffset,
                     break;
                 }
 
-                /* Only 4 bytes ? */
-                case FGFT_RASTER: nRequiredLength += sizeof(GInt32); break;
+                case FGFT_RASTER:
+                {
+                    const FileGDBRasterField* rasterField = cpl::down_cast<const FileGDBRasterField*>(apoFields[i]);
+                    if( rasterField->GetType() == FileGDBRasterField::Type::MANAGED )
+                        nRequiredLength += sizeof(GInt32);
+                    else
+                    {
+                        GByte* pabyIter = pabyBuffer + nRequiredLength;
+                        GUInt32 nLength;
+                        if( !ReadVarUInt32Silent(pabyIter, pabyBuffer + nRowBlobLength, nLength) ||
+                            pabyIter - (pabyBuffer + nRequiredLength) > 5 )
+                            return FALSE;
+                        nRequiredLength = static_cast<GUInt32>(pabyIter - pabyBuffer);
+                        if( nLength > nRowBlobLength - nRequiredLength )
+                            return FALSE;
+                        nRequiredLength += nLength;
+                    }
+                    break;
+                }
 
                 case FGFT_INT16: nRequiredLength += sizeof(GInt16); break;
                 case FGFT_INT32: nRequiredLength += sizeof(GInt32); break;
@@ -615,7 +642,7 @@ int FileGDBTable::ReadTableXHeader()
         GUInt32 nMagic = GetUInt32(abyTrailer, 0);
 
         GUInt32 nBitsForBlockMap = GetUInt32(abyTrailer + 4, 0);
-        returnErrorIf(nBitsForBlockMap > INT_MAX / 1024);
+        returnErrorIf(nBitsForBlockMap > 1 + INT_MAX / 1024);
 
         GUInt32 n1024BlocksBis = GetUInt32(abyTrailer + 8, 0);
         returnErrorIf(n1024BlocksBis != n1024Blocks );
@@ -788,6 +815,7 @@ int FileGDBTable::Open(const char* pszFilename,
         eTableGeomType = (FileGDBTableGeometryType) byTableGeomType;
     else
         CPLDebug("OpenFileGDB", "Unknown table geometry type: %d", byTableGeomType);
+    m_bStringsAreUTF8 = (abyHeader[9] & 0x1) != 0;
     const GByte byTableGeomTypeFlags = abyHeader[11];
     m_bGeomTypeHasM = (byTableGeomTypeFlags & (1 << 6)) != 0;
     m_bGeomTypeHasZ = (byTableGeomTypeFlags & (1 << 7)) != 0;
@@ -893,9 +921,17 @@ int FileGDBTable::Open(const char* pszFilename,
                 {
                     if( eType == FGFT_STRING )
                     {
-                        sDefault.String = (char*)CPLMalloc(defaultValueLength+1);
-                        memcpy(sDefault.String, pabyIter, defaultValueLength);
-                        sDefault.String[defaultValueLength] = 0;
+                        if( m_bStringsAreUTF8 )
+                        {
+                            sDefault.String = (char*)CPLMalloc(defaultValueLength+1);
+                            memcpy(sDefault.String, pabyIter, defaultValueLength);
+                            sDefault.String[defaultValueLength] = 0;
+                        }
+                        else
+                        {
+                            m_osTempString = ReadUTF16String(pabyIter, defaultValueLength/2);
+                            sDefault.String = CPLStrdup(m_osTempString.c_str());
+                        }
                     }
                     else if( eType == FGFT_INT16 && defaultValueLength == 2 )
                     {
@@ -1048,8 +1084,18 @@ int FileGDBTable::Open(const char* pszFilename,
 
             if( eType == FGFT_RASTER )
             {
-                /* Always one byte at end ? */
                 returnErrorIf(nRemaining < 1 );
+                if( *pabyIter == 0 )
+                    poRasterField->m_eType = FileGDBRasterField::Type::EXTERNAL;
+                else if( *pabyIter == 1 )
+                    poRasterField->m_eType = FileGDBRasterField::Type::MANAGED;
+                else if( *pabyIter == 2 )
+                    poRasterField->m_eType = FileGDBRasterField::Type::INLINE;
+                else
+                {
+                    CPLError(CE_Warning, CPLE_NotSupported,
+                             "Unknown raster field type %d", *pabyIter);
+                }
                 pabyIter += 1;
                 nRemaining -= 1;
             }
@@ -1272,7 +1318,7 @@ int FileGDBTable::GetAndSelectNextNonEmptyRow(int iRow)
             int iBlock = iRow / 1024;
             if( TEST_BIT(pabyTablXBlockMap, iBlock) == 0 )
             {
-                int nBlocks = (nTotalRecordCount+1023)/1024;
+                int nBlocks = DIV_ROUND_UP(nTotalRecordCount, 1024);
                 do
                 {
                     iBlock ++;
@@ -1462,8 +1508,21 @@ OGRField* FileGDBTable::GetFieldValue(int iCol)
                 break;
             }
 
-            /* Only 4 bytes ? */
-            case FGFT_RASTER: nLength = sizeof(GInt32); break;
+            case FGFT_RASTER:
+            {
+                const FileGDBRasterField* rasterField = cpl::down_cast<const FileGDBRasterField*>(apoFields[j]);
+                if( rasterField->GetType() == FileGDBRasterField::Type::MANAGED )
+                    nLength = sizeof(GInt32);
+                else
+                {
+                    if( !ReadVarUInt32(pabyIterVals, pabyEnd, nLength) )
+                    {
+                        bError = TRUE;
+                        returnError();
+                    }
+                }
+                break;
+            }
 
             case FGFT_INT16: nLength = sizeof(GInt16); break;
             case FGFT_INT32: nLength = sizeof(GInt32); break;
@@ -1515,14 +1574,23 @@ OGRField* FileGDBTable::GetFieldValue(int iCol)
                 returnError();
             }
 
-            /* eCurFieldType = OFTString; */
-            sCurField.String = (char*) pabyIterVals;
-            pabyIterVals += nLength;
+            if( m_bStringsAreUTF8 || apoFields[iCol]->eType != FGFT_STRING )
+            {
+                /* eCurFieldType = OFTString; */
+                sCurField.String = (char*) pabyIterVals;
+                pabyIterVals += nLength;
 
-            /* This is a trick to avoid a alloc()+copy(). We null-terminate */
-            /* after the string, and save the pointer and value to restore */
-            nChSaved = *pabyIterVals;
-            *pabyIterVals = '\0';
+                /* This is a trick to avoid a alloc()+copy(). We null-terminate */
+                /* after the string, and save the pointer and value to restore */
+                nChSaved = *pabyIterVals;
+                *pabyIterVals = '\0';
+            }
+            else
+            {
+                m_osTempString = ReadUTF16String(pabyIterVals, nLength / 2);
+                sCurField.String = &m_osTempString[0];
+                pabyIterVals += nLength;
+            }
 
             /* CPLDebug("OpenFileGDB", "Field %d, row %d: %s", iCol, nCurRow, sCurField.String); */
 
@@ -1646,22 +1714,59 @@ OGRField* FileGDBTable::GetFieldValue(int iCol)
             break;
         }
 
-        /* Only 4 bytes ? */
         case FGFT_RASTER:
         {
-            if( pabyIterVals + sizeof(GInt32) > pabyEnd )
+            const FileGDBRasterField* rasterField = cpl::down_cast<const FileGDBRasterField*>(apoFields[iCol]);
+            if( rasterField->GetType() == FileGDBRasterField::Type::MANAGED )
             {
-                bError = TRUE;
-                returnError();
+                if( pabyIterVals + sizeof(GInt32) > pabyEnd )
+                {
+                    bError = TRUE;
+                    returnError();
+                }
+
+                const GInt32 nVal = GetInt32(pabyIterVals, 0);
+
+                /* eCurFieldType = OFTIntger; */
+                sCurField.Integer = nVal;
+
+                pabyIterVals += sizeof(GInt32);
             }
+            else
+            {
+                GUInt32 nLength;
+                if( !ReadVarUInt32(pabyIterVals, pabyEnd, nLength) )
+                {
+                    bError = TRUE;
+                    returnError();
+                }
+                if( nLength > (GUInt32)(pabyEnd - pabyIterVals) )
+                {
+                    bError = TRUE;
+                    returnError();
+                }
 
-            /* GInt32 nVal = GetInt32(pabyIterVals, 0); */
+                if( rasterField->GetType() == FileGDBRasterField::Type::EXTERNAL )
+                {
+                    // coverity[tainted_data,tainted_data_argument]
+                    m_osCacheRasterFieldPath = ReadUTF16String(pabyIterVals, nLength / 2);
+                    sCurField.String = &m_osCacheRasterFieldPath[0];
+                    pabyIterVals += nLength;
+                }
+                else
+                {
+                    /* eCurFieldType = OFTBinary; */
+                    sCurField.Binary.nCount = nLength;
+                    sCurField.Binary.paData = (GByte*) pabyIterVals;
 
-            /* eCurFieldType = OFTBinary; */
-            OGR_RawField_SetUnset(&sCurField);
+                    pabyIterVals += nLength;
 
-            pabyIterVals += sizeof(GInt32);
-            /* CPLDebug("OpenFileGDB", "Field %d, row %d: %d", iCol, nCurRow, sCurField.Integer); */
+                    /* Null terminate binary in case it is used as a string */
+                    nChSaved = *pabyIterVals;
+                    *pabyIterVals = '\0';
+                }
+
+            }
             break;
         }
 
@@ -2401,7 +2506,7 @@ class ZMultiPointSetter
 
         void set(int i, double dfZ)
         {
-            poMPoint->getGeometryRef(i)->toPoint()->setZ(dfZ);
+            poMPoint->getGeometryRef(i)->setZ(dfZ);
         }
 };
 
@@ -2474,7 +2579,7 @@ class MMultiPointSetter
 
         void set(int i, double dfM)
         {
-            poMPoint->getGeometryRef(i)->toPoint()->setM(dfM);
+            poMPoint->getGeometryRef(i)->setM(dfM);
         }
 };
 
@@ -2736,12 +2841,11 @@ OGRGeometry* FileGDBOGRGeometryConverterImpl::GetAsGeometry(const OGRField* psFi
                 CPLUnsanitizedAdd<GUIntBig>(x, -1) / poGeomField->GetXYScale() + poGeomField->GetXOrigin();
             const double dfY =
                 CPLUnsanitizedAdd<GUIntBig>(y, -1) / poGeomField->GetXYScale() + poGeomField->GetYOrigin();
-            double dfZ = 0.0;
             if( bHasZ )
             {
                 ReadVarUInt64NoCheck(pabyCur, z);
                 const double dfZScale = SanitizeScale(poGeomField->GetZScale());
-                dfZ = CPLUnsanitizedAdd<GUIntBig>(z, -1) / dfZScale + poGeomField->GetZOrigin();
+                const double dfZ = CPLUnsanitizedAdd<GUIntBig>(z, -1) / dfZScale + poGeomField->GetZOrigin();
                 if( bHasM )
                 {
                     GUIntBig m = 0;
@@ -2885,7 +2989,9 @@ OGRGeometry* FileGDBOGRGeometryConverterImpl::GetAsGeometry(const OGRField* psFi
             {
                 poMLS = new OGRMultiLineString();
                 if( bHasZ )
-                    poMLS->setCoordinateDimension(3);
+                    poMLS->set3D(TRUE);
+                if( bHasM )
+                    poMLS->setMeasured(TRUE);
             }
 
             dx = dy = dz = 0;

@@ -18,7 +18,7 @@
 * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
-* Copyright 2014-2015 Esri
+* Copyright (c) 2014-2021 Esri
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -31,6 +31,9 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
+*
+* Author: Lucian Plesea
+* 
 */
 
 /*
@@ -44,14 +47,8 @@
 #include <cassert>
 
 CPL_C_START
-#ifdef INTERNAL_PNG
-#include "../png/libpng/png.h"
-#else
 #include <png.h>
-#endif
 CPL_C_END
-
-CPL_CVSID("$Id$")
 
 NAMESPACE_MRF_START
 
@@ -240,8 +237,11 @@ CPLErr PNG_Codec::CompressPNG(buf_mgr &dst, buf_mgr &src)
 #endif
 
     // Let the quality control the compression level
-    // Supposedly low numbers work well too while being fast
-    png_set_compression_level(pngp, img.quality / 10);
+    // Start at level 1, level 0 means uncompressed
+    int zlvl = img.quality / 10;
+    if (0 == zlvl)
+        zlvl = 1;
+    png_set_compression_level(pngp, zlvl);
 
     // Custom strategy for zlib, set using the band option Z_STRATEGY
     if (deflate_flags & ZFLAG_SMASK)
@@ -362,7 +362,8 @@ PNG_Band::PNG_Band( MRFDataset *pDS, const ILImage &image,
         return;
     }
     // PNGs can be larger than the source, especially for small page size
-    poDS->SetPBufferSize( image.pageSizeBytes + 100);
+    // If PPNG is used, the palette can take up to 2100 bytes
+    poMRFDS->SetPBufferSize(static_cast<unsigned int>(1.1 * image.pageSizeBytes + 4000));
 }
 
 NAMESPACE_MRF_END

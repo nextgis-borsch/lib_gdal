@@ -32,7 +32,7 @@
 #define OGR_GEOJSON_H_INCLUDED
 
 #include "cpl_port.h"
-#include <ogrsf_frmts.h>
+#include "ogrsf_frmts.h"
 #include "../mem/ogr_mem.h"
 
 #include <cstdio>
@@ -224,7 +224,7 @@ class OGRGeoJSONDataSource final: public OGRDataSource
     bool IsUpdatable() const { return bUpdatable_; }
     const CPLString& GetJSonFlavor() const { return osJSonFlavor_; }
 
-    virtual void        FlushCache() override;
+    virtual void        FlushCache(bool bAtClosing) override;
 
     static const size_t SPACE_FOR_BBOX = 130;
 

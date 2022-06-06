@@ -80,7 +80,7 @@ WCSDataset::WCSDataset(int version, const char *cache_dir) :
 WCSDataset::~WCSDataset()
 
 {
-    // perhaps this should be moved into a FlushCache() method.
+    // perhaps this should be moved into a FlushCache(bool bAtClosing) method.
     if( bServiceDirty && !STARTS_WITH_CI(GetDescription(), "<WCS_GDAL>") )
     {
         CPLSerializeXMLTreeToFile( psService, GetDescription() );
@@ -1407,24 +1407,24 @@ GDALDataset *WCSDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Capture HTTP parameters.                                        */
 /* -------------------------------------------------------------------- */
-    const char  *pszParm;
+    const char  *pszParam;
 
     poDS->papszHttpOptions =
         CSLSetNameValue(poDS->papszHttpOptions,
                         "TIMEOUT",
                         CPLGetXMLValue( service, "Timeout", "30" ) );
 
-    pszParm = CPLGetXMLValue( service, "HTTPAUTH", nullptr );
-    if( pszParm )
+    pszParam = CPLGetXMLValue( service, "HTTPAUTH", nullptr );
+    if( pszParam )
         poDS->papszHttpOptions =
             CSLSetNameValue( poDS->papszHttpOptions,
-                             "HTTPAUTH", pszParm );
+                             "HTTPAUTH", pszParam );
 
-    pszParm = CPLGetXMLValue( service, "USERPWD", nullptr );
-    if( pszParm )
+    pszParam = CPLGetXMLValue( service, "USERPWD", nullptr );
+    if( pszParam )
         poDS->papszHttpOptions =
             CSLSetNameValue( poDS->papszHttpOptions,
-                             "USERPWD", pszParm );
+                             "USERPWD", pszParam );
 
 /* -------------------------------------------------------------------- */
 /*      If we don't have the DescribeCoverage result for this           */

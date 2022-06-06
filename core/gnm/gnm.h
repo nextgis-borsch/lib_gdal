@@ -210,7 +210,7 @@ public:
                                    char **papszOptions = nullptr ) override;
 
     virtual int CloseDependentDatasets() override;
-    virtual void FlushCache(void) override;
+    virtual void FlushCache(bool bAtClosing) override;
 
     // GNMNetwork Interface
 
@@ -250,7 +250,7 @@ public:
      * @param nConFID - connection feature identificator (-1 for virtual connection)
      * @param dfCost - cost moving from source to target (default 1)
      * @param dfInvCost - cost moving from target to source (default 1)
-     * @param eDir - direction, may be source to target, traget to source or both.
+     * @param eDir - direction, may be source to target, target to source or both.
      *               (default - both)
      * @return CE_None on success
      */
@@ -701,9 +701,9 @@ protected:
     CPLString m_soSrcLayerName;
     CPLString m_soTgtLayerName;
     CPLString m_soConnLayerName;
-    bool m_bAllow;
-    bool m_bValid;
-    bool m_bAny;
+    bool m_bAllow = false;
+    bool m_bValid = false;
+    bool m_bAny = false;
     CPLString m_soRuleString;
 //! @endcond
 };

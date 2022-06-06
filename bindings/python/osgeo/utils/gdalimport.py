@@ -39,26 +39,25 @@ def progress_cb(complete, message, cb_data):
     print('%s %d' % (cb_data, complete))
 
 
-def main(argv):
-    gdal.AllRegister()
+def main(argv=sys.argv):
     argv = gdal.GeneralCmdLineProcessor(argv)
     if argv is None:
-        sys.exit(0)
+        return 0
 
     if len(argv) < 2:
         print("Usage: gdalimport.py [--help-general] source_file [newfile]")
-        sys.exit(1)
+        return 1
 
     filename = argv[1]
     dataset = gdal.Open(filename)
     if dataset is None:
         print('Unable to open %s' % filename)
-        sys.exit(1)
+        return 1
 
     geotiff = gdal.GetDriverByName("GTiff")
     if geotiff is None:
         print('GeoTIFF driver not registered.')
-        sys.exit(1)
+        return 1
 
     if len(argv) < 3:
         newbase, ext = os.path.splitext(os.path.basename(filename))

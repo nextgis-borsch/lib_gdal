@@ -55,6 +55,7 @@ set(LIB_CSOURCES
     ogresrijsondriver.cpp
     ogrtopojsondriver.cpp
     ogrgeojsonseqdriver.cpp
+    directedacyclicgraph.hpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

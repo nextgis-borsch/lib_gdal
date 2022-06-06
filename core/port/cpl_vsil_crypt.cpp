@@ -26,10 +26,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#ifdef DEBUG_BOOL
-#define DO_NOT_USE_DEBUG_BOOL
-#endif
-
 #include "cpl_port.h"
 #include "cpl_vsi_virtual.h"
 
@@ -62,17 +58,20 @@ constexpr char VSICRYPT_PREFIX_WITHOUT_SLASH[] = "/vsicrypt";
 constexpr unsigned int VSICRYPT_READ = 0x1;
 constexpr unsigned int VSICRYPT_WRITE = 0x2;
 
-#ifdef _MSC_VER
-#pragma warning( push )
-#pragma warning( disable : 4505 )
-#endif
-
 /* Begin of crypto++ headers */
 #ifdef _MSC_VER
 #pragma warning( push )
 #pragma warning( disable : 4189 )
 #pragma warning( disable : 4512 )
 #pragma warning( disable : 4244 )
+#pragma warning( disable : 4505 )
+#endif
+
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Weffc++"
+#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
 
 #ifdef USE_ONLY_CRYPTODLL_ALG
@@ -97,6 +96,10 @@ constexpr unsigned int VSICRYPT_WRITE = 0x2;
 #include "cryptopp/filters.h"
 #include "cryptopp/modes.h"
 #include "cryptopp/osrng.h"
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
 
 #ifdef _MSC_VER
 #pragma warning( pop )
@@ -243,7 +246,7 @@ static VSICryptAlg GetAlg( const char* pszName )
     CASE_ALG(DES_EDE2)
     CASE_ALG(DES_EDE3)
     // CASE_ALG(DES_XEX3) (obsolete)
-    // CASE_ALG(Gost) (obsolete)
+    // CASE_ALG(Ghost) (obsolete)
     CASE_ALG(MARS)
     CASE_ALG(IDEA)
     // CASE_ALG(RC2) (obsolete)
@@ -1435,7 +1438,8 @@ public:
 
     VSIVirtualHandle *Open( const char *pszFilename,
                             const char *pszAccess,
-                            bool bSetError ) override;
+                            bool bSetError,
+                            CSLConstList /* papszOptions */ ) override;
     int Stat( const char *pszFilename, VSIStatBufL *pStatBuf,
               int nFlags ) override;
     int Unlink( const char *pszFilename ) override;
@@ -1546,7 +1550,8 @@ static CPLString GetKey( const char* pszFilename )
 
 VSIVirtualHandle *VSICryptFilesystemHandler::Open( const char *pszFilename,
                                                    const char *pszAccess,
-                                                   bool /* bSetError */ )
+                                                   bool /* bSetError */,
+                                                   CSLConstList /* papszOptions */ )
 {
 #ifdef VERBOSE_VSICRYPT
     CPLDebug("VSICRYPT", "Open(%s, %s)", pszFilename, pszAccess);
@@ -2076,7 +2081,8 @@ public:
 
     VSIVirtualHandle *Open( const char * /* pszFilename */,
                             const char * /* pszAccess */,
-                            bool /* bSetError */ ) override
+                            bool /* bSetError */,
+                            CSLConstList /* papszOptions */ ) override
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "%s support not available in this build", VSICRYPT_PREFIX);

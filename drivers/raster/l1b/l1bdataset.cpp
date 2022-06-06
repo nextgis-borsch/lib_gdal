@@ -606,7 +606,7 @@ L1BDataset::L1BDataset( L1BFileFormat eL1BFormatIn ) :
 L1BDataset::~L1BDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
 
     if( nGCPCount > 0 )
     {
@@ -3248,7 +3248,7 @@ GDALDataset *L1BDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( poDS->eL1BFormat == L1B_NOAA15_NOHDR &&
         poDS->nRecordSizeFromHeader == 22016 &&
-        (sStat.st_size % poDS->nRecordSizeFromHeader) == 0 )
+        (sStat.st_size % 22016 /* poDS->nRecordSizeFromHeader*/) == 0 )
     {
         poDS->iDataFormat = UNPACKED16BIT;
         poDS->ComputeFileOffsets();

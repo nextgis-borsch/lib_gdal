@@ -42,7 +42,7 @@ class OGRMemDataSource;
 
 class IOGRMemLayerFeatureIterator;
 
-class OGRMemLayer CPL_NON_FINAL: public OGRLayer
+class CPL_DLL OGRMemLayer CPL_NON_FINAL: public OGRLayer
 {
     CPL_DISALLOW_COPY_ASSIGN(OGRMemLayer)
 
@@ -143,6 +143,16 @@ class OGRMemDataSource CPL_NON_FINAL: public OGRDataSource
     OGRErr              DeleteLayer( int iLayer ) override;
 
     int                 TestCapability( const char * ) override;
+
+    bool                AddFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain,
+                                       std::string& failureReason) override;
+
+    bool                DeleteFieldDomain(const std::string& name,
+                                          std::string& failureReason) override;
+
+    bool                UpdateFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain,
+                                          std::string& failureReason) override;
+
 };
 
 /************************************************************************/

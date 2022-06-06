@@ -734,23 +734,25 @@ const char *PCIDSK2Band::GetMetadataItem( const char *pszName,
 /*      Try and fetch (use cached value if available)                   */
 /* -------------------------------------------------------------------- */
     auto oIter = m_oCacheMetadataItem.find(pszName);
-    if( oIter == m_oCacheMetadataItem.end() )
+    if( oIter != m_oCacheMetadataItem.end() )
     {
-        CPLString osValue;
-        try
-        {
-            osValue = poChannel->GetMetadataValue( pszName );
-        }
-        catch( const PCIDSKException& ex )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                    "%s", ex.what() );
-            return nullptr;
-        }
-
-        m_oCacheMetadataItem[pszName] = osValue;
-        oIter = m_oCacheMetadataItem.find(pszName);
+        return oIter->second.empty() ? nullptr : oIter->second.c_str();
     }
+
+    CPLString osValue;
+    try
+    {
+        osValue = poChannel->GetMetadataValue( pszName );
+    }
+    catch( const PCIDSKException& ex )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                "%s", ex.what() );
+        return nullptr;
+    }
+
+    oIter = m_oCacheMetadataItem.insert(
+        std::pair<std::string, std::string>(pszName, osValue)).first;
     return oIter->second.empty() ? nullptr : oIter->second.c_str();
 }
 
@@ -827,7 +829,7 @@ PCIDSK2Dataset::PCIDSK2Dataset() :
 #endif
 PCIDSK2Dataset::~PCIDSK2Dataset()
 {
-    PCIDSK2Dataset::FlushCache();
+    PCIDSK2Dataset::FlushCache(true);
 
     while( !apoLayers.empty() )
     {
@@ -1035,10 +1037,10 @@ void PCIDSK2Dataset::ProcessRPC()
 /*                             FlushCache()                             */
 /************************************************************************/
 
-void PCIDSK2Dataset::FlushCache()
+void PCIDSK2Dataset::FlushCache(bool bAtClosing)
 
 {
-    GDALPamDataset::FlushCache();
+    GDALPamDataset::FlushCache(bAtClosing);
 
     if( poFile )
     {
@@ -1177,23 +1179,25 @@ const char *PCIDSK2Dataset::GetMetadataItem( const char *pszName,
 /*      Try and fetch (use cached value if available)                   */
 /* -------------------------------------------------------------------- */
     auto oIter = m_oCacheMetadataItem.find(pszName);
-    if( oIter == m_oCacheMetadataItem.end() )
+    if( oIter != m_oCacheMetadataItem.end() )
     {
-        CPLString osValue;
-        try
-        {
-            osValue = poFile->GetMetadataValue( pszName );
-        }
-        catch( const PCIDSKException& ex )
-        {
-            CPLError( CE_Failure, CPLE_AppDefined,
-                    "%s", ex.what() );
-            return nullptr;
-        }
-
-        m_oCacheMetadataItem[pszName] = osValue;
-        oIter = m_oCacheMetadataItem.find(pszName);
+        return oIter->second.empty() ? nullptr : oIter->second.c_str();
     }
+
+    CPLString osValue;
+    try
+    {
+        osValue = poFile->GetMetadataValue( pszName );
+    }
+    catch( const PCIDSKException& ex )
+    {
+        CPLError( CE_Failure, CPLE_AppDefined,
+                "%s", ex.what() );
+        return nullptr;
+    }
+
+    oIter = m_oCacheMetadataItem.insert(
+        std::pair<std::string, std::string>(pszName, osValue)).first;
     return oIter->second.empty() ? nullptr : oIter->second.c_str();
 }
 
@@ -1757,11 +1761,13 @@ GDALDataset *PCIDSK2Dataset::Open( GDALOpenInfo * poOpenInfo )
 /*      Try opening the file.                                           */
 /* -------------------------------------------------------------------- */
     PCIDSKFile *poFile = nullptr;
+    const int nMaxBandCount = atoi(CPLGetConfigOption("GDAL_MAX_BAND_COUNT", "65536"));
     try {
         poFile =
             PCIDSK::Open( poOpenInfo->pszFilename,
                           poOpenInfo->eAccess == GA_ReadOnly ? "r" : "r+",
-                          PCIDSK2GetInterfaces() );
+                          PCIDSK2GetInterfaces(),
+                          nMaxBandCount );
         if( poFile == nullptr )
         {
             CPLError( CE_Failure, CPLE_OpenFailed,
@@ -1837,7 +1843,7 @@ GDALDataset *PCIDSK2Dataset::Open( GDALOpenInfo * poOpenInfo )
 
 GDALDataset *PCIDSK2Dataset::LLOpen( const char *pszFilename,
                                      PCIDSK::PCIDSKFile *poFile,
-                                     GDALAccess eAccess,
+                                     GDALAccess eAccessIn,
                                      char** papszSiblingFiles )
 
 {
@@ -1846,7 +1852,7 @@ GDALDataset *PCIDSK2Dataset::LLOpen( const char *pszFilename,
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
     poDS->poFile = poFile;
-    poDS->eAccess = eAccess;
+    poDS->eAccess = eAccessIn;
     poDS->nRasterXSize = poFile->GetWidth();
     poDS->nRasterYSize = poFile->GetHeight();
 
@@ -1941,7 +1947,7 @@ GDALDataset *PCIDSK2Dataset::LLOpen( const char *pszFilename,
         {
             PCIDSK::PCIDSKVectorSegment* poVecSeg = dynamic_cast<PCIDSK::PCIDSKVectorSegment*>( segobj );
             if( poVecSeg )
-                poDS->apoLayers.push_back( new OGRPCIDSKLayer( segobj, poVecSeg, eAccess == GA_Update ) );
+                poDS->apoLayers.push_back( new OGRPCIDSKLayer( segobj, poVecSeg, eAccessIn == GA_Update ) );
         }
 
 /* -------------------------------------------------------------------- */
@@ -1990,9 +1996,9 @@ GDALDataset *PCIDSK2Dataset::LLOpen( const char *pszFilename,
 /************************************************************************/
 
 GDALDataset *PCIDSK2Dataset::Create( const char * pszFilename,
-                                     int nXSize, int nYSize, int nBands,
+                                     int nXSize, int nYSize, int nBandsIn,
                                      GDALDataType eType,
-                                     char **papszParmList )
+                                     char **papszParamList )
 
 {
 /* -------------------------------------------------------------------- */
@@ -2001,24 +2007,24 @@ GDALDataset *PCIDSK2Dataset::Create( const char * pszFilename,
     std::vector<eChanType> aeChanTypes;
 
     if( eType == GDT_Float32 )
-      aeChanTypes.resize( std::max(1, nBands), CHN_32R );
+      aeChanTypes.resize( std::max(1, nBandsIn), CHN_32R );
     else if( eType == GDT_Int16 )
-        aeChanTypes.resize( std::max(1, nBands), CHN_16S );
+        aeChanTypes.resize( std::max(1, nBandsIn), CHN_16S );
     else if( eType == GDT_UInt16 )
-        aeChanTypes.resize( std::max(1, nBands), CHN_16U );
+        aeChanTypes.resize( std::max(1, nBandsIn), CHN_16U );
     else if( eType == GDT_CInt16 )
-        aeChanTypes.resize( std::max(1, nBands), CHN_C16S );
+        aeChanTypes.resize( std::max(1, nBandsIn), CHN_C16S );
     else if( eType == GDT_CFloat32 )
-        aeChanTypes.resize( std::max(1, nBands), CHN_C32R );
+        aeChanTypes.resize( std::max(1, nBandsIn), CHN_C32R );
     else
-        aeChanTypes.resize( std::max(1, nBands), CHN_8U );
+        aeChanTypes.resize( std::max(1, nBandsIn), CHN_8U );
 
 /* -------------------------------------------------------------------- */
 /*      Reformat options.  Currently no support for jpeg compression    */
 /*      quality.                                                        */
 /* -------------------------------------------------------------------- */
     CPLString osOptions;
-    const char *pszValue = CSLFetchNameValue( papszParmList, "INTERLEAVING" );
+    const char *pszValue = CSLFetchNameValue( papszParamList, "INTERLEAVING" );
     if( pszValue == nullptr )
         pszValue = "BAND";
 
@@ -2026,14 +2032,21 @@ GDALDataset *PCIDSK2Dataset::Create( const char * pszFilename,
 
     if( osOptions == "TILED" )
     {
-        pszValue = CSLFetchNameValue( papszParmList, "TILESIZE" );
+        pszValue = CSLFetchNameValue( papszParamList, "TILESIZE" );
         if( pszValue != nullptr )
             osOptions += pszValue;
 
-        pszValue = CSLFetchNameValue( papszParmList, "COMPRESSION" );
+        pszValue = CSLFetchNameValue( papszParamList, "COMPRESSION" );
         if( pszValue != nullptr )
         {
             osOptions += " ";
+            osOptions += pszValue;
+        }
+
+        pszValue = CSLFetchNameValue( papszParamList, "TILEVERSION" );
+        if( pszValue != nullptr )
+        {
+            osOptions += " TILEV";
             osOptions += pszValue;
         }
     }
@@ -2043,12 +2056,12 @@ GDALDataset *PCIDSK2Dataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 
     try {
-        if( nBands == 0 )
+        if( nBandsIn == 0 )
         {
             nXSize = 512;
             nYSize = 512;
         }
-        PCIDSKFile *poFile = PCIDSK::Create( pszFilename, nXSize, nYSize, nBands,
+        PCIDSKFile *poFile = PCIDSK::Create( pszFilename, nXSize, nYSize, nBandsIn,
                                              &(aeChanTypes[0]), osOptions,
                                              PCIDSK2GetInterfaces() );
 
@@ -2056,14 +2069,14 @@ GDALDataset *PCIDSK2Dataset::Create( const char * pszFilename,
 /*      Apply band descriptions, if provided as creation options.       */
 /* -------------------------------------------------------------------- */
         for( size_t i = 0;
-             papszParmList != nullptr && papszParmList[i] != nullptr;
+             papszParamList != nullptr && papszParamList[i] != nullptr;
              i++ )
         {
-            if( STARTS_WITH_CI(papszParmList[i], "BANDDESC") )
+            if( STARTS_WITH_CI(papszParamList[i], "BANDDESC") )
             {
-                int nBand = atoi(papszParmList[i] + 8 );
-                const char *pszDescription = strstr(papszParmList[i],"=");
-                if( pszDescription && nBand > 0 && nBand <= nBands )
+                int nBand = atoi(papszParamList[i] + 8 );
+                const char *pszDescription = strstr(papszParamList[i],"=");
+                if( pszDescription && nBand > 0 && nBand <= nBandsIn )
                 {
                     poFile->GetChannel(nBand)->SetDescription( pszDescription+1 );
                 }
@@ -2282,6 +2295,7 @@ void GDALRegister_PCIDSK()
 "       <Value>JPEG</Value>"
 "   </Option>"
 "   <Option name='TILESIZE' type='int' default='127' description='Tile Size (INTERLEAVING=TILED only)'/>"
+"   <Option name='TILEVERSION' type='int' default='2' description='Tile Version (INTERLEAVING=TILED only)'/>"
 "</CreationOptionList>" );
     poDriver->SetMetadataItem( GDAL_DS_LAYER_CREATIONOPTIONLIST,
                                "<LayerCreationOptionList/>" );

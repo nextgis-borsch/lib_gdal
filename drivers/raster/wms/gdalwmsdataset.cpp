@@ -178,6 +178,10 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config, char **l_papszOpenOptions)
     }
 
     if (ret == CE_None) {
+        m_osAccept = CPLGetXMLValue(config, "Accept", "");
+    }
+
+    if (ret == CE_None) {
         const char *offline_mode = CPLGetXMLValue(config, "OfflineMode", "");
         if (offline_mode[0] != '\0') {
             const int offline_mode_bool = StrToBool(offline_mode);
@@ -241,8 +245,9 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config, char **l_papszOpenOptions)
     }
 
     if (ret == CE_None) {
+        const char *pszEnableCache = CPLGetConfigOption("GDAL_ENABLE_WMS_CACHE", "YES");
         CPLXMLNode *cache_node = CPLGetXMLNode(config, "Cache");
-        if (cache_node != nullptr) {
+        if (cache_node != nullptr && CPLTestBool(pszEnableCache)) {
             m_cache = new GDALWMSCache();
             if (m_cache->Initialize(CPLGetXMLValue(service_node, "ServerUrl", nullptr),
                                     cache_node) != CE_None) {
@@ -496,15 +501,14 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config, char **l_papszOpenOptions)
         if (ret == CE_None)
         {
             const char *data_type = CPLGetXMLValue(config, "DataType", "Byte");
+            if (!STARTS_WITH(data_type, "Byte"))
+                SetTileOO("@DATATYPE", data_type);
             m_data_type = GDALGetDataTypeByName(data_type);
             if (m_data_type == GDT_Unknown || m_data_type >= GDT_TypeCount)
             {
                 CPLError(CE_Failure, CPLE_AppDefined,
                     "GDALWMS: Invalid value in DataType. Data type \"%s\" is not supported.", data_type);
                 ret = CE_Failure;
-            }
-            else if (!STARTS_WITH(data_type, "Byte")) { // Valid, non-byte
-                m_tileOO = CSLSetNameValue(m_tileOO, "@DATATYPE", data_type);
             }
         }
 
@@ -561,12 +565,15 @@ CPLErr GDALWMSDataset::Initialize(CPLXMLNode *config, char **l_papszOpenOptions)
     if (ret == CE_None) {
         // Data values are attributes, they include NoData Min and Max
         if (nullptr!=CPLGetXMLNode(config,"DataValues")) {
-            const char *nodata=CPLGetXMLValue(config,"DataValues.NoData",nullptr);
-            if (nodata!=nullptr) WMSSetNoDataValue(nodata);
-            const char *min=CPLGetXMLValue(config,"DataValues.min",nullptr);
-            if (min!=nullptr) WMSSetMinValue(min);
-            const char *max=CPLGetXMLValue(config,"DataValues.max",nullptr);
-            if (max!=nullptr) WMSSetMaxValue(max);
+            const char *nodata = CPLGetXMLValue(config, "DataValues.NoData", "");
+            if (strlen(nodata) > 0) {
+                SetTileOO("@NDV", nodata);
+                WMSSetNoDataValue(nodata);
+            }
+            const char *min = CPLGetXMLValue(config, "DataValues.min", nullptr);
+            if (min != nullptr) WMSSetMinValue(min);
+            const char *max = CPLGetXMLValue(config, "DataValues.max", nullptr);
+            if (max != nullptr) WMSSetMaxValue(max);
         }
     }
 
@@ -731,6 +738,19 @@ const char * const * GDALWMSDataset::GetHTTPRequestOpts()
     if (m_http_max_conn > 0)
         opts = CSLAddString(opts, CPLOPrintf("MAXCONN=%d", m_http_max_conn));
 
+    if (!m_osAccept.empty() )
+        opts = CSLAddNameValue(opts, "ACCEPT", m_osAccept.c_str());
+
     m_http_options = opts;
     return m_http_options;
+}
+
+void GDALWMSDataset::SetTileOO(const char* pszName, const char* pszValue) {
+    if (pszName == nullptr || strlen(pszName) == 0)
+        return;
+    int oldidx = CSLFindName(m_tileOO, pszName);
+    if (oldidx >= 0)
+        m_tileOO = CSLRemoveStrings(m_tileOO, oldidx, 1, nullptr);
+    if (pszValue != nullptr && strlen(pszValue))
+        m_tileOO = CSLAddNameValue(m_tileOO, pszName, pszValue);
 }

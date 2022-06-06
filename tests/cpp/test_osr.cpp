@@ -6,22 +6,25 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2006, Mateusz Loskot <mateusz@loskot.net>
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Library General Public
-// License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Library General Public License for more details.
-//
-// You should have received a copy of the GNU Library General Public
-// License along with this library; if not, write to the
-// Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-// Boston, MA 02111-1307, USA.
-///////////////////////////////////////////////////////////////////////////////
+/*
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ ****************************************************************************/
 
 #include "gdal_unit_test.h"
 
@@ -314,32 +317,10 @@ namespace tut
         err_ = OSRSetFromUserInput(srs_, "urn:ogc:def:crs:OGC::AUTO42001:-117:33");
         ensure_equals("OSRSetFromUserInput failed", err_, OGRERR_NONE);
 
-        char* wkt1 = nullptr;
-        err_ = OSRExportToWkt(srs_, &wkt1);
-        ensure_equals("OSRExportToWkt failed", err_, OGRERR_NONE);
-        ensure("OSRExportToWkt returned NULL", nullptr != wkt1);
+        OGRSpatialReference oSRS;
+        oSRS.importFromEPSG(32611);
 
-        std::string expect("PROJCS[\"unnamed\",GEOGCS[\"WGS 84\","
-                           "DATUM[\"WGS_1984\",SPHEROID[\"WGS 84\","
-                           "6378137,298.257223563,"
-                           "AUTHORITY[\"EPSG\",\"7030\"]],"
-                           "AUTHORITY[\"EPSG\",\"6326\"]],"
-                           "PRIMEM[\"Greenwich\",0,"
-                           "AUTHORITY[\"EPSG\",\"8901\"]],"
-                           "UNIT[\"degree\",0.0174532925199433,"
-                           "AUTHORITY[\"EPSG\",\"9122\"]],"
-                           "AUTHORITY[\"EPSG\",\"4326\"]],"
-                           "PROJECTION[\"Transverse_Mercator\"],"
-                           "PARAMETER[\"latitude_of_origin\",0],"
-                           "PARAMETER[\"central_meridian\",-117],"
-                           "PARAMETER[\"scale_factor\",0.9996],"
-                           "PARAMETER[\"false_easting\",500000],"
-                           "PARAMETER[\"false_northing\",0],"
-                           "UNIT[\"Meter\",1,AUTHORITY[\"EPSG\",\"9001\"]],"
-                           "AXIS[\"Easting\",EAST],AXIS[\"Northing\",NORTH]]");
-
-        ensure_equals("AUTO42001 urn lookup not as expected", std::string(wkt1), expect);
-        CPLFree(wkt1);
+        ensure(oSRS.IsSame(OGRSpatialReference::FromHandle(srs_)));
     }
 
     // Test StripTOWGS84IfKnownDatum
@@ -455,6 +436,40 @@ namespace tut
             "        BBOX[-90,-180,90,180]],\n"
             "    ID[\"ESRI\",54049]]");
         ensure_equals(oSRS.GetEPSGGeogCS(), 4326);
+    }
+
+    // Test GetOGCURN
+    template<>
+    template<>
+    void object::test<10>()
+    {
+        {
+            OGRSpatialReference oSRS;
+            ensure(oSRS.GetOGCURN() == nullptr);
+        }
+        {
+            OGRSpatialReference oSRS;
+            oSRS.SetFromUserInput("+proj=longlat");
+            ensure(oSRS.GetOGCURN() == nullptr);
+        }
+
+        {
+            OGRSpatialReference oSRS;
+            oSRS.importFromEPSG(32631);
+            char* pszRet = oSRS.GetOGCURN();
+            ensure(pszRet != nullptr);
+            ensure(strcmp(pszRet, "urn:ogc:def:crs:EPSG::32631") == 0);
+            CPLFree(pszRet);
+        }
+
+        {
+            OGRSpatialReference oSRS;
+            oSRS.SetFromUserInput("EPSG:32631+5773");
+            char* pszRet = oSRS.GetOGCURN();
+            ensure(pszRet != nullptr);
+            ensure(strcmp(pszRet, "urn:ogc:def:crs,crs:EPSG::32631,crs:EPSG::5773") == 0);
+            CPLFree(pszRet);
+        }
     }
 
 } // namespace tut

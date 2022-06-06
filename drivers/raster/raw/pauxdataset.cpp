@@ -55,7 +55,7 @@ class PAuxDataset final: public RawDataset
     char        *pszGCPProjection;
 
     void        ScanForGCPs();
-    char       *PCI2WKT( const char *pszGeosys, const char *pszProjParms );
+    char       *PCI2WKT( const char *pszGeosys, const char *pszProjParams );
 
     char       *pszProjection;
 
@@ -88,8 +88,8 @@ class PAuxDataset final: public RawDataset
 
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
-                                int nXSize, int nYSize, int nBands,
-                                GDALDataType eType, char ** papszParmList );
+                                int nXSize, int nYSize, int nBandsIn,
+                                GDALDataType eType, char ** papszParamList );
 };
 
 /************************************************************************/
@@ -324,7 +324,7 @@ PAuxDataset::PAuxDataset() :
 PAuxDataset::~PAuxDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
     if( fpImage != nullptr && VSIFCloseL( fpImage ) != 0 )
     {
         CPLError( CE_Failure, CPLE_FileIO, "I/O error" );
@@ -366,7 +366,7 @@ char **PAuxDataset::GetFileList()
 /************************************************************************/
 
 char *PAuxDataset::PCI2WKT( const char *pszGeosys,
-                            const char *pszProjParms )
+                            const char *pszProjParams )
 
 {
     while( *pszGeosys == ' ' )
@@ -375,16 +375,16 @@ char *PAuxDataset::PCI2WKT( const char *pszGeosys,
 /* -------------------------------------------------------------------- */
 /*      Parse projection parameters array.                              */
 /* -------------------------------------------------------------------- */
-    double adfProjParms[16] = { 0.0 };
+    double adfProjParams[16] = { 0.0 };
 
-    if( pszProjParms != nullptr )
+    if( pszProjParams != nullptr )
     {
-        char **papszTokens = CSLTokenizeString( pszProjParms );
+        char **papszTokens = CSLTokenizeString( pszProjParams );
 
         for( int i = 0;
              i < 16 && papszTokens != nullptr && papszTokens[i] != nullptr;
              i++ )
-            adfProjParms[i] = CPLAtof(papszTokens[i]);
+            adfProjParams[i] = CPLAtof(papszTokens[i]);
 
         CSLDestroy( papszTokens );
     }
@@ -393,7 +393,7 @@ char *PAuxDataset::PCI2WKT( const char *pszGeosys,
 /*      Convert to SRS.                                                 */
 /* -------------------------------------------------------------------- */
     OGRSpatialReference oSRS;
-    if( oSRS.importFromPCI( pszGeosys, nullptr, adfProjParms ) == OGRERR_NONE )
+    if( oSRS.importFromPCI( pszGeosys, nullptr, adfProjParams ) == OGRERR_NONE )
     {
         char *pszResult = nullptr;
 
@@ -424,11 +424,11 @@ void PAuxDataset::ScanForGCPs()
 /* -------------------------------------------------------------------- */
     const char *pszMapUnits =
         CSLFetchNameValue( papszAuxLines, "GCP_1_MapUnits" );
-    const char *pszProjParms =
+    const char *pszProjParams =
         CSLFetchNameValue( papszAuxLines, "GCP_1_ProjParms" );
 
     if( pszMapUnits != nullptr )
-        pszGCPProjection = PCI2WKT( pszMapUnits, pszProjParms );
+        pszGCPProjection = PCI2WKT( pszMapUnits, pszProjParams );
 
 /* -------------------------------------------------------------------- */
 /*      Collect standalone GCPs.  They look like:                       */
@@ -860,11 +860,11 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     const char *pszMapUnits =
         CSLFetchNameValue( poDS->papszAuxLines, "MapUnits" );
-    const char *pszProjParms =
-        CSLFetchNameValue( poDS->papszAuxLines, "ProjParms" );
+    const char *pszProjParams =
+        CSLFetchNameValue( poDS->papszAuxLines, "ProjParams" );
 
     if( pszMapUnits != nullptr )
-        poDS->pszProjection = poDS->PCI2WKT( pszMapUnits, pszProjParms );
+        poDS->pszProjection = poDS->PCI2WKT( pszMapUnits, pszProjParams );
 
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
@@ -888,7 +888,7 @@ GDALDataset *PAuxDataset::Open( GDALOpenInfo * poOpenInfo )
 /************************************************************************/
 
 GDALDataset *PAuxDataset::Create( const char * pszFilename,
-                                  int nXSize, int nYSize, int nBands,
+                                  int nXSize, int nYSize, int nBandsIn,
                                   GDALDataType eType,
                                   char **papszOptions )
 
@@ -916,7 +916,7 @@ GDALDataset *PAuxDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
     int nPixelSizeSum = 0;
 
-    for( int iBand = 0; iBand < nBands; iBand++ )
+    for( int iBand = 0; iBand < nBandsIn; iBand++ )
         nPixelSizeSum += GDALGetDataTypeSizeBytes(eType);
 
 /* -------------------------------------------------------------------- */
@@ -984,7 +984,7 @@ GDALDataset *PAuxDataset::Create( const char * pszFilename,
 /*      Write out the raw definition for the dataset as a whole.        */
 /* -------------------------------------------------------------------- */
     CPL_IGNORE_RET_VAL(VSIFPrintfL( fp, "RawDefinition: %d %d %d\n",
-                nXSize, nYSize, nBands ));
+                nXSize, nYSize, nBandsIn ));
 
 /* -------------------------------------------------------------------- */
 /*      Write out a definition for each band.  We always write band     */
@@ -993,7 +993,7 @@ GDALDataset *PAuxDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
     vsi_l_offset nImgOffset = 0;
 
-    for( int iBand = 0; iBand < nBands; iBand++ )
+    for( int iBand = 0; iBand < nBandsIn; iBand++ )
     {
         int nPixelOffset = 0;
         int nLineOffset = 0;

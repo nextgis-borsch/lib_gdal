@@ -43,7 +43,6 @@ if(ENABLE_WFS)
 
     set(LIB_HHEADERS_PRIV
         ogr_wfs.h
-        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h
         ${CMAKE_SOURCE_DIR}/drivers/vector/gml/gmlreader.h
         ${CMAKE_SOURCE_DIR}/drivers/vector/gml/parsexsd.h
     )

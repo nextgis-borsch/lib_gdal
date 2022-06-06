@@ -126,6 +126,7 @@ typedef enum
     STATE_DEFAULT,
 
     /* for sharedString.xml */
+    STATE_SI,
     STATE_T,
 
     /* for sheet?.xml */
@@ -245,7 +246,7 @@ class OGRXLSXDataSource final: public GDALDataset
                                 char ** papszOptions ) override;
     virtual OGRErr      DeleteLayer(int iLayer) override;
 
-    virtual void        FlushCache() override;
+    virtual void        FlushCache(bool bAtClosing) override;
 
     void                startElementCbk(const char *pszName, const char **ppszAttr);
     void                endElementCbk(const char *pszName);

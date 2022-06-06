@@ -139,6 +139,12 @@ int OGRMemDataSource::TestCapability( const char *pszCap )
         return TRUE;
     else if( EQUAL(pszCap, ODsCRandomLayerWrite) )
         return TRUE;
+    else if( EQUAL(pszCap, ODsCAddFieldDomain) )
+        return TRUE;
+    else if( EQUAL(pszCap, ODsCDeleteFieldDomain) )
+        return TRUE;
+    else if( EQUAL(pszCap, ODsCUpdateFieldDomain) )
+        return TRUE;
 
     return FALSE;
 }
@@ -154,4 +160,70 @@ OGRLayer *OGRMemDataSource::GetLayer( int iLayer )
         return nullptr;
 
     return papoLayers[iLayer];
+}
+
+/************************************************************************/
+/*                           AddFieldDomain()                           */
+/************************************************************************/
+
+bool OGRMemDataSource::AddFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain,
+                                      std::string& failureReason)
+{
+    if( GetFieldDomain(domain->GetName()) != nullptr )
+    {
+        failureReason = "A domain of identical name already exists";
+        return false;
+    }
+    const auto domainName = domain->GetName();
+    m_oMapFieldDomains[domainName] = std::move(domain);
+    return true;
+}
+
+/************************************************************************/
+/*                           DeleteFieldDomain()                        */
+/************************************************************************/
+
+bool OGRMemDataSource::DeleteFieldDomain(const std::string &name, std::string &failureReason)
+{
+    const auto iter = m_oMapFieldDomains.find(name);
+    if( iter == m_oMapFieldDomains.end() )
+    {
+        failureReason = "Domain does not exist";
+        return false;
+    }
+
+    m_oMapFieldDomains.erase(iter);
+
+    for( int i = 0; i < nLayers; i++ )
+    {
+        OGRMemLayer* poLayer = papoLayers[i];
+        for( int j = 0; j < poLayer->GetLayerDefn()->GetFieldCount(); ++j )
+        {
+            OGRFieldDefn* poFieldDefn = poLayer->GetLayerDefn()->GetFieldDefn(j);
+            if ( poFieldDefn->GetDomainName() == name )
+            {
+                poFieldDefn->SetDomainName(std::string());
+            }
+        }
+    }
+
+    return true;
+}
+
+
+/************************************************************************/
+/*                           UpdateFieldDomain()                        */
+/************************************************************************/
+
+bool OGRMemDataSource::UpdateFieldDomain(std::unique_ptr<OGRFieldDomain> &&domain, std::string &failureReason)
+{
+    const auto domainName = domain->GetName();
+    const auto iter = m_oMapFieldDomains.find(domainName);
+    if( iter == m_oMapFieldDomains.end() )
+    {
+        failureReason = "No matching domain found";
+        return false;
+    }
+    m_oMapFieldDomains[domainName] = std::move(domain);
+    return true;
 }

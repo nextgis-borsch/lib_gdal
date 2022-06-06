@@ -144,9 +144,7 @@
 
 #include <time.h>
 
-#if defined(HAVE_ERRNO_H)
-#  include <errno.h>
-#endif
+#include <errno.h>
 
 #ifdef HAVE_LOCALE_H
 #  include <locale.h>
@@ -158,16 +156,6 @@
 
 #if !defined(WIN32)
 #  include <strings.h>
-#endif
-
-#if defined(HAVE_LIBDBMALLOC) && defined(HAVE_DBMALLOC_H) && defined(DEBUG)
-#  define DBMALLOC
-#  include <dbmalloc.h>
-#endif
-
-#if !defined(DBMALLOC) && defined(HAVE_DMALLOC_H)
-#  define USE_DMALLOC
-#  include <dmalloc.h>
 #endif
 
 /* ==================================================================== */
@@ -237,12 +225,6 @@ typedef int             GBool;
 /*      64bit support                                                   */
 /* -------------------------------------------------------------------- */
 
-#if defined(WIN32) && defined(_MSC_VER)
-#define VSI_LARGE_API_SUPPORTED
-#endif
-
-#if HAVE_LONG_LONG
-
 /** Large signed integer type (generally 64-bit integer type).
  *  Use GInt64 when exactly 64 bit is needed */
 typedef long long        GIntBig;
@@ -275,11 +257,6 @@ typedef GUIntBig         GUInt64;
 /** Minimum GUInt64 value */
 #define GUINT64_MAX     GUINTBIG_MAX
 
-#else
-
-#error "64bit integer support required"
-
-#endif
 
 #if SIZEOF_VOIDP == 8
 /** Integer type large enough to hold the difference between 2 addresses */
@@ -290,36 +267,23 @@ typedef int              GPtrDiff_t;
 #endif
 
 #ifdef GDAL_COMPILATION
-#if HAVE_UINTPTR_T
 #include <stdint.h>
 typedef uintptr_t GUIntptr_t;
-#elif SIZEOF_VOIDP == 8
-typedef GUIntBig GUIntptr_t;
-#else
-typedef unsigned int  GUIntptr_t;
-#endif
-
 #define CPL_IS_ALIGNED(ptr, quant) ((CPL_REINTERPRET_CAST(GUIntptr_t, CPL_STATIC_CAST(const void*, ptr)) % (quant)) == 0)
 
 #endif
 
-#if defined(__MSVCRT__) || (defined(WIN32) && defined(_MSC_VER))
+#if (defined(__MSVCRT__) && !(defined(__MINGW64__) && __GNUC__ >= 10)) || (defined(WIN32) && defined(_MSC_VER))
   #define CPL_FRMT_GB_WITHOUT_PREFIX     "I64"
-#elif HAVE_LONG_LONG
+#else
 /** Printf formatting suffix for GIntBig */
   #define CPL_FRMT_GB_WITHOUT_PREFIX     "ll"
-#else
-  #define CPL_FRMT_GB_WITHOUT_PREFIX     "l"
 #endif
 
 /** Printf formatting for GIntBig */
 #define CPL_FRMT_GIB     "%" CPL_FRMT_GB_WITHOUT_PREFIX "d"
 /** Printf formatting for GUIntBig */
 #define CPL_FRMT_GUIB    "%" CPL_FRMT_GB_WITHOUT_PREFIX "u"
-
-/*! @cond Doxygen_Suppress */
-#define GUINTBIG_TO_DOUBLE(x) CPL_STATIC_CAST(double, x)
-/*! @endcond */
 
 /*! @cond Doxygen_Suppress */
 #ifdef COMPAT_WITH_ICC_CONVERSION_CHECK
@@ -562,8 +526,8 @@ static inline char* CPL_afl_friendly_strstr(const char* haystack, const char* ne
 #endif /* defined(AFL_FRIENDLY) && defined(__GNUC__) */
 
 #  if defined(WIN32)
-#    define STRCASECMP(a,b)         (stricmp(a,b))
-#    define STRNCASECMP(a,b,n)      (strnicmp(a,b,n))
+#    define STRCASECMP(a,b)         (_stricmp(a,b))
+#    define STRNCASECMP(a,b,n)      (_strnicmp(a,b,n))
 #  else
 /** Alias for strcasecmp() */
 #    define STRCASECMP(a,b)         (strcasecmp(a,b))
@@ -641,7 +605,7 @@ static inline int CPLIsFinite(double f) { return !__isnan(f) && !__isinf(f); }
 #else
 #  define CPLIsNan(x) isnan(x)
 #  if defined(isinf) || defined(__FreeBSD__)
-/** Return whether a floating-pointer number is +/- infinty */
+/** Return whether a floating-pointer number is +/- infinity */
 #    define CPLIsInf(x) isinf(x)
 /** Return whether a floating-pointer number is finite */
 #    define CPLIsFinite(x) (!isnan(x) && !isinf(x))
@@ -709,11 +673,7 @@ template<> struct CPLStaticAssert<true>
 /** Byte-swap a 16bit unsigned integer */
 #define CPL_SWAP16(x) CPL_STATIC_CAST(GUInt16, (CPL_STATIC_CAST(GUInt16, x) << 8) | (CPL_STATIC_CAST(GUInt16, x) >> 8) )
 
-#if defined(HAVE_GCC_BSWAP) && (defined(__i386__) || defined(__x86_64__))
-/* Could potentially be extended to other architectures but must be checked */
-/* that the intrinsic is indeed efficient */
-/* GCC (at least 4.6  or above) need that include */
-#include <x86intrin.h>
+#if defined(HAVE_GCC_BSWAP)
 /** Byte-swap a 32bit unsigned integer */
 #define CPL_SWAP32(x) CPL_STATIC_CAST(GUInt32, __builtin_bswap32(CPL_STATIC_CAST(GUInt32, x)))
 /** Byte-swap a 64bit unsigned integer */
@@ -739,76 +699,36 @@ template<> struct CPLStaticAssert<true>
 
 /** Byte-swap a 16 bit pointer */
 #define CPL_SWAP16PTR(x) \
-{                                                                 \
-    GByte       byTemp, *_pabyDataT = CPL_REINTERPRET_CAST(GByte*, x);              \
+do {                                                                        \
+    GUInt16 _n16;                                                           \
+    void* _lx = x;                                                          \
+    memcpy(&_n16, _lx, 2);                                                  \
     CPL_STATIC_ASSERT_IF_AVAILABLE(sizeof(*(x)) == 1 || sizeof(*(x)) == 2); \
-                                                                  \
-    byTemp = _pabyDataT[0];                                       \
-    _pabyDataT[0] = _pabyDataT[1];                                \
-    _pabyDataT[1] = byTemp;                                       \
-}
-
-#if defined(MAKE_SANITIZE_HAPPY) || !(defined(__i386__) || defined(__x86_64__) || defined(_M_IX86) || defined(_M_X64))
+    _n16 = CPL_SWAP16(_n16);                                                \
+    memcpy(_lx, &_n16, 2);                                                  \
+} while(0)
 
 /** Byte-swap a 32 bit pointer */
 #define CPL_SWAP32PTR(x) \
-{                                                                 \
-    GByte       byTemp, *_pabyDataT = CPL_REINTERPRET_CAST(GByte*, x);              \
-    CPL_STATIC_ASSERT_IF_AVAILABLE(sizeof(*(x)) == 1 || sizeof(*(x)) == 4);  \
-                                                                  \
-    byTemp = _pabyDataT[0];                                       \
-    _pabyDataT[0] = _pabyDataT[3];                                \
-    _pabyDataT[3] = byTemp;                                       \
-    byTemp = _pabyDataT[1];                                       \
-    _pabyDataT[1] = _pabyDataT[2];                                \
-    _pabyDataT[2] = byTemp;                                       \
-}
-
-/** Byte-swap a 64 bit pointer */
-#define CPL_SWAP64PTR(x) \
-{                                                                 \
-    GByte       byTemp, *_pabyDataT = CPL_REINTERPRET_CAST(GByte*, x);              \
-    CPL_STATIC_ASSERT_IF_AVAILABLE(sizeof(*(x)) == 1 || sizeof(*(x)) == 8); \
-                                                                  \
-    byTemp = _pabyDataT[0];                                       \
-    _pabyDataT[0] = _pabyDataT[7];                                \
-    _pabyDataT[7] = byTemp;                                       \
-    byTemp = _pabyDataT[1];                                       \
-    _pabyDataT[1] = _pabyDataT[6];                                \
-    _pabyDataT[6] = byTemp;                                       \
-    byTemp = _pabyDataT[2];                                       \
-    _pabyDataT[2] = _pabyDataT[5];                                \
-    _pabyDataT[5] = byTemp;                                       \
-    byTemp = _pabyDataT[3];                                       \
-    _pabyDataT[3] = _pabyDataT[4];                                \
-    _pabyDataT[4] = byTemp;                                       \
-}
-
-#else
-
-/** Byte-swap a 32 bit pointer */
-#define CPL_SWAP32PTR(x) \
-{                                                                           \
+do {                                                                        \
     GUInt32 _n32;                                                           \
     void* _lx = x;                                                          \
     memcpy(&_n32, _lx, 4);                                                  \
     CPL_STATIC_ASSERT_IF_AVAILABLE(sizeof(*(x)) == 1 || sizeof(*(x)) == 4); \
     _n32 = CPL_SWAP32(_n32);                                                \
     memcpy(_lx, &_n32, 4);                                                  \
-}
+} while(0)
 
 /** Byte-swap a 64 bit pointer */
 #define CPL_SWAP64PTR(x) \
-{                                                                           \
+do {                                                                        \
     GUInt64 _n64;                                                           \
     void* _lx = x;                                                          \
     memcpy(&_n64, _lx, 8);                                                    \
     CPL_STATIC_ASSERT_IF_AVAILABLE(sizeof(*(x)) == 1 || sizeof(*(x)) == 8); \
     _n64 = CPL_SWAP64(_n64);                                                \
     memcpy(_lx, &_n64, 8);                                                    \
-}
-
-#endif
+} while(0)
 
 /** Byte-swap a 64 bit pointer */
 #define CPL_SWAPDOUBLE(p) CPL_SWAP64PTR(p)
@@ -1010,7 +930,7 @@ static const char *cvsid_aw() { return( cvsid_aw() ? NULL : cpl_cvsid ); }
 
 #endif /* __cplusplus */
 
-#if !defined(DOXYGEN_SKIP)
+#if !defined(DOXYGEN_SKIP) && !defined(CPL_WARN_DEPRECATED)
 #if defined(__has_extension)
   #if __has_extension(attribute_deprecated_with_message)
     /* Clang extension */
@@ -1051,10 +971,15 @@ CPL_C_END
 #endif
 
 #if defined(__cplusplus)
+#ifndef CPPCHECK
 /** Returns the size of C style arrays. */
 #define CPL_ARRAYSIZE(array) \
   ((sizeof(array) / sizeof(*(array))) / \
   static_cast<size_t>(!(sizeof(array) % sizeof(*(array)))))
+#else
+/* simplified version for cppcheck */
+#define CPL_ARRAYSIZE(array) (sizeof(array) / sizeof(array[0]))
+#endif
 
 extern "C++" {
 template<class T> static void CPL_IGNORE_RET_VAL(const T&) {}
@@ -1080,86 +1005,6 @@ inline static bool CPL_TO_BOOL(int x) { return x != 0; }
 #endif
 
 /*! @cond Doxygen_Suppress */
-// Define DEBUG_BOOL to compile in "MSVC mode", ie error out when
-// a integer is assigned to a bool
-// WARNING: use only at compilation time, since it is know to not work
-//  at runtime for unknown reasons (crash in MongoDB driver for example)
-#if defined(__cplusplus) && defined(DEBUG_BOOL) && !defined(DO_NOT_USE_DEBUG_BOOL) && !defined(CPL_SUPRESS_CPLUSPLUS)
-extern "C++" {
-class MSVCPedanticBool
-{
-
-        friend bool operator== (const bool& one, const MSVCPedanticBool& other);
-        friend bool operator!= (const bool& one, const MSVCPedanticBool& other);
-
-        bool b;
-        MSVCPedanticBool(int bIn);
-
-    public:
-        /* b not initialized on purpose in default ctor to flag use. */
-        /* cppcheck-suppress uninitMemberVar */
-        MSVCPedanticBool() {}
-        MSVCPedanticBool(bool bIn) : b(bIn) {}
-        MSVCPedanticBool(const MSVCPedanticBool& other) : b(other.b) {}
-
-        MSVCPedanticBool& operator= (const MSVCPedanticBool& other) { b = other.b; return *this; }
-        MSVCPedanticBool& operator&= (const MSVCPedanticBool& other) { b &= other.b; return *this; }
-        MSVCPedanticBool& operator|= (const MSVCPedanticBool& other) { b |= other.b; return *this; }
-
-        bool operator== (const bool& other) const { return b == other; }
-        bool operator!= (const bool& other) const { return b != other; }
-        bool operator< (const bool& other) const { return b < other; }
-        bool operator== (const MSVCPedanticBool& other) const { return b == other.b; }
-        bool operator!= (const MSVCPedanticBool& other) const { return b != other.b; }
-        bool operator< (const MSVCPedanticBool& other) const { return b < other.b; }
-
-        bool operator! () const { return !b; }
-        operator bool() const { return b; }
-        operator int() const { return b; }
-        operator GIntBig() const { return b; }
-};
-
-inline bool operator== (const bool& one, const MSVCPedanticBool& other) { return one == other.b; }
-inline bool operator!= (const bool& one, const MSVCPedanticBool& other) { return one != other.b; }
-
-/* We must include all C++ stuff before to avoid issues with templates that use bool */
-#include <vector>
-#include <map>
-#include <set>
-#include <string>
-#include <cstddef>
-#include <limits>
-#include <sstream>
-#include <fstream>
-#include <algorithm>
-#include <functional>
-#include <memory>
-#include <queue>
-#include <mutex>
-#include <unordered_map>
-#include <thread>
-#include <unordered_set>
-#include <complex>
-#include <iomanip>
-
-} /* extern C++ */
-
-#undef FALSE
-#define FALSE false
-#undef TRUE
-#define TRUE true
-
-/* In the very few cases we really need a "simple" type, fallback to bool */
-#define EMULATED_BOOL int
-
-/* Use our class instead of bool */
-#define bool MSVCPedanticBool
-
-/* "volatile bool" with the below substitution doesn't really work. */
-/* Just for the sake of the debug, we don't really need volatile */
-#define VOLATILE_BOOL bool
-
-#else /* defined(__cplusplus) && defined(DEBUG_BOOL) */
 
 #ifndef FALSE
 #  define FALSE 0
@@ -1168,11 +1013,6 @@ inline bool operator!= (const bool& one, const MSVCPedanticBool& other) { return
 #ifndef TRUE
 #  define TRUE 1
 #endif
-
-#define EMULATED_BOOL bool
-#define VOLATILE_BOOL volatile bool
-
-#endif /* defined(__cplusplus) && defined(DEBUG_BOOL) */
 
 #if __clang_major__ >= 4 || (__clang_major__ == 3 && __clang_minor__ >= 8)
 #define CPL_NOSANITIZE_UNSIGNED_INT_OVERFLOW __attribute__((no_sanitize("unsigned-integer-overflow")))
@@ -1191,9 +1031,6 @@ inline C CPLUnsanitizedAdd(A a, B b)
 }
 #endif
 
-/*! @endcond */
-
-/*! @cond Doxygen_Suppress */
 #if defined(__cplusplus) && !defined(CPL_SUPRESS_CPLUSPLUS)
 #define CPL_NULLPTR nullptr
 #else
@@ -1204,7 +1041,7 @@ inline C CPLUnsanitizedAdd(A a, B b)
 /* This typedef is for C functions that take char** as argument, but */
 /* with the semantics of a const list. In C, char** is not implicitly cast to */
 /* const char* const*, contrary to C++. So when seen for C++, it is OK */
-/* to expose the prototyes as const char* const*, but for C we keep the */
+/* to expose the prototypes as const char* const*, but for C we keep the */
 /* historical definition to avoid warnings. */
 #if defined(__cplusplus) && !defined(CPL_SUPRESS_CPLUSPLUS) && !defined(DOXYGEN_SKIP)
 /** Type of a constant null-terminated list of nul terminated strings.

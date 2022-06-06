@@ -92,7 +92,7 @@ public:
     CPLErr  Initialize( const char *pszFilename, char **papszOptions,
                         int nXSize, int nYSize, int nBands, const char * const * papszBandDescriptions, int bRGBColorSpace,
                         GDALDataType eType,
-                        const char *pszWKT, double *padfGeoTransform,
+                        const OGRSpatialReference *poSRS, double *padfGeoTransform,
                         int nGCPCount, const GDAL_GCP *pasGCPList,
                         int bIsJPEG2000, int bPixelIsPoint, char** papszRPCMD,
                         GDALDataset* poSrcDS = nullptr );
@@ -124,9 +124,12 @@ public:
     void             *pProgressData;
 
     GDALDataType eWorkDT;
-
+    int          m_nSwathLines;
+    UINT32       m_nSwathOffset;
+    GByte       *m_pabySwathBuf;
     JP2UserBox** papoJP2UserBox;
     int          nJP2UserBox;
+    std::vector<int> m_anBandMap{};
 
 private:
     NCSFileViewFileInfoEx sFileInfo;
@@ -143,7 +146,11 @@ private:
 /************************************************************************/
 
 GDALECWCompressor::GDALECWCompressor() :
-    m_OStream(std::make_shared<VSIIOStream>()), eWorkDT(GDT_Unknown)
+    m_OStream(std::make_shared<VSIIOStream>()),
+    eWorkDT(GDT_Unknown),
+    m_nSwathLines(0),
+    m_nSwathOffset(0),
+    m_pabySwathBuf(nullptr)
 {
     m_poSrcDS = nullptr;
     m_nPercentComplete = -1;
@@ -157,6 +164,9 @@ GDALECWCompressor::GDALECWCompressor() :
 #else
     NCSInitFileInfoEx(&sFileInfo);
 #endif
+    m_anBandMap.resize(sFileInfo.nBands);
+    for( int iBand = 0; iBand < sFileInfo.nBands; iBand++ )
+        m_anBandMap[iBand] = iBand+1;
 }
 
 /************************************************************************/
@@ -176,6 +186,7 @@ GDALECWCompressor::~GDALECWCompressor()
 #else
     NCSFreeFileInfoEx(&sFileInfo);
 #endif
+    CPLFree(m_pabySwathBuf);
 }
 
 /************************************************************************/
@@ -199,37 +210,74 @@ CNCSError GDALECWCompressor::WriteReadLine( UINT32 nNextLine,
                                             void **ppInputArray )
 
 {
-    int    iBand, *panBandMap;
     CPLErr eErr;
-    int nWordSize = GDALGetDataTypeSize( eWorkDT ) / 8;
 
 #ifdef DEBUG_VERBOSE
     CPLDebug("ECW", "nNextLine = %d", nNextLine);
 #endif
 
-    panBandMap = (int *) CPLMalloc(sizeof(int) * sFileInfo.nBands);
-    for( iBand = 0; iBand < sFileInfo.nBands; iBand++ )
-        panBandMap[iBand] = iBand+1;
-
-    GByte *pabyLineBuf =
-        (GByte *) CPLMalloc( sFileInfo.nSizeX * sFileInfo.nBands
-                             * nWordSize );
-
-    eErr = m_poSrcDS->RasterIO( GF_Read, 0, nNextLine, sFileInfo.nSizeX, 1,
-                                pabyLineBuf, sFileInfo.nSizeX, 1,
-                                eWorkDT,
-                                sFileInfo.nBands, panBandMap,
-                                nWordSize, 0, nWordSize * sFileInfo.nSizeX, nullptr );
-
-    for( iBand = 0; iBand < (int) sFileInfo.nBands; iBand++ )
+    if( m_poSrcDS == nullptr || m_poSrcDS->GetRasterBand(1) == nullptr )
     {
-        memcpy( ppInputArray[iBand],
-                pabyLineBuf + nWordSize * sFileInfo.nSizeX * iBand,
-                nWordSize * sFileInfo.nSizeX );
+        return GetCNCSError(NCS_FILEIO_ERROR);
+    }
+    if( m_nSwathLines <= 0 )
+    {
+        int nBlockX;
+        constexpr int MIN_SWATH_LINES = 256;
+        m_poSrcDS->GetRasterBand(1)->GetBlockSize( &nBlockX, &m_nSwathLines );
+        if(m_nSwathLines < MIN_SWATH_LINES)
+            m_nSwathLines = MIN_SWATH_LINES;
     }
 
-    CPLFree( pabyLineBuf );
-    CPLFree( panBandMap );
+    GSpacing nPixelSpace = GDALGetDataTypeSize( eWorkDT ) / 8;
+    GSpacing nLineSpace = sFileInfo.nSizeX * nPixelSpace;
+    GSpacing nBandSpace = nLineSpace * m_nSwathLines;
+
+    if( m_pabySwathBuf == nullptr )
+    {
+        size_t nBufSize = static_cast<size_t>(nBandSpace * sFileInfo.nBands);
+        m_pabySwathBuf = (GByte *) VSI_MALLOC_VERBOSE(nBufSize);
+    }
+    if( m_pabySwathBuf == nullptr )
+    {
+        return GetCNCSError(NCS_FILE_NO_MEMORY);
+    }
+
+    if(nNextLine == 0 || nNextLine >= m_nSwathOffset + m_nSwathLines)
+    {
+        int nSwathLines = m_nSwathLines;
+        if(nNextLine + nSwathLines > sFileInfo.nSizeY)
+        {
+            nSwathLines = sFileInfo.nSizeY - nNextLine;
+        }
+        eErr = m_poSrcDS->RasterIO( GF_Read, 0, nNextLine, sFileInfo.nSizeX, nSwathLines,
+                                    m_pabySwathBuf, sFileInfo.nSizeX, nSwathLines,
+                                    eWorkDT, sFileInfo.nBands, &m_anBandMap[0],
+                                    nPixelSpace, nLineSpace, nBandSpace, nullptr );
+        m_nSwathOffset = nNextLine;
+        UINT32 nNextSwathLine = nNextLine + nSwathLines;
+        if(nNextSwathLine < sFileInfo.nSizeY)
+        {
+            if(nNextSwathLine + nSwathLines > sFileInfo.nSizeY)
+            {
+                nSwathLines = sFileInfo.nSizeY - nNextSwathLine;
+            }
+            m_poSrcDS->AdviseRead( 0, nNextSwathLine, sFileInfo.nSizeX, nSwathLines,
+                                   sFileInfo.nSizeX, nSwathLines, eWorkDT,
+                                   sFileInfo.nBands, &m_anBandMap[0], nullptr );
+        }
+    }
+    else
+    {
+        eErr = CE_None;
+    }
+
+    for( int iBand = 0; iBand < (int) sFileInfo.nBands; iBand++ )
+    {
+        memcpy( ppInputArray[iBand],
+                m_pabySwathBuf + nLineSpace * (nNextLine - m_nSwathOffset) + nBandSpace * iBand,
+                static_cast<size_t>(nPixelSpace * sFileInfo.nSizeX) );
+    }
 
     if( eErr == CE_None )
         return GetCNCSError(NCS_SUCCESS);
@@ -541,7 +589,7 @@ CPLErr GDALECWCompressor::Initialize(
     const char *pszFilename, char **papszOptions,
     int nXSize, int nYSize, int nBands, const char * const * papszBandDescriptions, int bRGBColorSpace,
     GDALDataType eType,
-    const char *pszWKT, double *padfGeoTransform,
+    const OGRSpatialReference *poSRS, double *padfGeoTransform,
     int nGCPCount, const GDAL_GCP *pasGCPList,
     int bIsJPEG2000, int bPixelIsPoint, char** papszRPCMD,
     GDALDataset* poSrcDS )
@@ -924,9 +972,9 @@ CPLErr GDALECWCompressor::Initialize(
         psClient->eCellSizeUnits = ECWTranslateToCellSizeUnits(pszUnits);
     }
 
-    if( EQUAL(szProjection,"RAW") && pszWKT != nullptr )
+    if( EQUAL(szProjection,"RAW") && poSRS != nullptr && !poSRS->IsEmpty() )
     {
-        ECWTranslateFromWKT( pszWKT, szProjection, sizeof(szProjection), szDatum, sizeof(szDatum), szUnits );
+        ECWTranslateFromWKT( poSRS, szProjection, sizeof(szProjection), szDatum, sizeof(szDatum), szUnits );
         psClient->eCellSizeUnits = ECWTranslateToCellSizeUnits(szUnits);
     }
 
@@ -941,7 +989,7 @@ CPLErr GDALECWCompressor::Initialize(
 /* -------------------------------------------------------------------- */
 /*      Setup GML and GeoTIFF information.                              */
 /* -------------------------------------------------------------------- */
-    if( (pszWKT != nullptr && pszWKT[0] != '\0') ||
+    if( (poSRS != nullptr && !poSRS->IsEmpty()) ||
         !(padfGeoTransform[0] == 0.0 &&
           padfGeoTransform[1] == 1.0 &&
           padfGeoTransform[2] == 0.0 &&
@@ -952,7 +1000,7 @@ CPLErr GDALECWCompressor::Initialize(
     {
         GDALJP2Metadata oJP2MD;
 
-        oJP2MD.SetProjection( pszWKT );
+        oJP2MD.SetSpatialRef(poSRS);
         oJP2MD.SetGeoTransform( padfGeoTransform );
         oJP2MD.SetGCPs( nGCPCount, pasGCPList );
         oJP2MD.bPixelIsPoint = bPixelIsPoint;
@@ -1202,13 +1250,13 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     GDALDataType eType = poSrcDS->GetRasterBand(1)->GetRasterDataType();
 
-    const char *pszWKT = poSrcDS->GetProjectionRef();
+    const OGRSpatialReference* poSRS = poSrcDS->GetSpatialRef();
     double adfGeoTransform[6] = { 0, 1, 0, 0, 0, 1 };;
 
     poSrcDS->GetGeoTransform( adfGeoTransform );
 
     if( poSrcDS->GetGCPCount() > 0 )
-        pszWKT = poSrcDS->GetGCPProjection();
+        poSRS = poSrcDS->GetGCPSpatialRef();
 
 /* -------------------------------------------------------------------- */
 /*      For ECW, confirm the datatype is 8bit (or uint16 for ECW v3)    */
@@ -1290,7 +1338,7 @@ ECWCreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     if( oCompressor.Initialize( pszFilename, papszOptions,
                                 nXSize, nYSize, nBands, papszBandDescriptions, bRGBColorSpace,
-                                eType, pszWKT, adfGeoTransform,
+                                eType, poSRS, adfGeoTransform,
                                 poSrcDS->GetGCPCount(),
                                 poSrcDS->GetGCPs(),
                                 bIsJPEG2000, bPixelIsPoint,
@@ -1599,7 +1647,7 @@ class ECWWriteDataset final: public GDALDataset
     GDALDataType eDataType;
     char    **papszOptions;
 
-    char     *pszProjection;
+    OGRSpatialReference m_oSRS{};
     double    adfGeoTransform[6];
 
     GDALECWCompressor oCompressor;
@@ -1622,18 +1670,12 @@ class ECWWriteDataset final: public GDALDataset
                                  int );
             ~ECWWriteDataset();
 
-    virtual void   FlushCache( void ) override;
+    virtual void   FlushCache( bool bAtClosing ) override;
 
     virtual CPLErr GetGeoTransform( double * ) override;
-    virtual const char* _GetProjectionRef() override;
     virtual CPLErr SetGeoTransform( double * ) override;
-    virtual CPLErr _SetProjection( const char *pszWKT ) override;
-    const OGRSpatialReference* GetSpatialRef() const override {
-        return GetSpatialRefFromOldGetProjectionRef();
-    }
-    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override {
-        return OldSetProjectionFromSetSpatialRef(poSRS);
-    }
+    const OGRSpatialReference* GetSpatialRef() const override;
+    CPLErr SetSpatialRef(const OGRSpatialReference* poSRS) override;
 
 #ifdef OPTIMIZED_FOR_GDALWARP
     virtual CPLErr IRasterIO( GDALRWFlag eRWFlag,
@@ -1716,7 +1758,6 @@ ECWWriteDataset::ECWWriteDataset( const char *pszFilenameIn,
 
     nRasterXSize = nXSize;
     nRasterYSize = nYSize;
-    pszProjection = nullptr;
 
     adfGeoTransform[0] = 0.0;
     adfGeoTransform[1] = 1.0;
@@ -1744,7 +1785,7 @@ ECWWriteDataset::ECWWriteDataset( const char *pszFilenameIn,
 ECWWriteDataset::~ECWWriteDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
 
     if( bCrystalized )
     {
@@ -1760,7 +1801,6 @@ ECWWriteDataset::~ECWWriteDataset()
     }
 
     CPLFree( pabyBILBuffer );
-    CPLFree( pszProjection );
     CSLDestroy( papszOptions );
     CPLFree( pszFilename );
 }
@@ -1769,19 +1809,19 @@ ECWWriteDataset::~ECWWriteDataset()
 /*                             FlushCache()                             */
 /************************************************************************/
 
-void ECWWriteDataset::FlushCache()
+void ECWWriteDataset::FlushCache(bool bAtClosing)
 
 {
-    BlockBasedFlushCache();
+    BlockBasedFlushCache(bAtClosing);
 }
 
 /************************************************************************/
-/*                         GetProjectionRef()                           */
+/*                         GetSpatialRef()                              */
 /************************************************************************/
 
-const char*  ECWWriteDataset::_GetProjectionRef()
+const OGRSpatialReference* ECWWriteDataset::GetSpatialRef() const
 {
-    return pszProjection;
+    return m_oSRS.IsEmpty() ? nullptr : &m_oSRS;
 }
 
 /************************************************************************/
@@ -1807,14 +1847,15 @@ CPLErr ECWWriteDataset::SetGeoTransform( double *padfGeoTransform )
 }
 
 /************************************************************************/
-/*                           SetProjection()                            */
+/*                           SetSpatialRef()                            */
 /************************************************************************/
 
-CPLErr ECWWriteDataset::_SetProjection( const char *pszWKT )
+CPLErr ECWWriteDataset::SetSpatialRef( const OGRSpatialReference* poSRS )
 
 {
-    CPLFree( pszProjection );
-    pszProjection = CPLStrdup( pszWKT );
+    m_oSRS.Clear();
+    if( poSRS )
+        m_oSRS = *poSRS;
 
     return CE_None;
 }
@@ -1843,7 +1884,7 @@ CPLErr ECWWriteDataset::Crystalize()
     eErr = oCompressor.Initialize( pszFilename, papszOptions,
                                    nRasterXSize, nRasterYSize, nBands,paszBandDescriptions, bRGBColorSpace,
                                    eDataType,
-                                   pszProjection, adfGeoTransform,
+                                   &m_oSRS, adfGeoTransform,
                                    0, nullptr,
                                    bIsJPEG2000, FALSE, nullptr );
 

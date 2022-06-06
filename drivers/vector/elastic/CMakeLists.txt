@@ -47,6 +47,7 @@ if(ENABLE_ELASTIC)
         ogrelasticdriver.cpp
         ogrelasticdatasource.cpp
         ogrelasticlayer.cpp
+        ogrelasticaggregationlayer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

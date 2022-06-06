@@ -627,7 +627,7 @@ IdrisiDataset::IdrisiDataset() :
 
 IdrisiDataset::~IdrisiDataset()
 {
-    FlushCache();
+    FlushCache(true);
 
     if( papszRDC != nullptr && eAccess == GA_Update  )
     {
@@ -982,7 +982,7 @@ GDALDataset *IdrisiDataset::Open( GDALOpenInfo *poOpenInfo )
 GDALDataset *IdrisiDataset::Create( const char *pszFilename,
                                     int nXSize,
                                     int nYSize,
-                                    int nBands,
+                                    int nBandsIn,
                                     GDALDataType eType,
                                     char ** /* papszOptions */ )
 {
@@ -990,20 +990,20 @@ GDALDataset *IdrisiDataset::Create( const char *pszFilename,
     //      Check input options
     // --------------------------------------------------------------------
 
-    if( nBands != 1 && nBands != 3)
+    if( nBandsIn != 1 && nBandsIn != 3)
     {
       CPLError( CE_Failure, CPLE_AppDefined,
                 "Attempt to create IDRISI dataset with an illegal number of bands(%d)."
-                " Try again by selecting a specific band if possible. \n", nBands);
+                " Try again by selecting a specific band if possible. \n", nBandsIn);
                 return nullptr;
     }
 
-    if( nBands == 3 && eType != GDT_Byte )
+    if( nBandsIn == 3 && eType != GDT_Byte )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Attempt to create IDRISI dataset with an unsupported combination "
                   "of the number of bands(%d) and data type(%s). \n",
-                  nBands, GDALGetDataTypeName( eType ) );
+                  nBandsIn, GDALGetDataTypeName( eType ) );
         return nullptr;
     }
 
@@ -1016,7 +1016,7 @@ GDALDataset *IdrisiDataset::Create( const char *pszFilename,
     switch( eType )
     {
     case GDT_Byte:
-        if( nBands == 1 )
+        if( nBandsIn == 1 )
             pszLDataType = rstBYTE;
         else
             pszLDataType = rstRGB24;
@@ -1314,7 +1314,7 @@ GDALDataset *IdrisiDataset::CreateCopy( const char *pszFilename,
     //      Finalize
     // --------------------------------------------------------------------
 
-    poDS->FlushCache();
+    poDS->FlushCache(false);
 
     return poDS;
 }
@@ -2756,7 +2756,7 @@ CPLErr IdrisiGeoReference2Wkt( const char* pszFilename,
     //      Oblique Stereographic
     //      Albers Equal Area Conic
     //      Sinusoidal
-    //
+    //      Cylindrical Equal Area
 
     if( EQUAL( pszProjName, "Mercator" ) )
     {
@@ -2814,6 +2814,10 @@ CPLErr IdrisiGeoReference2Wkt( const char* pszFilename,
     else if( EQUAL( pszProjName, "Sinusoidal" ) )
     {
         oSRS.SetSinusoidal( dfCenterLong, dfFalseEasting, dfFalseNorthing );
+    }
+    else if( EQUAL( pszProjName, "CylindricalEA") || EQUAL( pszProjName, "Cylindrical Equal Area" ))
+    {
+        oSRS.SetCEA( dfStdP1, dfCenterLong, dfFalseEasting, dfFalseNorthing );
     }
     else
     {
@@ -2976,8 +2980,6 @@ CPLErr IdrisiDataset::Wkt2GeoReference( const char *pszProjString,
     //  Check for State Plane
     // -----------------------------------------------------
 
-#ifndef GDAL_RST_PLUGIN
-
     if( EQUAL( pszProjName, SRS_PT_LAMBERT_CONFORMAL_CONIC_2SP ) ||
         EQUAL( pszProjName, SRS_PT_TRANSVERSE_MERCATOR ) )
     {
@@ -3052,8 +3054,6 @@ CPLErr IdrisiDataset::Wkt2GeoReference( const char *pszProjString,
         }
     }
 
-#endif // GDAL_RST_PLUGIN
-
     const char *pszProjectionOut = nullptr;
 
     if( oSRS.IsProjected() )
@@ -3113,9 +3113,13 @@ CPLErr IdrisiDataset::Wkt2GeoReference( const char *pszProjString,
                      {
                          pszProjectionOut =  "Alber's Equal Area Conic" ;
                      }
+        else if( EQUAL( pszProjName, SRS_PT_CYLINDRICAL_EQUAL_AREA ) )
+                     {
+                         pszProjectionOut =  "Cylindrical Equal Area" ;
+                     }
 
         // ---------------------------------------------------------
-        //  Failure, Projection system not suppotted
+        //  Failure, Projection system not supported
         // ---------------------------------------------------------
 
         if( pszProjectionOut == nullptr )
@@ -3167,7 +3171,15 @@ CPLErr IdrisiDataset::Wkt2GeoReference( const char *pszProjString,
         dfFalseEasting  = oSRS.GetProjParm( SRS_PP_FALSE_EASTING, 0.0, nullptr );
         dfScale         = oSRS.GetProjParm( SRS_PP_SCALE_FACTOR, 0.0, nullptr );
         dfStdP1         = oSRS.GetProjParm( SRS_PP_STANDARD_PARALLEL_1, -0.1, nullptr );
-        dfStdP2         = oSRS.GetProjParm( SRS_PP_STANDARD_PARALLEL_2, -0.1, nullptr );
+        if ( EQUAL(pszProjectionOut, "Cylindrical Equal Area") )
+        {
+            dfStdP2 = -dfStdP1;
+            dfScale = 1.0;
+        }
+        else
+        {
+            dfStdP2 = oSRS.GetProjParm( SRS_PP_STANDARD_PARALLEL_2, -0.1, nullptr );
+        }
         if( dfStdP1 != -0.1 )
         {
             nParameters = 1;

@@ -6,7 +6,7 @@
  *******************************************************************************
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2018-2021, NextGIS <info@nextgis.com>
+ *  Copyright (c) 2018-2020, NextGIS <info@nextgis.com>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -288,24 +288,6 @@ static CPLJSONObject FeatureToJson(OGRFeature *poFeature)
 static std::string FeatureToJsonString(OGRFeature *poFeature)
 {
     return FeatureToJson(poFeature).Format(CPLJSONObject::PrettyFormat::Plain);
-}
-
-/*
- * FeaturesIDToJsonString()
- */
-static std::string FeaturesIDToJsonString(const std::vector<GIntBig> &vFeaturesID)
-{
-    CPLJSONArray oFeaturesIDJsonArray;
-
-    for (GIntBig nFeatureID : vFeaturesID)
-    {
-        CPLJSONObject oFeatureIDJson;
-        oFeatureIDJson.Add("id", nFeatureID);
-
-        oFeaturesIDJsonArray.Add(oFeatureIDJson);
-    }
-
-    return oFeaturesIDJsonArray.Format(CPLJSONObject::PrettyFormat::Plain);
 }
 
 /*
@@ -663,31 +645,30 @@ bool OGRNGWLayer::Delete()
     }
 
     // Headers free in DeleteResource method.
-    return NGWAPI::DeleteResource(poDS->GetUrl(), osResourceId, 
-        poDS->GetHeaders(false));
+    return NGWAPI::DeleteResource(poDS->GetUrl(), osResourceId, poDS->GetHeaders());
 }
 
 /*
  * Rename()
  */
-bool OGRNGWLayer::Rename( const std::string &osNewName)
+OGRErr OGRNGWLayer::Rename( const char* pszNewName)
 {
     bool bResult = true;
     if( osResourceId != "-1")
     {
         bResult = NGWAPI::RenameResource(poDS->GetUrl(), osResourceId,
-            osNewName, poDS->GetHeaders(false));
+            pszNewName, poDS->GetHeaders());
     }
     if( bResult )
     {
-        poFeatureDefn->SetName( osNewName.c_str() );
+        poFeatureDefn->SetName( pszNewName );
         SetDescription( poFeatureDefn->GetName() );
     }
     else
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "Rename layer to %s failed", osNewName.c_str());
+        CPLError(CE_Failure, CPLE_AppDefined, "Rename layer to %s failed", pszNewName);
     }
-    return bResult;
+    return bResult ? OGRERR_NONE : OGRERR_FAILURE;
 }
 
 /*
@@ -713,7 +694,7 @@ bool OGRNGWLayer::FillFeatures(const std::string &osUrl)
 
     CPLErrorReset();
     CPLJSONDocument oFeatureReq;
-    char **papszHTTPOptions = poDS->GetHeaders(false);
+    char **papszHTTPOptions = poDS->GetHeaders();
     bool bResult = oFeatureReq.LoadUrl( osUrl, papszHTTPOptions );
     CSLDestroy( papszHTTPOptions );
 
@@ -776,7 +757,7 @@ OGRErr OGRNGWLayer::SetNextByIndex( GIntBig nIndex )
             if( poDS->HasFeaturePaging() )
             {
                 osUrl = NGWAPI::GetFeaturePage( poDS->GetUrl(), osResourceId, 0, 0,
-                    osFields, osWhere, osSpatialFilter, poDS->Extensions(), 
+                    osFields, osWhere, osSpatialFilter, poDS->Extensions(),
                     poFeatureDefn->IsGeometryIgnored() == TRUE);
             }
             else
@@ -816,7 +797,7 @@ OGRFeature *OGRNGWLayer::GetNextFeature()
 
             osUrl = NGWAPI::GetFeaturePage( poDS->GetUrl(), osResourceId,
                 nPageStart, poDS->GetPageSize(), osFields, osWhere,
-                osSpatialFilter, poDS->Extensions(), 
+                osSpatialFilter, poDS->Extensions(),
                 poFeatureDefn->IsGeometryIgnored() == TRUE);
             nPageStart += poDS->GetPageSize();
         }
@@ -914,7 +895,7 @@ OGRFeature *OGRNGWLayer::GetFeature( GIntBig nFID )
         std::to_string(nFID);
     CPLErrorReset();
     CPLJSONDocument oFeatureReq;
-    char **papszHTTPOptions = poDS->GetHeaders(false);
+    char **papszHTTPOptions = poDS->GetHeaders();
     bool bResult = oFeatureReq.LoadUrl( osUrl, papszHTTPOptions );
     CSLDestroy( papszHTTPOptions );
 
@@ -967,6 +948,8 @@ int OGRNGWLayer::TestCapability( const char *pszCap )
         return poDS->HasFeaturePaging(); // Ignore fields, paging support and attribute/spatial filters were introduced in NGW v3.1
     else if( EQUAL(pszCap, OLCFastSpatialFilter) )
         return poDS->HasFeaturePaging();
+    else if( EQUAL(pszCap, OLCRename) )
+        return poDS->IsUpdateMode();
     return FALSE;
 }
 
@@ -1057,7 +1040,7 @@ GIntBig OGRNGWLayer::GetMaxFeatureCount( bool bForce )
     {
         CPLErrorReset();
         CPLJSONDocument oCountReq;
-        char **papszHTTPOptions = poDS->GetHeaders(false);
+        char **papszHTTPOptions = poDS->GetHeaders();
         bool bResult = oCountReq.LoadUrl( NGWAPI::GetFeatureCount( poDS->GetUrl(),
             osResourceId ), papszHTTPOptions );
         CSLDestroy( papszHTTPOptions );
@@ -1096,7 +1079,7 @@ OGRErr OGRNGWLayer::GetExtent( OGREnvelope *psExtent, int bForce )
 {
     if( !stExtent.IsInit() || CPL_TO_BOOL(bForce) )
     {
-        char **papszHTTPOptions = poDS->GetHeaders(false);
+        char **papszHTTPOptions = poDS->GetHeaders();
         bool bResult = NGWAPI::GetExtent(poDS->GetUrl(), osResourceId,
             papszHTTPOptions, 3857, stExtent);
         CSLDestroy( papszHTTPOptions );
@@ -1129,7 +1112,7 @@ void OGRNGWLayer::FetchPermissions()
 
     if( poDS->IsUpdateMode() )
     {
-        char **papszHTTPOptions = poDS->GetHeaders(false);
+        char **papszHTTPOptions = poDS->GetHeaders();
         stPermissions = NGWAPI::CheckPermissions( poDS->GetUrl(), osResourceId,
             papszHTTPOptions, poDS->IsUpdateMode() );
         CSLDestroy( papszHTTPOptions );
@@ -1313,7 +1296,7 @@ std::string OGRNGWLayer::CreateNGWResourceJson()
                 oField.Add("display_name", pszFieldAlias);
             }
         }
-        else 
+        else
         {
             oField.Add("display_name", osFieldAliasName);
         }
@@ -1351,8 +1334,7 @@ OGRErr OGRNGWLayer::SyncFeatures()
     if( !aoPatchedFIDs.empty() )
     {
         auto osIDs = NGWAPI::PatchFeatures( poDS->GetUrl(), osResourceId,
-            oFeatureJsonArray.Format(CPLJSONObject::PrettyFormat::Plain), 
-            poDS->GetHeaders() );
+            oFeatureJsonArray.Format(CPLJSONObject::PrettyFormat::Plain), poDS->GetHeaders() );
         if( !osIDs.empty() )
         {
             bNeedSyncData = false;
@@ -1411,7 +1393,7 @@ OGRErr OGRNGWLayer::SyncToDisk()
     else if( bNeedSyncStructure ) // Update vector layer at NextGIS Web.
     {
         if( !NGWAPI::UpdateResource( poDS->GetUrl(), GetResourceId(),
-            CreateNGWResourceJson(), poDS->GetHeaders(false) ) )
+            CreateNGWResourceJson(), poDS->GetHeaders() ) )
         {
             // Error message should set in UpdateResource.
             return OGRERR_FAILURE;
@@ -1449,7 +1431,7 @@ OGRErr OGRNGWLayer::DeleteFeature(GIntBig nFID)
         if( stPermissions.bDataCanWrite && poDS->IsUpdateMode() )
         {
             bool bResult = NGWAPI::DeleteFeature(poDS->GetUrl(), osResourceId,
-                std::to_string(nFID), poDS->GetHeaders(false));
+                std::to_string(nFID), poDS->GetHeaders());
             if( bResult )
             {
                 if( moFeatures[nFID] != nullptr )
@@ -1467,57 +1449,6 @@ OGRErr OGRNGWLayer::DeleteFeature(GIntBig nFID)
             "Delete feature " CPL_FRMT_GIB " operation is not permitted.", nFID);
         return OGRERR_FAILURE;
     }
-}
-
-/*
- * DeleteFeatures()
- */
-OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
-{
-    CPLErrorReset();
-
-    for (GIntBig nFID : vFeaturesID)
-    {
-        if (nFID < 0)
-        {
-            if (moFeatures[nFID] != nullptr)
-            {
-                OGRFeature::DestroyFeature(moFeatures[nFID]);
-                moFeatures[nFID] = nullptr;
-                nFeatureCount--;
-                soChangedIds.erase(nFID);
-                return OGRERR_NONE;
-            }
-            CPLError(CE_Failure, CPLE_AppDefined,
-                "Feature with id " CPL_FRMT_GIB " not found.", nFID);
-            return OGRERR_FAILURE;
-        }
-    }
-
-    FetchPermissions();
-    if (stPermissions.bDataCanWrite && poDS->IsUpdateMode())
-    {
-        std::string osFeaturesJson;
-        bool bResult = NGWAPI::DeleteFeatures(poDS->GetUrl(), osResourceId, FeaturesIDToJsonString(vFeaturesID), poDS->GetHeaders(false));
-        if (bResult)
-        {
-            for (GIntBig nFID : vFeaturesID)
-            {
-                if (moFeatures[nFID] != nullptr)
-                {
-                    OGRFeature::DestroyFeature(moFeatures[nFID]);
-                    moFeatures[nFID] = nullptr;
-                }
-                nFeatureCount--;
-                soChangedIds.erase(nFID);
-            }
-            return OGRERR_NONE;
-        }
-        return OGRERR_FAILURE;
-    }
-    CPLError(CE_Failure, CPLE_AppDefined,
-        "Delete feature " CPL_FRMT_GIB " operation is not permitted.");
-    return OGRERR_FAILURE;
 }
 
 /*
@@ -1539,7 +1470,7 @@ bool OGRNGWLayer::DeleteAllFeatures()
         if( stPermissions.bDataCanWrite && poDS->IsUpdateMode() )
         {
             bool bResult = NGWAPI::DeleteFeature(poDS->GetUrl(), osResourceId, "",
-                poDS->GetHeaders(false));
+                poDS->GetHeaders());
             if( bResult )
             {
                 soChangedIds.clear();
@@ -1602,7 +1533,7 @@ OGRErr OGRNGWLayer::ISetFeature(OGRFeature *poFeature)
 
             bool bResult = NGWAPI::UpdateFeature(poDS->GetUrl(), osResourceId,
                 std::to_string(poFeature->GetFID()),
-                FeatureToJsonString(poFeature), poDS->GetHeaders(false));
+                FeatureToJsonString(poFeature), poDS->GetHeaders());
             if( bResult )
             {
                 CPLDebug("NGW", "ISetFeature with FID " CPL_FRMT_GIB, poFeature->GetFID());

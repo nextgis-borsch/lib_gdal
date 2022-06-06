@@ -48,12 +48,14 @@
 //  JPEG compression support
 //  ---------------------------------------------------------------------------
 
+#ifdef JPEG_SUPPORTED
 CPL_C_START
 #include <jpeglib.h>
 CPL_C_END
 
 void jpeg_vsiio_src (j_decompress_ptr cinfo, VSILFILE * infile);
 void jpeg_vsiio_dest (j_compress_ptr cinfo, VSILFILE * outfile);
+#endif
 
 //  ---------------------------------------------------------------------------
 //  JPEG2000 support - Install the Virtual File System handler to OCI LOB
@@ -202,7 +204,7 @@ public:
 
     char **GetMetadataDomainList() override;
     char **GetMetadata( const char* pszDomain ) override;
-    void FlushCache() override;
+    void FlushCache(bool bAtClosing) override;
     CPLErr IRasterIO( GDALRWFlag eRWFlag,
                       int nXOff, int nYOff, int nXSize, int nYSize,
                       void *pData, int nBufXSize, int nBufYSize,
@@ -243,7 +245,7 @@ public:
         { return CE_None; }
     OGRErr CommitTransaction() override { return CE_None; }
     OGRErr RollbackTransaction() override { return CE_None; }
-    
+
     char** GetFileList() override;
 
     void                AssignGeoRaster( GeoRasterWrapper* poGRW );
@@ -286,7 +288,7 @@ private:
     int                 nNoDataArraySz;
     bool                bHasNoDataArray;
 
-    void                ApplyNoDataArry( void* pBuffer ) const;
+    void                ApplyNoDataArray( void* pBuffer ) const;
 
 public:
     double GetNoDataValue( int *pbSuccess = nullptr ) override;
@@ -311,6 +313,7 @@ public:
     CPLErr      CreateMaskBand( int nFlags ) override;
     GDALRasterBand *GetMaskBand() override;
     int GetMaskFlags() override;
+    bool            IsMaskBand() const override { return nOverviewLevel == DEFAULT_BMP_MASK; }
 };
 
 //  ---------------------------------------------------------------------------
@@ -358,14 +361,16 @@ class GeoRasterWrapper
 
     void                UnpackNBits( GByte* pabyData );
     void                PackNBits( GByte* pabyData ) const;
+#ifdef JPEG_SUPPORTED
     unsigned long       CompressJpeg();
-    unsigned long       CompressDeflate();
     void                UncompressJpeg( unsigned long nBufferSize );
-    bool                UncompressDeflate( unsigned long nBufferSize );
 
     struct jpeg_decompress_struct sDInfo;
     struct jpeg_compress_struct sCInfo;
     struct jpeg_error_mgr sJErr;
+#endif
+    unsigned long       CompressDeflate();
+    bool                UncompressDeflate( unsigned long nBufferSize );
 
     void                GetSpatialReference();
 
@@ -518,7 +523,7 @@ public:
     int                 eModelCoordLocation;
     unsigned int        anULTCoordinate[3];
 
-    GDALRPCInfo*        phRPC;
+    GDALRPCInfoV2*      phRPC;
 };
 
 #endif /* ifndef GEORASTER_PRIV_H_INCLUDED */

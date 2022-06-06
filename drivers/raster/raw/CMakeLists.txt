@@ -65,7 +65,6 @@ if(ENABLE_RAW)
         snodasdataset.cpp
         ctable2dataset.cpp
         ehdrdataset.cpp
-        fujibasdataset.cpp
         hkvdataset.cpp
         landataset.cpp
         ndfdataset.cpp
@@ -73,12 +72,10 @@ if(ENABLE_RAW)
         dipxdataset.cpp
         eirdataset.cpp
         genbindataset.cpp
-        idadataset.cpp
         lcpdataset.cpp
         ntv2dataset.cpp
         rrasterdataset.cpp
         byndataset.cpp
-        ntv1dataset.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

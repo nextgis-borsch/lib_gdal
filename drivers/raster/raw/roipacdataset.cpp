@@ -62,10 +62,10 @@ class ROIPACDataset final: public RawDataset
     static GDALDataset *Open( GDALOpenInfo *poOpenInfo );
     static int          Identify( GDALOpenInfo *poOpenInfo );
     static GDALDataset *Create( const char *pszFilename,
-                                int nXSize, int nYSize, int nBands,
+                                int nXSize, int nYSize, int nBandsIn,
                                 GDALDataType eType, char **papszOptions );
 
-    void        FlushCache() override;
+    void        FlushCache(bool bAtClosing) override;
     CPLErr              GetGeoTransform( double *padfTransform ) override;
     CPLErr      SetGeoTransform( double *padfTransform ) override;
     const char *_GetProjectionRef( void ) override;
@@ -161,7 +161,7 @@ ROIPACDataset::ROIPACDataset() :
 
 ROIPACDataset::~ROIPACDataset()
 {
-    ROIPACDataset::FlushCache();
+    ROIPACDataset::FlushCache(true);
     if ( fpRsc != nullptr && VSIFCloseL( fpRsc ) != 0 )
     {
         CPLError( CE_Failure, CPLE_FileIO, "I/O error" );
@@ -586,7 +586,7 @@ int ROIPACDataset::Identify( GDALOpenInfo *poOpenInfo )
 /************************************************************************/
 
 GDALDataset *ROIPACDataset::Create( const char *pszFilename,
-                                    int nXSize, int nYSize, int nBands,
+                                    int nXSize, int nYSize, int nBandsIn,
                                     GDALDataType eType,
                                     char ** /* papszOptions */ )
 {
@@ -597,23 +597,23 @@ GDALDataset *ROIPACDataset::Create( const char *pszFilename,
     if ( strcmp( pszExtension, "int" ) == 0
                 || strcmp( pszExtension, "slc" ) == 0 )
     {
-        if ( nBands != 1 || eType != GDT_CFloat32 )
+        if ( nBandsIn != 1 || eType != GDT_CFloat32 )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Attempt to create ROI_PAC %s dataset with an illegal "
                       "number of bands (%d) and/or data type (%s).",
-                      pszExtension, nBands, GDALGetDataTypeName(eType) );
+                      pszExtension, nBandsIn, GDALGetDataTypeName(eType) );
             return nullptr;
         }
     }
     else if ( strcmp( pszExtension, "amp" ) == 0 )
     {
-        if ( nBands != 2 || eType != GDT_Float32 )
+        if ( nBandsIn != 2 || eType != GDT_Float32 )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Attempt to create ROI_PAC %s dataset with an illegal "
                       "number of bands (%d) and/or data type (%s).",
-                      pszExtension, nBands, GDALGetDataTypeName(eType) );
+                      pszExtension, nBandsIn, GDALGetDataTypeName(eType) );
             return nullptr;
         }
     }
@@ -623,34 +623,34 @@ GDALDataset *ROIPACDataset::Create( const char *pszFilename,
                 || strcmp( pszExtension, "msk" ) == 0
                 || strcmp( pszExtension, "trans" ) == 0 )
     {
-        if ( nBands != 2 || eType != GDT_Float32 )
+        if ( nBandsIn != 2 || eType != GDT_Float32 )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Attempt to create ROI_PAC %s dataset with an illegal "
                           "number of bands (%d) and/or data type (%s).",
-                      pszExtension, nBands, GDALGetDataTypeName(eType) );
+                      pszExtension, nBandsIn, GDALGetDataTypeName(eType) );
             return nullptr;
         }
     }
     else if ( strcmp( pszExtension, "dem" ) == 0 )
     {
-        if ( nBands != 1 || eType != GDT_Int16 )
+        if ( nBandsIn != 1 || eType != GDT_Int16 )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Attempt to create ROI_PAC %s dataset with an illegal "
                       "number of bands (%d) and/or data type (%s).",
-                      pszExtension, nBands, GDALGetDataTypeName(eType) );
+                      pszExtension, nBandsIn, GDALGetDataTypeName(eType) );
             return nullptr;
         }
     }
     else if ( strcmp( pszExtension, "flg" ) == 0 )
     {
-        if ( nBands != 1 || eType != GDT_Byte )
+        if ( nBandsIn != 1 || eType != GDT_Byte )
         {
             CPLError( CE_Failure, CPLE_AppDefined,
                       "Attempt to create ROI_PAC %s dataset with an illegal "
                       "number of bands (%d) and/or data type (%s).",
-                      pszExtension, nBands, GDALGetDataTypeName(eType) );
+                      pszExtension, nBandsIn, GDALGetDataTypeName(eType) );
             return nullptr;
         }
     }
@@ -708,9 +708,9 @@ GDALDataset *ROIPACDataset::Create( const char *pszFilename,
 /*                             FlushCache()                             */
 /************************************************************************/
 
-void ROIPACDataset::FlushCache( void )
+void ROIPACDataset::FlushCache(bool bAtClosing)
 {
-    RawDataset::FlushCache();
+    RawDataset::FlushCache(bAtClosing);
 
     GDALRasterBand *band = (GetRasterCount() > 0) ? GetRasterBand(1) : nullptr;
 

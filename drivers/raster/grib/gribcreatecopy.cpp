@@ -43,6 +43,16 @@ CPL_C_START
 CPL_C_END
 
 /************************************************************************/
+/*                         Lon180to360()                                */
+/************************************************************************/
+
+static inline double Lon180to360(double lon)
+{
+    if (lon == 180) return 180;
+    return fmod(fmod(lon, 360) + 360, 360);
+}
+
+/************************************************************************/
 /*                             WriteByte()                              */
 /************************************************************************/
 
@@ -154,6 +164,7 @@ class GRIB2Section3Writer
         const char* pszProjection;
         double dfLLX, dfLLY, dfURX, dfURY;
         double adfGeoTransform[6];
+        int nSplitAndSwapColumn = 0;
 
         bool WriteScaled(double dfVal, double dfUnit);
         bool TransformToGeo(double& dfX, double& dfY);
@@ -170,6 +181,7 @@ class GRIB2Section3Writer
 
     public:
         GRIB2Section3Writer( VSILFILE* fpIn, GDALDataset *poSrcDSIn );
+        inline int SplitAndSwap() const { return nSplitAndSwapColumn; }
 
         bool Write();
 };
@@ -184,7 +196,7 @@ GRIB2Section3Writer::GRIB2Section3Writer( VSILFILE* fpIn,
     poSrcDS(poSrcDSIn)
 {
     oSRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-    oSRS.SetFromUserInput( poSrcDS->GetProjectionRef() );
+    oSRS.importFromWkt( poSrcDS->GetProjectionRef() );
     pszProjection = oSRS.GetAttrValue("PROJECTION");
 
     poSrcDS->GetGeoTransform(adfGeoTransform);
@@ -236,8 +248,8 @@ bool GRIB2Section3Writer::WriteEllipsoidAndRasterSize()
     }
     else if( dfInvFlattening == 0 )
     {
-        // Earth assumed spherical with radius specified (in m) 
-        // by data producer 
+        // Earth assumed spherical with radius specified (in m)
+        // by data producer
         WriteByte(fp, 1);
         WriteByte(fp, 2); // scale = * 100
         WriteUInt32(fp, static_cast<GUInt32>(dfSemiMajor * 100 + 0.5));
@@ -283,10 +295,35 @@ bool GRIB2Section3Writer::WriteGeographic()
 
     WriteEllipsoidAndRasterSize();
 
-    if( dfLLX < 0 )
+    if (dfLLX < 0 &&
+        CPLTestBool(CPLGetConfigOption("GRIB_ADJUST_LONGITUDE_RANGE", "YES")))
     {
-        dfLLX += 360;
-        dfURX += 360;
+        CPLDebug("GRIB", "Source longitude range is %lf to %lf", dfLLX, dfURX);
+        double dfOrigLLX = dfLLX;
+        dfLLX = Lon180to360(dfLLX);
+        dfURX = Lon180to360(dfURX);
+
+        if (dfLLX > dfURX)
+        {
+            if (fabs(360 - poSrcDS->GetRasterXSize() * adfGeoTransform[1]) <
+                adfGeoTransform[1] / 4)
+            {
+                // Find the first row number east of the prime meridian
+                nSplitAndSwapColumn =
+                  static_cast<int>(ceil((0 - dfOrigLLX) / adfGeoTransform[1]));
+                CPLDebug("GRIB",
+                         "Rewrapping around the prime meridian at column %d",
+                         nSplitAndSwapColumn);
+                dfLLX = 0;
+                dfURX = 360 - adfGeoTransform[1];
+            }
+            else
+            {
+                CPLDebug("GRIB",
+                         "Writing a GRIB with 0-360 longitudes crossing the prime meridian");
+            }
+        }
+        CPLDebug("GRIB", "Target longitudes range is %lf %lf", dfLLX, dfURX);
     }
 
     WriteUInt32(fp, 0); // Basic angle. 0 equivalent of 1
@@ -419,7 +456,7 @@ bool GRIB2Section3Writer::WriteTransverseMercator()
     const double dfAngUnit = 1e-6;
     WriteScaled(
         oSRS.GetNormProjParm(SRS_PP_LATITUDE_OF_ORIGIN, 0.0), dfAngUnit);
-    WriteScaled(oSRS.GetNormProjParm(SRS_PP_CENTRAL_MERIDIAN, 0.0), dfAngUnit);
+    WriteScaled(Lon180to360(oSRS.GetNormProjParm(SRS_PP_CENTRAL_MERIDIAN, 0.0)), dfAngUnit);
     WriteByte(fp, GRIB2BIT_3 | GRIB2BIT_4); // Resolution and component flags
     float fScale = static_cast<float>(oSRS.GetNormProjParm(
         SRS_PP_SCALE_FACTOR, 0.0));
@@ -459,8 +496,8 @@ bool GRIB2Section3Writer::WritePolarSteregraphic()
     const double dfLatOrigin = oSRS.GetNormProjParm(
                                     SRS_PP_LATITUDE_OF_ORIGIN, 0.0);
     WriteScaled(dfLatOrigin, dfAngUnit);
-    WriteScaled(fmod(oSRS.GetNormProjParm(
-                     SRS_PP_CENTRAL_MERIDIAN, 0.0) + 360.0, 360.0), dfAngUnit);
+    WriteScaled(Lon180to360(oSRS.GetNormProjParm(
+                     SRS_PP_CENTRAL_MERIDIAN, 0.0)), dfAngUnit);
     const double dfLinearUnit = 1e-3;
     WriteScaled(adfGeoTransform[1], dfLinearUnit);
     WriteScaled(fabs(adfGeoTransform[5]), dfLinearUnit);
@@ -513,12 +550,12 @@ bool GRIB2Section3Writer::WriteLCC2SPOrAEA(OGRSpatialReference* poSRS)
     const double dfAngUnit = 1e-6;
     WriteScaled(dfLLY, dfAngUnit);
     WriteScaled(dfLLX, dfAngUnit);
-    // Resolution and component flags. "not applicatable" ==> 0 ?
+    // Resolution and component flags. "not applicable" ==> 0 ?
     WriteByte( fp, 0);
     WriteScaled(
         poSRS->GetNormProjParm(SRS_PP_LATITUDE_OF_ORIGIN, 0.0), dfAngUnit);
-    WriteScaled(fmod(oSRS.GetNormProjParm(
-                     SRS_PP_CENTRAL_MERIDIAN, 0.0) + 360.0, 360.0), dfAngUnit);
+    WriteScaled(Lon180to360(oSRS.GetNormProjParm(
+                     SRS_PP_CENTRAL_MERIDIAN, 0.0)), dfAngUnit);
     const double dfLinearUnit = 1e-3;
     WriteScaled(adfGeoTransform[1], dfLinearUnit);
     WriteScaled(fabs(adfGeoTransform[5]), dfLinearUnit);
@@ -528,9 +565,9 @@ bool GRIB2Section3Writer::WriteLCC2SPOrAEA(OGRSpatialReference* poSRS)
         poSRS->GetNormProjParm(SRS_PP_STANDARD_PARALLEL_1, 0.0), dfAngUnit);
     WriteScaled(
         poSRS->GetNormProjParm(SRS_PP_STANDARD_PARALLEL_2, 0.0), dfAngUnit);
-    // Latitude of the southern pole of projection 
+    // Latitude of the southern pole of projection
     WriteUInt32( fp, GRIB2MISSING_u4 );
-    // Longitude of the southern pole of projection 
+    // Longitude of the southern pole of projection
     WriteUInt32( fp, GRIB2MISSING_u4 );
     return true;
 }
@@ -553,8 +590,8 @@ bool GRIB2Section3Writer::WriteLAEA()
     WriteScaled(dfLLX, dfAngUnit);
     WriteScaled(
         oSRS.GetNormProjParm(SRS_PP_LATITUDE_OF_CENTER, 0.0), dfAngUnit);
-    WriteScaled(fmod(oSRS.GetNormProjParm(
-                SRS_PP_LONGITUDE_OF_CENTER, 0.0) + 360.0, 360.0), dfAngUnit);
+    WriteScaled(Lon180to360(oSRS.GetNormProjParm(
+                SRS_PP_LONGITUDE_OF_CENTER, 0.0)), dfAngUnit);
     WriteByte( fp, GRIB2BIT_3 | GRIB2BIT_4); // Resolution and component flags
     const double dfLinearUnit = 1e-3;
     WriteScaled(adfGeoTransform[1], dfLinearUnit);
@@ -577,7 +614,7 @@ bool GRIB2Section3Writer::Write()
     WriteByte(fp, 3); // section number
 
     // Source of grid definition = Specified in Code Table 3.1
-    WriteByte(fp, 0); 
+    WriteByte(fp, 0);
 
     const GUInt32 nDataPoints =
         static_cast<GUInt32>(poSrcDS->GetRasterXSize()) *
@@ -587,7 +624,7 @@ bool GRIB2Section3Writer::Write()
     // Number of octets for optional list of numbers defining number of points
     WriteByte(fp, 0);
 
-    // Interpetation of list of numbers defining number of points =
+    // Interpretation of list of numbers defining number of points =
     // No appended list
     WriteByte(fp, 0);
 
@@ -686,6 +723,7 @@ class GRIB2Section567Writer
         float            m_fValOffset;
         int              m_bHasNoData;
         double           m_dfNoData;
+        int              m_nSplitAndSwap;
 
         float*           GetFloatData();
         bool             WriteSimplePacking();
@@ -698,7 +736,8 @@ class GRIB2Section567Writer
     public:
         GRIB2Section567Writer( VSILFILE* fp,
                                GDALDataset *poSrcDS,
-                               int nBand );
+                               int nBand,
+                               int nSplitAndSwap );
 
         bool Write(float fValOffset,
                    char** papszOptions,
@@ -712,7 +751,8 @@ class GRIB2Section567Writer
 
 GRIB2Section567Writer::GRIB2Section567Writer( VSILFILE* fp,
                                               GDALDataset *poSrcDS,
-                                              int nBand ):
+                                              int nBand,
+                                              int nSplitAndSwap ):
     m_fp(fp),
     m_poSrcDS(poSrcDS),
     m_nBand(nBand),
@@ -729,7 +769,8 @@ GRIB2Section567Writer::GRIB2Section567Writer( VSILFILE* fp,
     m_bUseZeroBits(false),
     m_fValOffset(0.0),
     m_bHasNoData(false),
-    m_dfNoData(0.0)
+    m_dfNoData(0.0),
+    m_nSplitAndSwap(nSplitAndSwap)
 {
     m_poSrcDS->GetGeoTransform(m_adfGeoTransform);
     m_dfNoData = m_poSrcDS->GetRasterBand(nBand)->GetNoDataValue(&m_bHasNoData);
@@ -749,28 +790,52 @@ float* GRIB2Section567Writer::GetFloatData()
     }
     CPLErr eErr = m_poSrcDS->GetRasterBand(m_nBand)->RasterIO(
         GF_Read,
-        0, 0,
-        m_nXSize, m_nYSize,
+        m_nSplitAndSwap, 0,
+        m_nXSize - m_nSplitAndSwap, m_nYSize,
         pafData + (m_adfGeoTransform[5] < 0 ? (m_nYSize - 1) * m_nXSize : 0),
-        m_nXSize, m_nYSize,
+        m_nXSize - m_nSplitAndSwap, m_nYSize,
         GDT_Float32,
         sizeof(float),
         m_adfGeoTransform[5] < 0 ?
             -static_cast<GSpacing>(m_nXSize * sizeof(float)):
             static_cast<GSpacing>(m_nXSize * sizeof(float)),
         nullptr);
-    if( eErr != CE_None )
+    if (eErr != CE_None)
     {
         VSIFree(pafData);
         return nullptr;
     }
+    if (m_nSplitAndSwap > 0)
+    {
+        eErr = m_poSrcDS->GetRasterBand(m_nBand)->RasterIO(
+        GF_Read,
+        0, 0,
+        m_nSplitAndSwap, m_nYSize,
+        pafData + (m_adfGeoTransform[5] < 0 ? (m_nYSize - 1) * m_nXSize : 0) +
+            (m_nXSize - m_nSplitAndSwap),
+        m_nSplitAndSwap, m_nYSize,
+        GDT_Float32,
+        sizeof(float),
+        m_adfGeoTransform[5] < 0
+            ? -static_cast<GSpacing>(m_nXSize * sizeof(float))
+            : static_cast<GSpacing>(m_nXSize * sizeof(float)),
+        nullptr);
+        if (eErr != CE_None)
+        {
+            VSIFree(pafData);
+            return nullptr;
+        }
+    }
 
     m_fMin = std::numeric_limits<float>::max();
     m_fMax = -std::numeric_limits<float>::max();
+    bool bHasNoDataValuePoint = false;
+    bool bHasDataValuePoint = false;
     for( GUInt32 i = 0; i < m_nDataPoints; i++ )
     {
         if( m_bHasNoData && pafData[i] == static_cast<float>(m_dfNoData) )
         {
+            if (!bHasNoDataValuePoint) bHasNoDataValuePoint = true;
             continue;
         }
         if( !CPLIsFinite( pafData[i] ) )
@@ -781,6 +846,7 @@ float* GRIB2Section567Writer::GetFloatData()
             VSIFree(pafData);
             return nullptr;
         }
+        if (!bHasDataValuePoint) bHasDataValuePoint = true;
         pafData[i] += m_fValOffset;
         if( pafData[i] < m_fMin ) m_fMin = pafData[i];
         if( pafData[i] > m_fMax ) m_fMax = pafData[i];
@@ -792,7 +858,7 @@ float* GRIB2Section567Writer::GetFloatData()
 
     // We check that the actual range of values got from the above RasterIO
     // request does not go over the expected range of the datatype, as we
-    // later assume that for computing nMaxBitsPerElt. 
+    // later assume that for computing nMaxBitsPerElt.
     // This shouldn't happen for well-behaved drivers, but this can still
     // happen in practice, if some drivers don't completely fill buffers etc.
     if( m_fMax > m_fMin &&
@@ -824,8 +890,8 @@ float* GRIB2Section567Writer::GetFloatData()
         m_nBits = 8;
     }
 
-    m_bUseZeroBits =( m_fMin == m_fMax ||
-        (!GDALDataTypeIsFloating(m_eDT) && dfScaledMaxDiff < 1.0) );
+    m_bUseZeroBits = ( m_fMin == m_fMax &&  !(bHasDataValuePoint && bHasNoDataValuePoint) )  ||
+        (!GDALDataTypeIsFloating(m_eDT) && dfScaledMaxDiff < 1.0);
 
     return pafData;
 }
@@ -906,7 +972,7 @@ bool GRIB2Section567Writer::WriteSimplePacking()
     WriteInt16(m_fp, idrstmpl[TMPL5_D_IDX]);
     WriteByte(m_fp, idrstmpl[TMPL5_NBITS_IDX]);
     // Type of original data: 0=Floating, 1=Integer
-    WriteByte(m_fp, GDALDataTypeIsFloating(m_eDT) ? 0 : 1); 
+    WriteByte(m_fp, GDALDataTypeIsFloating(m_eDT) ? 0 : 1);
 
     // Section 6: Bitmap section
 #ifdef DEBUG
@@ -1005,7 +1071,7 @@ bool GRIB2Section567Writer::WriteComplexPacking(int nSpatialDifferencingOrder)
     const float fNoData = static_cast<float>(m_dfNoData);
     if( m_bUseZeroBits )
     {
-        // Case where all values are at nodata
+        // Case where all values are at nodata or a single value
         VSIFree(pafData);
 
         // Section 5: Data Representation Section
@@ -1013,7 +1079,7 @@ bool GRIB2Section567Writer::WriteComplexPacking(int nSpatialDifferencingOrder)
         WriteByte(m_fp, 5); // section number
         WriteUInt32(m_fp, m_nDataPoints);
         WriteUInt16(m_fp, GS5_CMPLX);
-        WriteFloat32(m_fp, m_fMin); // ref value
+        WriteFloat32(m_fp, m_fMin); // ref value = nodata or single data
         WriteInt16(m_fp, 0); // binary scale factor
         WriteInt16(m_fp, 0); // decimal scale factor
         WriteByte(m_fp, 0); // number of bits
@@ -1067,7 +1133,7 @@ bool GRIB2Section567Writer::WriteComplexPacking(int nSpatialDifferencingOrder)
         return false;
     }
 
-    const double dfScaledMaxDiff = (m_fMax-m_fMin)* m_dfDecimalScale;
+    const double dfScaledMaxDiff = (m_fMax == m_fMin) ? 1 : (m_fMax-m_fMin)* m_dfDecimalScale;
     if( m_nBits == 0 )
     {
         double dfTemp = log(ceil(dfScaledMaxDiff))/log(2.0);
@@ -1225,11 +1291,34 @@ bool GRIB2Section567Writer::WriteIEEE(GDALProgressFunc pfnProgress,
         int iSrcLine = m_adfGeoTransform[5] < 0 ? m_nYSize - 1 - i: i;
         CPLErr eErr = m_poSrcDS->GetRasterBand(m_nBand)->RasterIO(
             GF_Read,
-            0, iSrcLine,
-            m_nXSize, 1,
+            m_nSplitAndSwap, iSrcLine,
+            m_nXSize - m_nSplitAndSwap, 1,
             pData,
-            m_nXSize, 1,
+            m_nXSize - m_nSplitAndSwap, 1,
             eReqDT, 0, 0, nullptr);
+        if ( eErr != CE_None )
+        {
+            CPLFree(pData);
+            GDALDestroyScaledProgress(pScaledProgressData);
+            return false;
+        }
+        if (m_nSplitAndSwap > 0)
+        {
+            eErr = m_poSrcDS->GetRasterBand(m_nBand)->RasterIO(
+                GF_Read,
+                0, iSrcLine,
+                m_nSplitAndSwap, 1,
+                reinterpret_cast<void*>(reinterpret_cast<GByte*>(pData) +
+                     (m_nXSize - m_nSplitAndSwap) * GDALGetDataTypeSizeBytes(eReqDT)),
+                m_nSplitAndSwap, 1,
+                eReqDT, 0, 0, nullptr);
+            if ( eErr != CE_None )
+            {
+                CPLFree(pData);
+                GDALDestroyScaledProgress(pScaledProgressData);
+                return false;
+            }
+        }
         if( m_fValOffset != 0.0 )
         {
             if( eReqDT == GDT_Float32 )
@@ -1251,12 +1340,6 @@ bool GRIB2Section567Writer::WriteIEEE(GDALProgressFunc pfnProgress,
         GDALSwapWords( pData, GDALGetDataTypeSizeBytes(eReqDT), m_nXSize,
                        GDALGetDataTypeSizeBytes(eReqDT) );
 #endif
-        if( eErr != CE_None )
-        {
-            CPLFree(pData);
-            GDALDestroyScaledProgress(pScaledProgressData);
-            return false;
-        }
         if( VSIFWriteL( pData, 1, nBufferSize, m_fp ) != nBufferSize )
         {
             CPLFree(pData);
@@ -1635,15 +1718,6 @@ bool GRIB2Section567Writer::WriteJPEG2000(char** papszOptions)
                         CPLSPrintf("%f", 100.0 / nCompressionRatio ));
         }
     }
-    else if( EQUAL(poJ2KDriver->GetDescription(), "JPEG2000") )
-    {
-        if( !bLossLess )
-        {
-            aosJ2KOptions.SetNameValue("mode", "real");
-            aosJ2KOptions.SetNameValue("rate",
-                        CPLSPrintf("%f", 1.0 / nCompressionRatio ));
-        }
-    }
     else if( EQUAL(poJ2KDriver->GetDescription(), "JP2ECW") )
     {
         if( bLossLess )
@@ -1685,7 +1759,7 @@ bool GRIB2Section567Writer::WriteJPEG2000(char** papszOptions)
     WriteUInt16(m_fp, GS5_JPEG2000);
     WriteFloat32(m_fp, static_cast<float>(m_dfMinScaled));
     WriteInt16(m_fp, nBinaryScaleFactor); // Binary scale factor (E)
-    WriteInt16(m_fp, m_nDecimalScaleFactor); // Decimal scale factor (D) 
+    WriteInt16(m_fp, m_nDecimalScaleFactor); // Decimal scale factor (D)
     WriteByte(m_fp, m_nBits); // Number of bits
     // Type of original data: 0=Floating, 1=Integer
     WriteByte(m_fp, GDALDataTypeIsFloating(m_eDT) ? 0 : 1);
@@ -2180,7 +2254,7 @@ static bool WriteSection4( VSILFILE* fp,
     // 0 = Analysis or forecast at a horizontal level or in a horizontal
     // layer at a point in time
     int nPDTN = atoi(GetBandOption(
-            papszOptions, poSrcDS, nBand, "PDS_PDTN", "0")); 
+            papszOptions, poSrcDS, nBand, "PDS_PDTN", "0"));
     const char* pszPDSTemplateNumbers = GetBandOption(
             papszOptions, nullptr, nBand, "PDS_TEMPLATE_NUMBERS", nullptr);
     const char* pszPDSTemplateAssembledValues = GetBandOption(
@@ -2212,7 +2286,7 @@ static bool WriteSection4( VSILFILE* fp,
         WriteByte(fp, GRIB2MISSING_u1);// Parameter number = Missing
         WriteByte(fp, GRIB2MISSING_u1); // Type of generating process = Missing
         WriteByte(fp, 0); // Background generating process identifier
-        // Analysis or forecast generating process identified 
+        // Analysis or forecast generating process identified
         WriteByte(fp, GRIB2MISSING_u1);
         WriteUInt16(fp, 0); // Hours
         WriteByte(fp, 0); // Minutes
@@ -2224,7 +2298,7 @@ static bool WriteSection4( VSILFILE* fp,
         WriteByte(fp, GRIB2MISSING_u1); // Type of second fixed surface
         WriteByte(fp, GRIB2MISSING_u1); // Scale factor of second fixed surface
         // Scaled value of second fixed surface
-        WriteUInt32(fp, GRIB2MISSING_u4); 
+        WriteUInt32(fp, GRIB2MISSING_u4);
     }
     else if( pszPDSTemplateNumbers == nullptr &&
              pszPDSTemplateAssembledValues == nullptr )
@@ -2327,6 +2401,8 @@ static bool WriteSection4( VSILFILE* fp,
         }
         else
         {
+            free(pdstempl);
+            free(coordlist);
             CPLError(CE_Warning, CPLE_AppDefined,
                      "PDS_PDTN = %d is unknown. Product will not be "
                      "correctly read by this driver (but potentially valid "
@@ -2447,7 +2523,7 @@ GRIBDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     }
 
     OGRSpatialReference oSRS;
-    oSRS.SetFromUserInput(poSrcDS->GetProjectionRef());
+    oSRS.importFromWkt(poSrcDS->GetProjectionRef());
     if( oSRS.IsProjected() )
     {
         const char *pszProjection = oSRS.GetAttrValue("PROJECTION");
@@ -2487,6 +2563,7 @@ GRIBDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
 
     vsi_l_offset nStartOffset = 0;
     vsi_l_offset nTotalSizeOffset = 0;
+    int nSplitAndSwapColumn = 0;
     // Note: WRITE_SUBGRIDS=YES should not be used blindly currently, as it
     // does not check that the content of the DISCIPLINE and IDS are the same.
     // A smarter behavior would be to break into separate messages if needed
@@ -2517,11 +2594,13 @@ GRIBDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
             WriteByte(fp, 2); // section number
 
             // Section 3: Grid Definition Section
-            if( !GRIB2Section3Writer(fp, poSrcDS).Write() )
+            GRIB2Section3Writer oSection3(fp, poSrcDS);
+            if (!oSection3.Write())
             {
                 VSIFCloseL(fp);
                 return nullptr;
             }
+            nSplitAndSwapColumn = oSection3.SplitAndSwap();
         }
 
         // Section 4: Product Definition Section
@@ -2533,7 +2612,7 @@ GRIBDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
         }
 
         // Section 5, 6 and 7
-        if( !GRIB2Section567Writer(fp, poSrcDS, nBand).
+        if( !GRIB2Section567Writer(fp, poSrcDS, nBand, nSplitAndSwapColumn).
                 Write(fValOffset, papszOptions, pfnProgress, pProgressData) )
         {
             VSIFCloseL(fp);

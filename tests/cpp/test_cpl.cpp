@@ -9,27 +9,33 @@
 // Copyright (c) 2008-2012, Even Rouault <even dot rouault at spatialys.com>
 // Copyright (c) 2017, Dmitry Baryshnikov <polimax@mail.ru>
 // Copyright (c) 2017, NextGIS <info@nextgis.com>
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Library General Public
-// License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Library General Public License for more details.
-//
-// You should have received a copy of the GNU Library General Public
-// License along with this library; if not, write to the
-// Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-// Boston, MA 02111-1307, USA.
-///////////////////////////////////////////////////////////////////////////////
+/*
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ ****************************************************************************/
 
+#ifndef GDAL_COMPILATION
 #define GDAL_COMPILATION
+#endif
 
 #include "gdal_unit_test.h"
 
+#include "cpl_compressor.h"
 #include "cpl_error.h"
 #include "cpl_hash_set.h"
 #include "cpl_list.h"
@@ -44,6 +50,7 @@
 #include "cpl_http.h"
 #include "cpl_auto_close.h"
 #include "cpl_minixml.h"
+#include "cpl_quad_tree.h"
 #include "cpl_worker_thread_pool.h"
 
 #include <fstream>
@@ -54,6 +61,10 @@ static void CPL_STDCALL myErrorHandler(CPLErr, CPLErrorNum, const char*)
 {
     gbGotError = true;
 }
+
+// The tut framework has a default maximum number of tests per group of 50
+// Increase it as we're over that.
+#define MAX_NUMBER_OF_TESTS 100
 
 namespace tut
 {
@@ -71,7 +82,7 @@ namespace tut
     };
 
     // Register test group
-    typedef test_group<test_cpl_data> group;
+    typedef test_group<test_cpl_data, MAX_NUMBER_OF_TESTS> group;
     typedef group::object object;
     group test_cpl_group("CPL");
 
@@ -466,12 +477,14 @@ namespace tut
                  sizeof(oReferenceString.szString));
         oReferenceString.szString[sizeof(oReferenceString.szString) - 1] = '\0';
 
-        while ( !fin.eof() )
+        while (true)
         {
             TestRecodeStruct oTestString;
 
             fin.read(oTestString.szEncoding, sizeof(oTestString.szEncoding));
             oTestString.szEncoding[sizeof(oTestString.szEncoding) - 1] = '\0';
+            if( fin.eof() )
+                break;
             fin.read(oTestString.szString, sizeof(oTestString.szString));
             oTestString.szString[sizeof(oTestString.szString) - 1] = '\0';
 
@@ -479,7 +492,8 @@ namespace tut
             CPLErrorReset();
             char    *pszDecodedString = CPLRecode( oTestString.szString,
                 oTestString.szEncoding, oReferenceString.szEncoding);
-            if( strstr(CPLGetLastErrorMsg(), "Recode from KOI8-R to UTF-8 not supported") != nullptr )
+            if( strstr(CPLGetLastErrorMsg(), "Recode from CP1251 to UTF-8 not supported") != nullptr ||
+                strstr(CPLGetLastErrorMsg(), "Recode from KOI8-R to UTF-8 not supported") != nullptr )
             {
                 CPLFree( pszDecodedString );
                 break;
@@ -2144,10 +2158,17 @@ namespace tut
             CPLJSONDocument oDocument;
             ensure( !oDocument.LoadMemory(nullptr, 0) );
             ensure( !oDocument.LoadMemory(CPLString()) );
+            ensure( oDocument.LoadMemory(std::string("true")) );
+            ensure( oDocument.GetRoot().GetType() == CPLJSONObject::Type::Boolean );
+            ensure( oDocument.GetRoot().ToBool() );
+            ensure( oDocument.LoadMemory(std::string("false")) );
+            ensure( oDocument.GetRoot().GetType() == CPLJSONObject::Type::Boolean );
+            ensure( !oDocument.GetRoot().ToBool() );
         }
         {
             // Copy constructor
             CPLJSONDocument oDocument;
+            oDocument.GetRoot();
             CPLJSONDocument oDocument2(oDocument);
             CPLJSONObject oObj;
             CPLJSONObject oObj2(oObj);
@@ -2158,6 +2179,19 @@ namespace tut
             oObj2 = oObj;
             auto& oObj2Ref(oObj2);
             oObj2 = oObj2Ref;
+        }
+        {
+            // Move constructor
+            CPLJSONDocument oDocument;
+            oDocument.GetRoot();
+            CPLJSONDocument oDocument2(std::move(oDocument));
+        }
+        {
+            // Move assignment
+            CPLJSONDocument oDocument;
+            oDocument.GetRoot();
+            CPLJSONDocument oDocument2;
+            oDocument2 = std::move(oDocument);
         }
         {
             // Save
@@ -2587,7 +2621,7 @@ namespace tut
             AutoCloseTest() {
                 counter += 222;
             }
-            virtual ~AutoCloseTest() { 
+            virtual ~AutoCloseTest() {
                 counter -= 22;
             }
             static AutoCloseTest* Create() {
@@ -2684,12 +2718,12 @@ namespace tut
         }
         {
             CPLJSonStreamingWriter x(nullptr, nullptr);
-            x.Add(static_cast<GIntBig>(-10000) * 1000000);
+            x.Add(static_cast<std::int64_t>(-10000) * 1000000);
             ensure_equals( x.GetString(), std::string("-10000000000") );
         }
         {
             CPLJSonStreamingWriter x(nullptr, nullptr);
-            x.Add(static_cast<GUInt64>(10000) * 1000000);
+            x.Add(static_cast<std::uint64_t>(10000) * 1000000);
             ensure_equals( x.GetString(), std::string("10000000000") );
         }
         {
@@ -2895,7 +2929,7 @@ namespace tut
     template<>
     void object::test<41>()
     {
-#ifdef HAVE_CURL        
+#ifdef HAVE_CURL
         CPLStringList oOptions;
         oOptions.AddNameVlue("FORM_ITEM_COUNT", "5");
         oOptions.AddNameVlue("FORM_KEY_0", "qqq");
@@ -2911,8 +2945,8 @@ namespace tut
         ensure_equals(pResult->nStatus, 34);
         CPLHTTPDestroyResult(pResult);
 
-#endif // HAVE_CURL        
-    }    
+#endif // HAVE_CURL
+    }
 
     // Test CPLHTTPPushFetchCallback
     template<>
@@ -3045,5 +3079,636 @@ namespace tut
         ensure_equals( userData2.pfnWrite, pfnWriteCbk );
         ensure_equals( userData2.pWriteArg, &writeCbkArg );
     }
+
+    // Test CPLLoadConfigOptionsFromFile() and CPLLoadConfigOptionsFromPredefinedFiles()
+    template<>
+    template<>
+    void object::test<44>()
+    {
+        CPLLoadConfigOptionsFromFile("/i/do/not/exist", false);
+
+        VSILFILE* fp = VSIFOpenL("/vsimem/.gdal/gdalrc", "wb");
+        VSIFPrintfL(fp, "# some comment\n");
+        VSIFPrintfL(fp, "\n"); // blank line
+        VSIFPrintfL(fp, "  \n"); // blank line
+        VSIFPrintfL(fp, "[configoptions]\n");
+        VSIFPrintfL(fp, "# some comment\n");
+        VSIFPrintfL(fp, "FOO_CONFIGOPTION=BAR\n");
+        VSIFCloseL(fp);
+
+        // Try CPLLoadConfigOptionsFromFile()
+        CPLLoadConfigOptionsFromFile("/vsimem/.gdal/gdalrc", false);
+        ensure( EQUAL(CPLGetConfigOption("FOO_CONFIGOPTION", ""), "BAR") );
+        CPLSetConfigOption("FOO_CONFIGOPTION", nullptr);
+
+        // Try CPLLoadConfigOptionsFromPredefinedFiles() with GDAL_CONFIG_FILE set
+        CPLSetConfigOption("GDAL_CONFIG_FILE", "/vsimem/.gdal/gdalrc");
+        CPLLoadConfigOptionsFromPredefinedFiles();
+        ensure( EQUAL(CPLGetConfigOption("FOO_CONFIGOPTION", ""), "BAR") );
+        CPLSetConfigOption("FOO_CONFIGOPTION", nullptr);
+
+        // Try CPLLoadConfigOptionsFromPredefinedFiles() with $HOME/.gdal/gdalrc file
+#ifdef WIN32
+        const char* pszHOMEEnvVarName = "USERPROFILE";
+#else
+        const char* pszHOMEEnvVarName = "HOME";
+#endif
+        CPLString osOldVal(CPLGetConfigOption(pszHOMEEnvVarName, ""));
+        CPLSetConfigOption(pszHOMEEnvVarName, "/vsimem/");
+        CPLLoadConfigOptionsFromPredefinedFiles();
+        ensure( EQUAL(CPLGetConfigOption("FOO_CONFIGOPTION", ""), "BAR") );
+        CPLSetConfigOption("FOO_CONFIGOPTION", nullptr);
+        if( !osOldVal.empty() )
+            CPLSetConfigOption(pszHOMEEnvVarName, osOldVal.c_str());
+        else
+            CPLSetConfigOption(pszHOMEEnvVarName, nullptr);
+
+        VSIUnlink("/vsimem/.gdal/gdalrc");
+    }
+
+    // Test decompressor side of cpl_compressor.h
+    template<>
+    template<>
+    void object::test<45>()
+    {
+        const auto compressionLambda = [](const void* /* input_data */,
+                                          size_t /* input_size */,
+                                          void** /* output_data */,
+                                          size_t* /* output_size */,
+                                          CSLConstList /* options */,
+                                          void* /* compressor_user_data */)
+        {
+            return false;
+        };
+        int dummy = 0;
+
+        CPLCompressor sComp;
+        sComp.nStructVersion = 1;
+        sComp.eType = CCT_COMPRESSOR;
+        sComp.pszId = "my_comp";
+        const char* const apszMetadata[] = { "FOO=BAR", nullptr };
+        sComp.papszMetadata = apszMetadata;
+        sComp.pfnFunc = compressionLambda;
+        sComp.user_data = &dummy;
+
+        ensure( CPLRegisterDecompressor(&sComp) );
+
+        CPLPushErrorHandler(CPLQuietErrorHandler);
+        ensure( !CPLRegisterDecompressor(&sComp) );
+        CPLPopErrorHandler();
+
+        char** decompressors = CPLGetDecompressors();
+        ensure( decompressors != nullptr );
+        ensure( CSLFindString(decompressors, sComp.pszId) >= 0 );
+        for( auto iter = decompressors; *iter; ++iter )
+        {
+            const auto pCompressor = CPLGetDecompressor(*iter);
+            ensure( pCompressor );
+            const char* pszOptions = CSLFetchNameValue(pCompressor->papszMetadata, "OPTIONS");
+            if( pszOptions )
+            {
+                auto psNode = CPLParseXMLString(pszOptions);
+                ensure(psNode);
+                CPLDestroyXMLNode(psNode);
+            }
+            else
+            {
+                CPLDebug("TEST", "Decompressor %s has no OPTIONS", *iter);
+            }
+        }
+        CSLDestroy( decompressors );
+
+        ensure( CPLGetDecompressor("invalid") == nullptr );
+        const auto pCompressor = CPLGetDecompressor(sComp.pszId);
+        ensure( pCompressor );
+        ensure_equals( std::string(pCompressor->pszId), std::string(sComp.pszId) );
+        ensure_equals( CSLCount(pCompressor->papszMetadata), CSLCount(sComp.papszMetadata) );
+        ensure( pCompressor->pfnFunc != nullptr );
+        ensure_equals( pCompressor->user_data, sComp.user_data );
+
+        CPLDestroyCompressorRegistry();
+        ensure( CPLGetDecompressor(sComp.pszId) == nullptr );
+    }
+
+    // Test compressor side of cpl_compressor.h
+    template<>
+    template<>
+    void object::test<46>()
+    {
+        const auto compressionLambda = [](const void* /* input_data */,
+                                          size_t /* input_size */,
+                                          void** /* output_data */,
+                                          size_t* /* output_size */,
+                                          CSLConstList /* options */,
+                                          void* /* compressor_user_data */)
+        {
+            return false;
+        };
+        int dummy = 0;
+
+        CPLCompressor sComp;
+        sComp.nStructVersion = 1;
+        sComp.eType = CCT_COMPRESSOR;
+        sComp.pszId = "my_comp";
+        const char* const apszMetadata[] = { "FOO=BAR", nullptr };
+        sComp.papszMetadata = apszMetadata;
+        sComp.pfnFunc = compressionLambda;
+        sComp.user_data = &dummy;
+
+        ensure( CPLRegisterCompressor(&sComp) );
+
+        CPLPushErrorHandler(CPLQuietErrorHandler);
+        ensure( !CPLRegisterCompressor(&sComp) );
+        CPLPopErrorHandler();
+
+        char** compressors = CPLGetCompressors();
+        ensure( compressors != nullptr );
+        ensure( CSLFindString(compressors, sComp.pszId) >= 0 );
+        for( auto iter = compressors; *iter; ++iter )
+        {
+            const auto pCompressor = CPLGetCompressor(*iter);
+            ensure( pCompressor );
+            const char* pszOptions = CSLFetchNameValue(pCompressor->papszMetadata, "OPTIONS");
+            if( pszOptions )
+            {
+                auto psNode = CPLParseXMLString(pszOptions);
+                ensure(psNode);
+                CPLDestroyXMLNode(psNode);
+            }
+            else
+            {
+                CPLDebug("TEST", "Compressor %s has no OPTIONS", *iter);
+            }
+        }
+        CSLDestroy( compressors );
+
+        ensure( CPLGetCompressor("invalid") == nullptr );
+        const auto pCompressor = CPLGetCompressor(sComp.pszId);
+        ensure( pCompressor );
+        ensure_equals( std::string(pCompressor->pszId), std::string(sComp.pszId) );
+        ensure_equals( CSLCount(pCompressor->papszMetadata), CSLCount(sComp.papszMetadata) );
+        ensure( pCompressor->pfnFunc != nullptr );
+        ensure_equals( pCompressor->user_data, sComp.user_data );
+
+        CPLDestroyCompressorRegistry();
+        ensure( CPLGetDecompressor(sComp.pszId) == nullptr );
+    }
+
+    // Test builtin compressors/decompressor
+    template<>
+    template<>
+    void object::test<47>()
+    {
+        for( const char* id : { "blosc", "zlib", "gzip", "lzma", "zstd", "lz4" } )
+        {
+            const auto pCompressor = CPLGetCompressor(id);
+            if( pCompressor == nullptr )
+            {
+                CPLDebug("TEST", "%s not available", id);
+                if( strcmp(id, "zlib") == 0 || strcmp(id, "gzip") == 0 )
+                {
+                    ensure( false );
+                }
+                continue;
+            }
+            CPLDebug("TEST", "Testing %s", id);
+
+            const char my_str[] = "my string to compress";
+            const char* const options[] = { "TYPESIZE=1", nullptr };
+
+            // Compressor side
+
+            // Just get output size
+            size_t out_size = 0;
+            ensure( pCompressor->pfnFunc( my_str, strlen(my_str),
+                                          nullptr, &out_size,
+                                          options, pCompressor->user_data ) );
+            ensure( out_size != 0 );
+
+            // Let it alloc the output buffer
+            void* out_buffer2 = nullptr;
+            size_t out_size2 = 0;
+            ensure( pCompressor->pfnFunc( my_str, strlen(my_str),
+                                          &out_buffer2, &out_size2,
+                                          options, pCompressor->user_data ) );
+            ensure( out_buffer2 != nullptr );
+            ensure( out_size2 != 0 );
+            ensure( out_size2 <= out_size );
+
+            std::vector<GByte> out_buffer3(out_size);
+
+            // Provide not large enough buffer size
+            size_t out_size3 = 1;
+            void* out_buffer3_ptr = &out_buffer3[0];
+            ensure( !(pCompressor->pfnFunc( my_str, strlen(my_str),
+                                          &out_buffer3_ptr, &out_size3,
+                                          options, pCompressor->user_data )) );
+
+            // Provide the output buffer
+            out_size3 = out_buffer3.size();
+            out_buffer3_ptr = &out_buffer3[0];
+            ensure( pCompressor->pfnFunc( my_str, strlen(my_str),
+                                          &out_buffer3_ptr, &out_size3,
+                                          options, pCompressor->user_data ) );
+            ensure( out_buffer3_ptr != nullptr );
+            ensure( out_buffer3_ptr == &out_buffer3[0] );
+            ensure( out_size3 != 0 );
+            ensure_equals( out_size3, out_size2 );
+
+            out_buffer3.resize( out_size3 );
+            out_buffer3_ptr = &out_buffer3[0];
+
+            ensure( memcmp(out_buffer3_ptr, out_buffer2, out_size2) == 0 );
+
+            CPLFree(out_buffer2);
+
+            const std::vector<GByte> compressedData(out_buffer3);
+
+            // Decompressor side
+            const auto pDecompressor = CPLGetDecompressor(id);
+            ensure( pDecompressor != nullptr );
+
+            out_size = 0;
+            ensure( pDecompressor->pfnFunc( compressedData.data(), compressedData.size(),
+                                            nullptr, &out_size,
+                                            nullptr, pDecompressor->user_data ) );
+            ensure( out_size != 0 );
+            ensure( out_size >= strlen(my_str) );
+
+            out_buffer2 = nullptr;
+            out_size2 = 0;
+            ensure( pDecompressor->pfnFunc( compressedData.data(), compressedData.size(),
+                                            &out_buffer2, &out_size2,
+                                            options, pDecompressor->user_data ) );
+            ensure( out_buffer2 != nullptr );
+            ensure( out_size2 != 0 );
+            ensure_equals( out_size2, strlen(my_str) );
+            ensure( memcmp(out_buffer2, my_str, strlen(my_str)) == 0 );
+            CPLFree(out_buffer2);
+
+            out_buffer3.clear();
+            out_buffer3.resize(out_size);
+            out_size3 = out_buffer3.size();
+            out_buffer3_ptr = &out_buffer3[0];
+            ensure( pDecompressor->pfnFunc( compressedData.data(), compressedData.size(),
+                                            &out_buffer3_ptr, &out_size3,
+                                            options, pDecompressor->user_data ) );
+            ensure( out_buffer3_ptr != nullptr );
+            ensure( out_buffer3_ptr == &out_buffer3[0] );
+            ensure_equals( out_size3, strlen(my_str) );
+            ensure( memcmp(out_buffer3.data(), my_str, strlen(my_str)) == 0 );
+        }
+    }
+
+    template<class T> struct TesterDelta
+    {
+        static void test(const char* dtypeOption)
+        {
+            const auto pCompressor = CPLGetCompressor("delta");
+            ensure(pCompressor);
+            const auto pDecompressor = CPLGetDecompressor("delta");
+            ensure(pDecompressor);
+
+            const T tabIn[] = { static_cast<T>(-2), 3, 1 };
+            T tabCompress[3];
+            T tabOut[3];
+            const char* const apszOptions[] = { dtypeOption, nullptr };
+
+            void* outPtr = &tabCompress[0];
+            size_t outSize = sizeof(tabCompress);
+            ensure( pCompressor->pfnFunc( &tabIn[0], sizeof(tabIn),
+                                          &outPtr, &outSize,
+                                          apszOptions, pCompressor->user_data) );
+            ensure_equals(outSize, sizeof(tabCompress));
+
+            // ensure_equals(tabCompress[0], 2);
+            // ensure_equals(tabCompress[1], 1);
+            // ensure_equals(tabCompress[2], -2);
+
+            outPtr = &tabOut[0];
+            outSize = sizeof(tabOut);
+            ensure( pDecompressor->pfnFunc( &tabCompress[0], sizeof(tabCompress),
+                                            &outPtr, &outSize,
+                                            apszOptions, pDecompressor->user_data) );
+            ensure_equals(outSize, sizeof(tabOut));
+            ensure_equals(tabOut[0], tabIn[0]);
+            ensure_equals(tabOut[1], tabIn[1]);
+            ensure_equals(tabOut[2], tabIn[2]);
+        }
+    };
+
+    // Test delta compressors/decompressor
+    template<>
+    template<>
+    void object::test<48>()
+    {
+        TesterDelta<int8_t>::test("DTYPE=i1");
+
+        TesterDelta<uint8_t>::test("DTYPE=u1");
+
+        TesterDelta<int16_t>::test("DTYPE=i2");
+        TesterDelta<int16_t>::test("DTYPE=<i2");
+        TesterDelta<int16_t>::test("DTYPE=>i2");
+
+        TesterDelta<uint16_t>::test("DTYPE=u2");
+        TesterDelta<uint16_t>::test("DTYPE=<u2");
+        TesterDelta<uint16_t>::test("DTYPE=>u2");
+
+        TesterDelta<int32_t>::test("DTYPE=i4");
+        TesterDelta<int32_t>::test("DTYPE=<i4");
+        TesterDelta<int32_t>::test("DTYPE=>i4");
+
+        TesterDelta<uint32_t>::test("DTYPE=u4");
+        TesterDelta<uint32_t>::test("DTYPE=<u4");
+        TesterDelta<uint32_t>::test("DTYPE=>u4");
+
+        TesterDelta<int64_t>::test("DTYPE=i8");
+        TesterDelta<int64_t>::test("DTYPE=<i8");
+        TesterDelta<int64_t>::test("DTYPE=>i8");
+
+        TesterDelta<uint64_t>::test("DTYPE=u8");
+        TesterDelta<uint64_t>::test("DTYPE=<u8");
+        TesterDelta<uint64_t>::test("DTYPE=>u8");
+
+        TesterDelta<float>::test("DTYPE=f4");
+#ifdef CPL_MSB
+        TesterDelta<float>::test("DTYPE=>f4");
+#else
+        TesterDelta<float>::test("DTYPE=<f4");
+#endif
+
+        TesterDelta<double>::test("DTYPE=f8");
+#ifdef CPL_MSB
+        TesterDelta<double>::test("DTYPE=>f8");
+#else
+        TesterDelta<double>::test("DTYPE=<f8");
+#endif
+
+    }
+
+    // Test CPLQuadTree
+    template<>
+    template<>
+    void object::test<49>()
+    {
+        unsigned next = 0;
+
+        const auto DummyRandInit = [&next](unsigned initValue)
+        {
+            next = initValue;
+        };
+
+        constexpr int MAX_RAND_VAL = 32767;
+
+        // Slightly improved version of https://xkcd.com/221/, as suggested by
+        // "man srand"
+        const auto DummyRand = [&]()
+        {
+           next = next * 1103515245 + 12345;
+           return((unsigned)(next/65536) % (MAX_RAND_VAL+1));
+        };
+
+        CPLRectObj globalbounds;
+        globalbounds.minx = 0;
+        globalbounds.miny = 0;
+        globalbounds.maxx = 1;
+        globalbounds.maxy = 1;
+
+        auto hTree = CPLQuadTreeCreate(&globalbounds, nullptr);
+        ensure(hTree != nullptr);
+
+        const auto GenerateRandomRect = [&](CPLRectObj& rect)
+        {
+            rect.minx = double(DummyRand()) / MAX_RAND_VAL;
+            rect.miny = double(DummyRand()) / MAX_RAND_VAL;
+            rect.maxx = rect.minx + double(DummyRand()) / MAX_RAND_VAL * (1 - rect.minx);
+            rect.maxy = rect.miny + double(DummyRand()) / MAX_RAND_VAL * (1 - rect.miny);
+        };
+
+        for( int j = 0; j < 2; j++ )
+        {
+            DummyRandInit(j);
+            for( int i = 0; i < 1000; i++ )
+            {
+                CPLRectObj rect;
+                GenerateRandomRect(rect);
+                void* hFeature = reinterpret_cast<void*>(static_cast<uintptr_t>(i));
+                CPLQuadTreeInsertWithBounds(hTree, hFeature, &rect);
+            }
+
+            {
+                int nFeatureCount = 0;
+                CPLFree(CPLQuadTreeSearch(hTree, &globalbounds, &nFeatureCount));
+                ensure_equals(nFeatureCount, 1000);
+            }
+
+            DummyRandInit(j);
+            for( int i = 0; i < 1000; i++ )
+            {
+                CPLRectObj rect;
+                GenerateRandomRect(rect);
+                void* hFeature = reinterpret_cast<void*>(static_cast<uintptr_t>(i));
+                CPLQuadTreeRemove(hTree, hFeature, &rect);
+            }
+
+            {
+                int nFeatureCount = 0;
+                CPLFree(CPLQuadTreeSearch(hTree, &globalbounds, &nFeatureCount));
+                ensure_equals(nFeatureCount, 0);
+            }
+        }
+
+        CPLQuadTreeDestroy(hTree);
+    }
+    // Test bUnlinkAndSize on VSIGetMemFileBuffer
+    template<>
+    template<>
+    void object::test<50>()
+    {
+        VSILFILE *fp = VSIFOpenL("/vsimem/test_unlink_and_seize.tif", "wb");
+        VSIFWriteL("test", 5, 1, fp);
+        GByte *pRawData = VSIGetMemFileBuffer("/vsimem/test_unlink_and_seize.tif", nullptr, true);
+        ensure(EQUAL(reinterpret_cast<const char *>(pRawData), "test"));
+        ensure(VSIGetMemFileBuffer("/vsimem/test_unlink_and_seize.tif", nullptr, false) == nullptr);
+        ensure(VSIFOpenL("/vsimem/test_unlink_and_seize.tif", "r") == nullptr);
+        ensure(VSIFReadL(pRawData, 5, 1, fp) == 0);
+        ensure(VSIFWriteL(pRawData, 5, 1, fp) == 0);
+        ensure(VSIFSeekL(fp, 0, SEEK_END) == 0);
+        CPLFree(pRawData);
+        VSIFCloseL(fp);
+    }
+
+    // Test CPLLoadConfigOptionsFromFile() for VSI credentials
+    template<>
+    template<>
+    void object::test<51>()
+    {
+        VSILFILE* fp = VSIFOpenL("/vsimem/credentials.txt", "wb");
+        VSIFPrintfL(fp, "[credentials]\n");
+        VSIFPrintfL(fp, "\n");
+        VSIFPrintfL(fp, "[.my_subsection]\n");
+        VSIFPrintfL(fp, "path=/vsi_test/foo/bar\n");
+        VSIFPrintfL(fp, "FOO=BAR\n");
+        VSIFPrintfL(fp, "FOO2=BAR2\n");
+        VSIFPrintfL(fp, "\n");
+        VSIFPrintfL(fp, "[.my_subsection2]\n");
+        VSIFPrintfL(fp, "path=/vsi_test/bar/baz\n");
+        VSIFPrintfL(fp, "BAR=BAZ\n");
+        VSIFPrintfL(fp, "[configoptions]\n");
+        VSIFPrintfL(fp, "configoptions_FOO=BAR\n");
+        VSIFCloseL(fp);
+
+        CPLErrorReset();
+        CPLLoadConfigOptionsFromFile("/vsimem/credentials.txt", false);
+        ensure_equals(CPLGetLastErrorType(), CE_None);
+
+        {
+            const char* pszVal = VSIGetCredential("/vsi_test/foo/bar", "FOO", nullptr);
+            ensure(pszVal != nullptr);
+            ensure_equals(std::string(pszVal), std::string("BAR"));
+        }
+
+        {
+            const char* pszVal = VSIGetCredential("/vsi_test/foo/bar", "FOO2", nullptr);
+            ensure(pszVal != nullptr);
+            ensure_equals(std::string(pszVal), std::string("BAR2"));
+        }
+
+        {
+            const char* pszVal = VSIGetCredential("/vsi_test/bar/baz", "BAR", nullptr);
+            ensure(pszVal != nullptr);
+            ensure_equals(std::string(pszVal), std::string("BAZ"));
+        }
+
+        {
+            const char* pszVal = CPLGetConfigOption("configoptions_FOO", nullptr);
+            ensure(pszVal != nullptr);
+            ensure_equals(std::string(pszVal), std::string("BAR"));
+        }
+
+        VSIClearCredentials("/vsi_test/bar/baz");
+        CPLSetConfigOption("configoptions_FOO", nullptr);
+
+        {
+            const char* pszVal = VSIGetCredential("/vsi_test/bar/baz", "BAR", nullptr);
+            ensure(pszVal == nullptr);
+        }
+
+        VSIUnlink("/vsimem/credentials.txt");
+    }
+
+    // Test CPLLoadConfigOptionsFromFile() for VSI credentials, warning case
+    template<>
+    template<>
+    void object::test<52>()
+    {
+        VSILFILE* fp = VSIFOpenL("/vsimem/credentials.txt", "wb");
+        VSIFPrintfL(fp, "[credentials]\n");
+        VSIFPrintfL(fp, "\n");
+        VSIFPrintfL(fp, "FOO=BAR\n"); // content outside of subsection
+        VSIFCloseL(fp);
+
+        CPLErrorReset();
+        CPLPushErrorHandler(CPLQuietErrorHandler);
+        CPLLoadConfigOptionsFromFile("/vsimem/credentials.txt", false);
+        CPLPopErrorHandler();
+        ensure_equals(CPLGetLastErrorType(), CE_Warning);
+
+
+        VSIUnlink("/vsimem/credentials.txt");
+    }
+
+    // Test CPLLoadConfigOptionsFromFile() for VSI credentials, warning case
+    template<>
+    template<>
+    void object::test<53>()
+    {
+        VSILFILE* fp = VSIFOpenL("/vsimem/credentials.txt", "wb");
+        VSIFPrintfL(fp, "[credentials]\n");
+        VSIFPrintfL(fp, "[.subsection]\n");
+        VSIFPrintfL(fp, "FOO=BAR\n"); // first key is not 'path'
+        VSIFCloseL(fp);
+
+        CPLErrorReset();
+        CPLPushErrorHandler(CPLQuietErrorHandler);
+        CPLLoadConfigOptionsFromFile("/vsimem/credentials.txt", false);
+        CPLPopErrorHandler();
+        ensure_equals(CPLGetLastErrorType(), CE_Warning);
+
+
+        VSIUnlink("/vsimem/credentials.txt");
+    }
+
+    // Test CPLLoadConfigOptionsFromFile() for VSI credentials, warning case
+    template<>
+    template<>
+    void object::test<54>()
+    {
+        VSILFILE* fp = VSIFOpenL("/vsimem/credentials.txt", "wb");
+        VSIFPrintfL(fp, "[credentials]\n");
+        VSIFPrintfL(fp, "[.subsection]\n");
+        VSIFPrintfL(fp, "path=/vsi_test/foo\n");
+        VSIFPrintfL(fp, "path=/vsi_test/bar\n"); // duplicated path
+        VSIFPrintfL(fp, "FOO=BAR\n"); // first key is not 'path'
+        VSIFPrintfL(fp, "[unrelated_section]");
+        VSIFPrintfL(fp, "BAR=BAZ\n"); // first key is not 'path'
+        VSIFCloseL(fp);
+
+        CPLErrorReset();
+        CPLPushErrorHandler(CPLQuietErrorHandler);
+        CPLLoadConfigOptionsFromFile("/vsimem/credentials.txt", false);
+        CPLPopErrorHandler();
+        ensure_equals(CPLGetLastErrorType(), CE_Warning);
+
+        {
+            const char* pszVal = VSIGetCredential("/vsi_test/foo", "FOO", nullptr);
+            ensure(pszVal != nullptr);
+        }
+
+        {
+            const char* pszVal = VSIGetCredential("/vsi_test/foo", "BAR", nullptr);
+            ensure(pszVal == nullptr);
+        }
+
+        VSIUnlink("/vsimem/credentials.txt");
+    }
+
+    // Test CPLRecodeFromWCharIconv() with 2 bytes/char source encoding
+    template<>
+    template<>
+    void object::test<55>()
+    {
+#ifdef CPL_RECODE_ICONV
+        int N = 2048;
+        wchar_t* pszIn = static_cast<wchar_t*>(CPLMalloc((N+1)*sizeof(wchar_t)));
+        for(int i=0;i<N;i++)
+            pszIn[i] = L'A';
+        pszIn[N] = L'\0';
+        char* pszExpected = static_cast<char*>(CPLMalloc(N+1));
+        for(int i=0;i<N;i++)
+            pszExpected[i] = 'A';
+        pszExpected[N] = '\0';
+        char* pszRet = CPLRecodeFromWChar(pszIn, CPL_ENC_UTF16, CPL_ENC_UTF8);
+        const bool bOK = memcmp(pszExpected, pszRet, N+1) == 0;
+        // FIXME Some tests fail on Mac. Not sure why, but do not error out just for that
+        if( !bOK && (strstr(CPLGetConfigOption("TRAVIS_OS_NAME", ""), "osx") != nullptr ||
+                     strstr(CPLGetConfigOption("BUILD_NAME", ""), "osx") != nullptr ||
+                     getenv("DO_NOT_FAIL_ON_RECODE_ERRORS") != nullptr))
+        {
+            fprintf(stderr, "Recode from CPL_ENC_UTF16 to CPL_ENC_UTF8 failed\n");
+        }
+        else
+        {
+            ensure( bOK );
+        }
+        CPLFree(pszIn);
+        CPLFree(pszRet);
+        CPLFree(pszExpected);
+#endif
+    }
+
+    // WARNING: keep that line at bottom and read carefully:
+    // If the number of tests reaches 100, increase the MAX_NUMBER_OF_TESTS
+    // define at top of this file (and update this comment!)
 
 } // namespace tut

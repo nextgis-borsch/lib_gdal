@@ -93,9 +93,9 @@ std::string CPL_DLL OGRMakeWktCoordinateM( double, double, double, double, OGRBo
 
 #endif
 
-void OGRFormatDouble( char *pszBuffer, int nBufferLen, double dfVal,
+void CPL_DLL OGRFormatDouble( char *pszBuffer, int nBufferLen, double dfVal,
                       char chDecimalSep, int nPrecision = 15, char chConversionSpecifier = 'f' );
-std::string OGRFormatDouble(double val, const OGRWktOptions& opts);
+std::string CPL_DLL OGRFormatDouble(double val, const OGRWktOptions& opts);
 
 int OGRFormatFloat(char *pszBuffer, int nBufferLen, float fVal,
                    int nPrecision, char chConversionSpecifier);
@@ -113,6 +113,7 @@ int CPL_DLL OGRParseRFC822DateTime( const char* pszRFC822DateTime,
                                     OGRField* psField );
 char CPL_DLL * OGRGetRFC822DateTime(const OGRField* psField);
 char CPL_DLL * OGRGetXMLDateTime(const OGRField* psField);
+char CPL_DLL * OGRGetXMLDateTime(const OGRField* psField, bool bAlwaysMillisecond);
 char CPL_DLL * OGRGetXML_UTF8_EscapedString(const char* pszString);
 
 int OGRCompareDate(const OGRField *psFirstTuple,
@@ -146,7 +147,7 @@ OGRErr CPL_DLL OSRGetEllipsoidInfo( int, char **, double *, double *);
 /* Fast atof function */
 double OGRFastAtof(const char* pszStr);
 
-OGRErr CPL_DLL OGRCheckPermutation(int* panPermutation, int nSize);
+OGRErr CPL_DLL OGRCheckPermutation(const int* panPermutation, int nSize);
 
 /* GML related */
 
@@ -173,9 +174,16 @@ char CPL_DLL * OGRGeometryToHexEWKB( OGRGeometry * poGeometry, int nSRSId,
 /*                        WKB Type Handling encoding                    */
 /************************************************************************/
 
-OGRErr OGRReadWKBGeometryType( const unsigned char * pabyData,
+OGRErr CPL_DLL OGRReadWKBGeometryType( const unsigned char * pabyData,
                                OGRwkbVariant wkbVariant,
                                OGRwkbGeometryType *eGeometryType );
+
+/************************************************************************/
+/*                        WKT Type Handling encoding                    */
+/************************************************************************/
+
+OGRErr CPL_DLL OGRReadWKTGeometryType( const char* pszWKT,
+                                       OGRwkbGeometryType *peGeometryType );
 
 /************************************************************************/
 /*                            Other                                     */

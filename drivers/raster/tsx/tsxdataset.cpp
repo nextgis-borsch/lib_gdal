@@ -38,6 +38,7 @@
 
 CPL_CVSID("$Id$")
 
+namespace {
 enum ePolarization {
     HH=0,
     HV,
@@ -52,6 +53,7 @@ enum eProductType {
     eGEC,
     eUnknown
 };
+} // namespace
 
 /************************************************************************/
 /* Helper Functions                                                     */
@@ -237,7 +239,7 @@ TSXDataset::TSXDataset() :
 /************************************************************************/
 
 TSXDataset::~TSXDataset() {
-    FlushCache();
+    FlushCache(true);
 
     CPLFree( pszProjection );
 

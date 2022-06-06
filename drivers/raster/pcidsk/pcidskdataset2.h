@@ -80,7 +80,7 @@ class PCIDSK2Dataset final: public GDALPamDataset
     static GDALDataset  *Create( const char * pszFilename,
                                  int nXSize, int nYSize, int nBands,
                                  GDALDataType eType,
-                                 char **papszParmList );
+                                 char **papszParamList );
 
     char              **GetFileList() override;
     CPLErr              GetGeoTransform( double * padfTransform ) override;
@@ -95,7 +95,7 @@ class PCIDSK2Dataset final: public GDALPamDataset
     CPLErr              SetMetadataItem(const char*,const char*,const char*) override;
     const char         *GetMetadataItem( const char*, const char*) override;
 
-    virtual void FlushCache() override;
+    virtual void FlushCache(bool bAtClosing) override;
 
     virtual CPLErr IBuildOverviews( const char *, int, int *,
                                     int, int *, GDALProgressFunc, void * ) override;

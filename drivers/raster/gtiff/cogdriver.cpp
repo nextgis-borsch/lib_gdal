@@ -26,6 +26,8 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
+
 #include "gdal_priv.h"
 #include "gtiff.h"
 #include "gt_overview.h"
@@ -39,6 +41,8 @@
 #include <algorithm>
 #include <memory>
 #include <vector>
+
+static bool gbHasLZW = false;
 
 extern "C" CPL_DLL void GDALRegister_COG();
 
@@ -85,6 +89,32 @@ static const char* GetResampling(GDALDataset* poSrcDS)
 }
 
 /************************************************************************/
+/*                             GetPredictor()                          */
+/************************************************************************/
+static const char* GetPredictor(GDALDataset* poSrcDS,
+                                const char* pszPredictor)
+{
+    if (pszPredictor == nullptr) return nullptr;
+
+    if( EQUAL(pszPredictor, "YES") || EQUAL(pszPredictor, "ON") || EQUAL(pszPredictor, "TRUE") )
+    {
+        if( GDALDataTypeIsFloating(poSrcDS->GetRasterBand(1)->GetRasterDataType()) )
+            return "3";
+        else
+            return "2";
+    }
+    else if( EQUAL(pszPredictor, "STANDARD") || EQUAL(pszPredictor, "2") )
+    {
+        return "2";
+    }
+    else if( EQUAL(pszPredictor, "FLOATING_POINT") || EQUAL(pszPredictor, "3") )
+    {
+        return "3";
+    }
+    return nullptr;
+}
+
+/************************************************************************/
 /*                     COGGetWarpingCharacteristics()                   */
 /************************************************************************/
 
@@ -99,6 +129,7 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
                                   double& dfMinY,
                                   double& dfMaxX,
                                   double& dfMaxY,
+                                  double& dfRes,
                                   std::unique_ptr<gdal::TileMatrixSet>& poTM,
                                   int& nZoomLevel,
                                   int& nAlignedLevels)
@@ -109,8 +140,8 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
     if( EQUAL(osTargetSRS, "") && EQUAL(osTilingScheme, "CUSTOM") )
         return false;
 
-    CPLString osExtent(CSLFetchNameValueDef(papszOptions, "EXTENT", ""));
-    CPLString osRes(CSLFetchNameValueDef(papszOptions, "RES", ""));
+    const CPLString osExtent(CSLFetchNameValueDef(papszOptions, "EXTENT", ""));
+    const CPLString osRes(CSLFetchNameValueDef(papszOptions, "RES", ""));
     if( !EQUAL(osTilingScheme, "CUSTOM") )
     {
         poTM = gdal::TileMatrixSet::parse(osTilingScheme);
@@ -134,11 +165,15 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
                     "Unsupported tiling scheme: some levels have variable matrix width");
             return false;
         }
+        if( !osTargetSRS.empty() )
+        {
+            CPLError(CE_Warning, CPLE_AppDefined, "Ignoring TARGET_SRS option");
+        }
         osTargetSRS = poTM->crs();
 
         // "Normalize" SRS as AUTH:CODE
         OGRSpatialReference oTargetSRS;
-        oTargetSRS.SetFromUserInput(osTargetSRS);
+        oTargetSRS.SetFromUserInput(osTargetSRS, OGRSpatialReference::SET_FROM_USER_INPUT_LIMITATIONS_get());
         const char* pszAuthCode = oTargetSRS.GetAuthorityCode(nullptr);
         const char* pszAuthName = oTargetSRS.GetAuthorityName(nullptr);
         if( pszAuthName && pszAuthCode )
@@ -154,7 +189,7 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
     void* hTransformArg = nullptr;
 
     OGRSpatialReference oTargetSRS;
-    oTargetSRS.SetFromUserInput(osTargetSRS);
+    oTargetSRS.SetFromUserInput(osTargetSRS, OGRSpatialReference::SET_FROM_USER_INPUT_LIMITATIONS_get());
     const char* pszAuthCode = oTargetSRS.GetAuthorityCode(nullptr);
     const int nEPSGCode = pszAuthCode ? atoi(pszAuthCode) : 0;
 
@@ -207,6 +242,10 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
                 {
                     hTransformArg = GDALCreateGenImgProjTransformer2(
                         GDALDataset::FromHandle(poTmpDS.get()), nullptr, aosTO.List() );
+                    if( hTransformArg == nullptr )
+                    {
+                        return false;
+                    }
                 }
             }
         }
@@ -215,6 +254,10 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
     {
         hTransformArg =
             GDALCreateGenImgProjTransformer2( poSrcDS, nullptr, aosTO.List() );
+        if( hTransformArg == nullptr )
+        {
+            return false;
+        }
     }
 
     GDALTransformerInfo* psInfo = static_cast<GDALTransformerInfo*>(hTransformArg);
@@ -239,10 +282,18 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
     dfMinY = adfExtent[1];
     dfMaxX = adfExtent[2];
     dfMaxY = adfExtent[3];
-    double dfRes = adfGeoTransform[1];
+    dfRes = adfGeoTransform[1];
 
     if( poTM )
     {
+        if( !osExtent.empty() )
+        {
+            CPLError(CE_Warning, CPLE_AppDefined, "Ignoring EXTENT option");
+        }
+        if( !osRes.empty() )
+        {
+            CPLError(CE_Warning, CPLE_AppDefined, "Ignoring RES option");
+        }
         const bool bInvertAxis =
             oTargetSRS.EPSGTreatsAsLatLong() != FALSE ||
             oTargetSRS.EPSGTreatsAsNorthingEasting() != FALSE;
@@ -264,48 +315,63 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
         const auto& tmList = poTM->tileMatrixList();
         const int nBlockSize = atoi(CSLFetchNameValueDef(
             papszOptions, "BLOCKSIZE", CPLSPrintf("%d", tmList[0].mTileWidth)));
+        dfRes = 0.0;
+
+        const char* pszZoomLevel = CSLFetchNameValue(papszOptions, "ZOOM_LEVEL");
+        if( pszZoomLevel )
+        {
+            nZoomLevel = atoi(pszZoomLevel);
+            if( nZoomLevel < 0 || nZoomLevel >= static_cast<int>(tmList.size()) )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined,
+                         "Invalid zoom level: should be in [0,%d]",
+                         static_cast<int>(tmList.size())-1);
+                return false;
+            }
+        }
+        else
+        {
+            double dfComputedRes = adfGeoTransform[1];
+            double dfPrevRes = 0.0;
+            for( ; nZoomLevel < static_cast<int>(tmList.size()); nZoomLevel++ )
+            {
+                dfRes = tmList[nZoomLevel].mResX * tmList[0].mTileWidth / nBlockSize;
+                if( dfComputedRes > dfRes || fabs( dfComputedRes - dfRes ) / dfRes <= 1e-8 )
+                    break;
+                dfPrevRes = dfRes;
+            }
+            if( nZoomLevel == static_cast<int>(tmList.size()) )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined,
+                        "Could not find an appropriate zoom level");
+                return false;
+            }
+
+            if( nZoomLevel > 0 && fabs( dfComputedRes - dfRes ) / dfRes > 1e-8 )
+            {
+                const char* pszZoomLevelStrategy = CSLFetchNameValueDef(papszOptions,
+                                                                        "ZOOM_LEVEL_STRATEGY",
+                                                                        "AUTO");
+                if( EQUAL(pszZoomLevelStrategy, "LOWER") )
+                {
+                    nZoomLevel --;
+                }
+                else if( EQUAL(pszZoomLevelStrategy, "UPPER") )
+                {
+                    /* do nothing */
+                }
+                else
+                {
+                    if( dfPrevRes / dfComputedRes < dfComputedRes / dfRes )
+                        nZoomLevel --;
+                }
+            }
+        }
+        CPLDebug("COG", "Using ZOOM_LEVEL %d", nZoomLevel);
+        dfRes = tmList[nZoomLevel].mResX * tmList[0].mTileWidth / nBlockSize;
+
         const double dfOriX = bInvertAxis ? tmList[0].mTopLeftY : tmList[0].mTopLeftX;
         const double dfOriY = bInvertAxis ? tmList[0].mTopLeftX : tmList[0].mTopLeftY;
-        double dfComputedRes = adfGeoTransform[1];
-        double dfPrevRes = 0.0;
-        dfRes = 0.0;
-        for( ; nZoomLevel < static_cast<int>(tmList.size()); nZoomLevel++ )
-        {
-            dfRes = tmList[nZoomLevel].mResX * tmList[0].mTileWidth / nBlockSize;
-            if( dfComputedRes > dfRes || fabs( dfComputedRes - dfRes ) / dfRes <= 1e-8 )
-                break;
-            dfPrevRes = dfRes;
-        }
-        if( nZoomLevel == static_cast<int>(tmList.size()) )
-        {
-            CPLError(CE_Failure, CPLE_AppDefined,
-                    "Could not find an appropriate zoom level");
-            return false;
-        }
-
-        if( nZoomLevel > 0 && fabs( dfComputedRes - dfRes ) / dfRes > 1e-8 )
-        {
-            const char* pszZoomLevelStrategy = CSLFetchNameValueDef(papszOptions,
-                                                                    "ZOOM_LEVEL_STRATEGY",
-                                                                    "AUTO");
-            if( EQUAL(pszZoomLevelStrategy, "LOWER") )
-            {
-                nZoomLevel --;
-            }
-            else if( EQUAL(pszZoomLevelStrategy, "UPPER") )
-            {
-                /* do nothing */
-            }
-            else
-            {
-                if( dfPrevRes / dfComputedRes < dfComputedRes / dfRes )
-                    nZoomLevel --;
-            }
-            dfRes = tmList[nZoomLevel].mResX * tmList[0].mTileWidth / nBlockSize;
-        }
-
-        CPLDebug("COG", "Using ZOOM_LEVEL %d", nZoomLevel);
-
         const double dfTileExtent = dfRes * nBlockSize;
         int nTLTileX = static_cast<int>(std::floor((dfMinX - dfOriX) / dfTileExtent + 1e-10));
         int nTLTileY = static_cast<int>(std::floor((dfOriY - dfMaxY) / dfTileExtent + 1e-10));
@@ -382,8 +448,6 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
         dfMinY = dfOriY - nBRTileY * dfTileExtent;
         dfMaxX = dfOriX + nBRTileX * dfTileExtent;
         dfMaxY = dfOriY - nTLTileY * dfTileExtent;
-        nXSize = static_cast<int>(std::round((dfMaxX - dfMinX) / dfRes));
-        nYSize = static_cast<int>(std::round((dfMaxY - dfMinY) / dfRes));
     }
     else if( !osExtent.empty() || !osRes.empty() )
     {
@@ -428,12 +492,13 @@ bool COGGetWarpingCharacteristics(GDALDataset* poSrcDS,
     std::unique_ptr<gdal::TileMatrixSet> poTM;
     int nZoomLevel = 0;
     int nAlignedLevels = 0;
+    double dfRes;
     return COGGetWarpingCharacteristics(poSrcDS,
                                         papszOptions,
                                         osResampling,
                                         osTargetSRS,
                                         nXSize, nYSize,
-                                        dfMinX, dfMinY, dfMaxX, dfMaxY,
+                                        dfMinX, dfMinY, dfMaxX, dfMaxY, dfRes,
                                         poTM, nZoomLevel, nAlignedLevels);
 }
 
@@ -478,6 +543,7 @@ static std::unique_ptr<GDALDataset> CreateReprojectedDS(
                                 const double dfMinY,
                                 const double dfMaxX,
                                 const double dfMaxY,
+                                const double dfRes,
                                 GDALProgressFunc pfnProgress,
                                 void * pProgressData,
                                 double& dfCurPixels,
@@ -504,13 +570,30 @@ static std::unique_ptr<GDALDataset> CreateReprojectedDS(
     papszArg = CSLAddString(papszArg, "-t_srs");
     papszArg = CSLAddString(papszArg, osTargetSRS);
     papszArg = CSLAddString(papszArg, "-te");
-    papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g,", dfMinX));
-    papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g,", dfMinY));
-    papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g,", dfMaxX));
-    papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g,", dfMaxY));
+    papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g", dfMinX));
+    papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g", dfMinY));
+    papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g", dfMaxX));
+    papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g", dfMaxY));
     papszArg = CSLAddString(papszArg, "-ts");
     papszArg = CSLAddString(papszArg, CPLSPrintf("%d", nXSize));
     papszArg = CSLAddString(papszArg, CPLSPrintf("%d", nYSize));
+
+    // to be kept in sync with gdalwarp_lib.cpp
+    constexpr double RELATIVE_ERROR_RES_SHARED_BY_COG_AND_GDALWARP = 1e-8;
+    if (fabs((dfMaxX - dfMinX) / dfRes - nXSize) <= RELATIVE_ERROR_RES_SHARED_BY_COG_AND_GDALWARP &&
+        fabs((dfMaxY - dfMinY) / dfRes - nYSize) <= RELATIVE_ERROR_RES_SHARED_BY_COG_AND_GDALWARP )
+    {
+        // Try to produce exactly square pixels
+        papszArg = CSLAddString(papszArg, "-tr");
+        papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g", dfRes));
+        papszArg = CSLAddString(papszArg, CPLSPrintf("%.18g", dfRes));
+    }
+    else
+    {
+        CPLDebug("COG", "Cannot pass -tr option to GDALWarp() due to extent, "
+                 "size and resolution not consistent enough");
+    }
+
     int bHasNoData = FALSE;
     poSrcDS->GetRasterBand(1)->GetNoDataValue(&bHasNoData);
     if( !bHasNoData && CPLTestBool(CSLFetchNameValueDef(
@@ -656,12 +739,14 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
         double dfTargetMinY = 0;
         double dfTargetMaxX = 0;
         double dfTargetMaxY = 0;
+        double dfRes = 0;
         if( !COGGetWarpingCharacteristics(poCurDS, papszOptions,
                                           osTargetResampling,
                                           osTargetSRS,
                                           nTargetXSize, nTargetYSize,
                                           dfTargetMinX, dfTargetMinY,
                                           dfTargetMaxX, dfTargetMaxY,
+                                          dfRes,
                                           poTM, nZoomLevel, nAlignedLevels) )
         {
             return nullptr;
@@ -718,6 +803,7 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
                                     nTargetXSize, nTargetYSize,
                                     dfTargetMinX, dfTargetMinY,
                                     dfTargetMaxX, dfTargetMaxY,
+                                    dfRes,
                                     pfnProgress, pProgressData,
                                     dfCurPixels, dfTotalPixelsToProcess);
             if( !m_poReprojectedDS )
@@ -726,9 +812,11 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
         }
     }
 
-    CPLString osCompress = CSLFetchNameValueDef(papszOptions, "COMPRESS", "NONE");
+    CPLString osCompress = CSLFetchNameValueDef(papszOptions, "COMPRESS",
+                                                gbHasLZW ? "LZW" : "NONE");
     if( EQUAL(osCompress, "JPEG") &&
-        poCurDS->GetRasterCount() == 4 )
+        poCurDS->GetRasterCount() == 4 &&
+        poCurDS->GetRasterBand(4)->GetColorInterpretation() == GCI_AlphaBand )
     {
         char** papszArg = nullptr;
         papszArg = CSLAddString(papszArg, "-of");
@@ -782,7 +870,7 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
         papszOptions, "OVERVIEWS", "AUTO");
     const bool bRecreateOvr = EQUAL(osOverviews, "FORCE_USE_EXISTING") ||
                               EQUAL(osOverviews, "NONE");
-    const bool bGenerateMskOvr = 
+    const bool bGenerateMskOvr =
         !bRecreateOvr &&
         bHasMask &&
         (nXSize > nOvrThresholdSize || nYSize > nOvrThresholdSize) &&
@@ -811,13 +899,28 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
             nCurLevel --;
         }
     }
-    else
+    else if( bGenerateMskOvr || bGenerateOvr )
     {
-        while( nTmpXSize > nOvrThresholdSize || nTmpYSize > nOvrThresholdSize )
+        if( !bGenerateOvr )
         {
-            nTmpXSize /= 2;
-            nTmpYSize /= 2;
-            asOverviewDims.push_back(std::pair<int,int>(nTmpXSize, nTmpYSize));
+            // If generating only .msk.ovr, use the exact overview size as
+            // the overviews of the imagery.
+            for(int i = 0; i < poFirstBand->GetOverviewCount(); i++ )
+            {
+                auto poOvrBand = poFirstBand->GetOverview(i);
+                asOverviewDims.push_back(std::pair<int,int>(
+                    poOvrBand->GetXSize(), poOvrBand->GetYSize()));
+            }
+        }
+        else
+        {
+            while( nTmpXSize > nOvrThresholdSize ||
+                   nTmpYSize > nOvrThresholdSize )
+            {
+                nTmpXSize /= 2;
+                nTmpYSize /= 2;
+                asOverviewDims.push_back(std::pair<int,int>(nTmpXSize, nTmpYSize));
+            }
         }
     }
 
@@ -854,10 +957,6 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
                 dfNextPixels / dfTotalPixelsToProcess,
                 pfnProgress, pProgressData );
         dfCurPixels = dfNextPixels;
-
-        // Used by GDALRegenerateOverviews() and GDALRegenerateOverviewsMultiBand()
-        CPLConfigOptionSetter oSetterRegeneratedBandIsMask(
-            "GDAL_REGENERATED_BAND_IS_MASK", "YES", true);
 
         CPLErr eErr = GTIFFBuildOverviewsEx(
             m_osTmpMskOverviewFilename,
@@ -928,21 +1027,12 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
     aosOptions.SetNameValue("BLOCKXSIZE", osBlockSize);
     aosOptions.SetNameValue("BLOCKYSIZE", osBlockSize);
     const char* pszPredictor = CSLFetchNameValueDef(papszOptions, "PREDICTOR", "FALSE");
-    if( EQUAL(pszPredictor, "YES") || EQUAL(pszPredictor, "ON") || EQUAL(pszPredictor, "TRUE") )
+    const char* pszPredictorValue = GetPredictor(poSrcDS, pszPredictor);
+    if (pszPredictorValue != nullptr)
     {
-        if( GDALDataTypeIsFloating(poSrcDS->GetRasterBand(1)->GetRasterDataType()) )
-            aosOptions.SetNameValue("PREDICTOR", "3");
-        else
-            aosOptions.SetNameValue("PREDICTOR", "2");
+        aosOptions.SetNameValue("PREDICTOR", pszPredictorValue);
     }
-    else if( EQUAL(pszPredictor, "STANDARD") || EQUAL(pszPredictor, "2") )
-    {
-        aosOptions.SetNameValue("PREDICTOR", "2");
-    }
-    else if( EQUAL(pszPredictor, "FLOATING_POINT") || EQUAL(pszPredictor, "3") )
-    {
-        aosOptions.SetNameValue("PREDICTOR", "3");
-    }
+
     const char* pszQuality = CSLFetchNameValue(papszOptions, "QUALITY");
     if( EQUAL(osCompress, "JPEG") )
     {
@@ -966,12 +1056,28 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
         aosOptions.SetNameValue("ZSTD_LEVEL",
                                 CSLFetchNameValue(papszOptions, "LEVEL"));
     }
+    else if( EQUAL(osCompress, "LZMA") )
+    {
+        aosOptions.SetNameValue("LZMA_PRESET",
+                                CSLFetchNameValue(papszOptions, "LEVEL"));
+    }
 
     if( STARTS_WITH_CI(osCompress, "LERC") )
     {
         aosOptions.SetNameValue("MAX_Z_ERROR",
                                 CSLFetchNameValue(papszOptions, "MAX_Z_ERROR"));
     }
+
+    if( STARTS_WITH_CI(osCompress, "JXL") )
+    {
+        aosOptions.SetNameValue("JXL_LOSSLESS",
+                                CSLFetchNameValue(papszOptions, "JXL_LOSSLESS"));
+        aosOptions.SetNameValue("JXL_EFFORT",
+                                CSLFetchNameValue(papszOptions, "JXL_EFFORT"));
+        aosOptions.SetNameValue("JXL_DISTANCE",
+                                CSLFetchNameValue(papszOptions, "JXL_DISTANCE"));
+    }
+
     aosOptions.SetNameValue("BIGTIFF",
                                 CSLFetchNameValue(papszOptions, "BIGTIFF"));
     aosOptions.SetNameValue("NUM_THREADS",
@@ -1010,6 +1116,22 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
                                      CPLSPrintf("%d", nAlignedLevels));
          }
     }
+    const char* pszOverviewCompress = CSLFetchNameValueDef(
+        papszOptions, "OVERVIEW_COMPRESS", osCompress.c_str());
+
+    CPLConfigOptionSetter ovrCompressSetter("COMPRESS_OVERVIEW", pszOverviewCompress, true);
+    CPLConfigOptionSetter ovrQualityJpegSetter("JPEG_QUALITY_OVERVIEW", CSLFetchNameValue(papszOptions, "OVERVIEW_QUALITY"), true);
+    CPLConfigOptionSetter ovrQualityWebpSetter("WEBP_LEVEL_OVERVIEW", CSLFetchNameValue(papszOptions, "OVERVIEW_QUALITY"), true);
+
+    std::unique_ptr<CPLConfigOptionSetter> poPhotometricSetter;
+    if (nBands == 3 && EQUAL(pszOverviewCompress, "JPEG") )
+    {
+        poPhotometricSetter.reset(new CPLConfigOptionSetter("PHOTOMETRIC_OVERVIEW", "YCBCR", true));
+    }
+
+    const char* osOvrPredictor = CSLFetchNameValueDef(papszOptions, "OVERVIEW_PREDICTOR", "FALSE");
+    const char* pszOvrPredictorValue = GetPredictor(poSrcDS, osOvrPredictor);
+    CPLConfigOptionSetter ovrPredictorSetter("PREDICTOR_OVERVIEW", pszOvrPredictorValue, true);
 
     GDALDriver* poGTiffDrv = GDALDriver::FromHandle(GDALGetDriverByName("GTiff"));
     if( !poGTiffDrv )
@@ -1030,7 +1152,7 @@ GDALDataset* GDALCOGCreator::Create(const char * pszFilename,
     GDALDestroyScaledProgress(pScaledProgress);
 
     if( poRet )
-        poRet->FlushCache();
+        poRet->FlushCache(false);
 
     CPLDebug("COG", "Generating final product: end");
     return poRet;
@@ -1064,6 +1186,7 @@ class GDALCOGDriver final: public GDALDriver
         bool bHasZSTD = false;
         bool bHasJPEG = false;
         bool bHasWebP = false;
+        bool bHasLERC = false;
         std::string osCompressValues{};
 
         void InitializeCreationOptionList();
@@ -1094,8 +1217,9 @@ GDALCOGDriver::GDALCOGDriver()
     // TIFFGetConfiguredCODECs(), this wouldn't work properly if the LERC codec
     // had been registered in between
     osCompressValues = GTiffGetCompressValues(
-        bHasLZW, bHasDEFLATE, bHasLZMA, bHasZSTD, bHasJPEG, bHasWebP,
+        bHasLZW, bHasDEFLATE, bHasLZMA, bHasZSTD, bHasJPEG, bHasWebP, bHasLERC,
         true /* bForCOG */);
+    gbHasLZW = bHasLZW;
 }
 
 void GDALCOGDriver::InitializeCreationOptionList()
@@ -1106,28 +1230,52 @@ void GDALCOGDriver::InitializeCreationOptionList()
 
     CPLString osOptions;
     osOptions = "<CreationOptionList>"
-                "   <Option name='COMPRESS' type='string-select'>";
+                "   <Option name='COMPRESS' type='string-select' default='";
+    osOptions += bHasLZW ? "LZW" : "NONE";
+    osOptions += "'>";
     osOptions += osCompressValues;
     osOptions += "   </Option>";
-    if( bHasLZW || bHasDEFLATE || bHasZSTD )
+
+    osOptions += "   <Option name='OVERVIEW_COMPRESS' type='string-select' default='";
+    osOptions += bHasLZW ? "LZW" : "NONE";
+    osOptions += "'>";
+    osOptions += osCompressValues;
+    osOptions += "   </Option>";
+
+    if( bHasLZW || bHasDEFLATE || bHasZSTD || bHasLZMA)
     {
-        osOptions += "   <Option name='LEVEL' type='int' "
-            "description='DEFLATE/ZSTD compression level: 1 (fastest)'/>";
-        osOptions += "   <Option name='PREDICTOR' type='string-select' default='FALSE'>"
-                     "     <Value>YES</Value>"
+        const char* osPredictorOptions =  "     <Value>YES</Value>"
                      "     <Value>NO</Value>"
                      "     <Value alias='2'>STANDARD</Value>"
-                     "     <Value alias='3'>FLOATING_POINT</Value>"
-                     "   </Option>";
+                     "     <Value alias='3'>FLOATING_POINT</Value>";
+
+        osOptions += "   <Option name='LEVEL' type='int' "
+            "description='DEFLATE/ZSTD/LZMA compression level: 1 (fastest)'/>";
+
+        osOptions += "   <Option name='PREDICTOR' type='string-select' default='FALSE'>";
+        osOptions += osPredictorOptions;
+        osOptions += "   </Option>"
+                     "   <Option name='OVERVIEW_PREDICTOR' type='string-select' default='FALSE'>";
+        osOptions += osPredictorOptions;
+        osOptions += "   </Option>";
     }
     if( bHasJPEG || bHasWebP )
     {
         osOptions += "   <Option name='QUALITY' type='int' "
-                     "description='JPEG/WEBP quality 1-100' default='75'/>";
+                     "description='JPEG/WEBP quality 1-100' default='75'/>"
+                     "   <Option name='OVERVIEW_QUALITY' type='int' "
+                     "description='Overview JPEG/WEBP quality 1-100' default='75'/>";
     }
-#ifdef HAVE_LERC
-    osOptions += ""
+    if( bHasLERC )
+    {
+        osOptions += ""
 "   <Option name='MAX_Z_ERROR' type='float' description='Maximum error for LERC compression' default='0'/>";
+    }
+#ifdef HAVE_JXL
+    osOptions += ""
+"   <Option name='JXL_LOSSLESS' type='boolean' description='Whether JPEGXL compression should be lossless' default='YES'/>"
+"   <Option name='JXL_EFFORT' type='int' description='Level of effort 1(fast)-9(slow)' default='5'/>"
+"   <Option name='JXL_DISTANCE' type='float' description='Distance level for lossy compression (0=mathematically lossless, 1.0=visually lossless, usual range [0.5,3])' default='1.0' min='0.1' max='15.0'/>";
 #endif
     osOptions +=
 "   <Option name='NUM_THREADS' type='string' "
@@ -1177,6 +1325,8 @@ void GDALCOGDriver::InitializeCreationOptionList()
 
     osOptions +=
 "  </Option>"
+"  <Option name='ZOOM_LEVEL' type='int' description='Target zoom level. "
+        "Only used for TILING_SCHEME != CUSTOM'/>"
 "  <Option name='ZOOM_LEVEL_STRATEGY' type='string-select' "
         "description='Strategy to determine zoom level. "
         "Only used for TILING_SCHEME != CUSTOM' default='AUTO'>"
@@ -1191,7 +1341,7 @@ void GDALCOGDriver::InitializeCreationOptionList()
 "  <Option name='EXTENT' type='string' description='"
         "Target extent as minx,miny,maxx,maxy for reprojection'/>"
 "  <Option name='ALIGNED_LEVELS' type='int' description='"
-        "Number of overview levels for which the tiles from GeoTIFF and the "
+        "Number of resolution levels for which the tiles from GeoTIFF and the "
         "specified tiling scheme match'/>"
 "  <Option name='ADD_ALPHA' type='boolean' description='Can be set to NO to "
         "disable the addition of an alpha band in case of reprojection' default='YES'/>"
@@ -1221,10 +1371,12 @@ void GDALRegister_COG()
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/raster/cog.html" );
 
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
-                               "Byte UInt16 Int16 UInt32 Int32 Float32 "
+                               "Byte UInt16 Int16 UInt32 Int32 UInt64 Int64 Float32 "
                                "Float64 CInt16 CInt32 CFloat32 CFloat64" );
 
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+
+    poDriver->SetMetadataItem( GDAL_DCAP_COORDINATE_EPOCH, "YES" );
 
     poDriver->pfnCreateCopy = COGCreateCopy;
 

@@ -322,7 +322,7 @@ foreach(swig_path ${FILL_SWIG_PATHS})
     fill_swig_paths(${swig_path})
 endforeach()
 
-set(SWIG_PYTHON_LIBRARY_DIRS "${SWIG_PYTHON_LIBRARY_DIRS}, '../../${CMAKE_BUILD_TYPE}'")
+set(SWIG_PYTHON_LIBRARY_DIRS "${SWIG_PYTHON_LIBRARY_DIRS}, '../../${CMAKE_BUILD_TYPE}', '../../lib/${CMAKE_BUILD_TYPE}'")
 
 set(SWIG_PYTHON_INCLUDE_DIRS "'${CMAKE_SOURCE_DIR}/core/alg', '${CMAKE_SOURCE_DIR}/core/port', '${CMAKE_SOURCE_DIR}/core/gcore', '${CMAKE_BINARY_DIR}/core/gcore', '${CMAKE_SOURCE_DIR}/core/gnm', '${CMAKE_SOURCE_DIR}/core/ogr', '${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts', '${CMAKE_SOURCE_DIR}/apps', '${CMAKE_BINARY_DIR}'")
 if(GDAL_ENABLE_GNM)

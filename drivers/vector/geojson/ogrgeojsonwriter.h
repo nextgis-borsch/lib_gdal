@@ -31,7 +31,7 @@
 #ifndef OGR_GEOJSONWRITER_H_INCLUDED
 #define OGR_GEOJSONWRITER_H_INCLUDED
 
-#include <ogr_core.h>
+#include "ogr_core.h"
 
 #include "cpl_json_header.h"
 #include "cpl_string.h"
@@ -96,7 +96,7 @@ json_object* OGRGeoJSONWriteAttributes( OGRFeature* poFeature,
                                         bool bWriteIdIfFoundInAttributes = true,
                                         const OGRGeoJSONWriteOptions& oOptions = OGRGeoJSONWriteOptions() );
 json_object* OGRGeoJSONWriteGeometry( const OGRGeometry* poGeometry, int nCoordPrecision, int nSignificantFigures );
-json_object* OGRGeoJSONWriteGeometry( const OGRGeometry* poGeometry, const OGRGeoJSONWriteOptions& oOptions );
+json_object CPL_DLL* OGRGeoJSONWriteGeometry( const OGRGeometry* poGeometry, const OGRGeoJSONWriteOptions& oOptions );
 json_object* OGRGeoJSONWritePoint( const OGRPoint* poPoint, const OGRGeoJSONWriteOptions& oOptions );
 json_object* OGRGeoJSONWriteLineString( const OGRLineString* poLine, const OGRGeoJSONWriteOptions& oOptions );
 json_object* OGRGeoJSONWritePolygon( const OGRPolygon* poPolygon, const OGRGeoJSONWriteOptions& oOptions );

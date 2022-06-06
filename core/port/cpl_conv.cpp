@@ -27,6 +27,9 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_config.h"
+
+#ifdef HAVE_USELOCALE
 // For uselocale, define _XOPEN_SOURCE = 700
 // but on Solaris, we don't have uselocale and we cannot have
 // std=c++11 with _XOPEN_SOURCE != 600
@@ -42,6 +45,7 @@
 #undef _XOPEN_SOURCE
 #endif
 #define _XOPEN_SOURCE 700
+#endif
 #endif
 
 // For atoll (at least for NetBSD)
@@ -67,6 +71,9 @@
 #endif
 #if HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+#if HAVE_XLOCALE_H
+#include <xlocale.h> // for LC_NUMERIC_MASK on MacOS
 #endif
 
 #ifdef DEBUG_CONFIG_OPTIONS
@@ -99,8 +106,8 @@ static volatile char **g_papszConfigOptions = nullptr;
 
 // Used by CPLOpenShared() and friends.
 static CPLMutex *hSharedFileMutex = nullptr;
-static volatile int nSharedFileCount = 0;
-static volatile CPLSharedFileInfo *pasSharedFileList = nullptr;
+static int nSharedFileCount = 0;
+static CPLSharedFileInfo *pasSharedFileList = nullptr;
 
 // Used by CPLsetlocale().
 static CPLMutex *hSetLocaleMutex = nullptr;
@@ -174,7 +181,7 @@ void *CPLMalloc( size_t nSize )
 
     CPLVerifyConfiguration();
 
-    if( static_cast<long>(nSize) < 0 )
+    if( (nSize >> (8 * sizeof(nSize) - 1)) != 0 )
     {
         // coverity[dead_error_begin]
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -186,7 +193,7 @@ void *CPLMalloc( size_t nSize )
     void *pReturn = VSIMalloc(nSize);
     if( pReturn == nullptr )
     {
-        if( nSize > 0 && nSize < 2000 )
+        if( nSize < 2000 )
         {
             CPLEmergencyError("CPLMalloc(): Out of memory allocating a small "
                               "number of bytes.");
@@ -232,7 +239,7 @@ void * CPLRealloc( void * pData, size_t nNewSize )
         return nullptr;
     }
 
-    if( static_cast<long>(nNewSize) < 0 )
+    if( (nNewSize >> (8 * sizeof(nNewSize) - 1)) != 0 )
     {
         // coverity[dead_error_begin]
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -250,7 +257,7 @@ void * CPLRealloc( void * pData, size_t nNewSize )
 
     if( pReturn == nullptr )
     {
-        if( nNewSize > 0 && nNewSize < 2000 )
+        if( nNewSize < 2000 )
         {
             char szSmallMsg[80] = {};
 
@@ -973,15 +980,7 @@ GUIntBig CPLScanUIntBig( const char *pszString, int nMaxLength )
 /* -------------------------------------------------------------------- */
 /*      Fetch out the result                                            */
 /* -------------------------------------------------------------------- */
-#if defined(__MSVCRT__) || (defined(WIN32) && defined(_MSC_VER))
-    return static_cast<GUIntBig>(_atoi64(osValue.c_str()));
-#elif HAVE_STRTOULL
     return strtoull(osValue.c_str(), nullptr, 10);
-#elif HAVE_ATOLL
-    return atoll(osValue.c_str());
-#else
-    return atol(osValue.c_str());
-#endif
 }
 
 /************************************************************************/
@@ -998,13 +997,7 @@ GUIntBig CPLScanUIntBig( const char *pszString, int nMaxLength )
 
 GIntBig CPLAtoGIntBig( const char *pszString )
 {
-#if defined(__MSVCRT__) || (defined(WIN32) && defined(_MSC_VER))
-    return _atoi64(pszString);
-#elif HAVE_ATOLL
     return atoll(pszString);
-#else
-    return atol(pszString);
-#endif
 }
 
 #if defined(__MINGW32__) || defined(__sun__)
@@ -1051,15 +1044,7 @@ static int CPLAtoGIntBigExHasOverflow(const char* pszString, GIntBig nVal)
 GIntBig CPLAtoGIntBigEx( const char* pszString, int bWarn, int *pbOverflow )
 {
     errno = 0;
-#if defined(__MSVCRT__) || (defined(WIN32) && defined(_MSC_VER))
-    GIntBig nVal = _atoi64(pszString);
-#elif HAVE_STRTOLL
     GIntBig nVal = strtoll(pszString, nullptr, 10);
-#elif HAVE_ATOLL
-    GIntBig nVal = atoll(pszString);
-#else
-    GIntBig nVal = atol(pszString);
-#endif
     if( errno == ERANGE
 #if defined(__MINGW32__) || defined(__sun__)
         || CPLAtoGIntBigExHasOverflow(pszString, nVal)
@@ -1371,10 +1356,8 @@ int CPLPrintUIntBig( char *pszBuffer, GUIntBig iValue, int nMaxLen )
 #ifdef HAVE_GCC_DIAGNOSTIC_PUSH
 #pragma GCC diagnostic pop
 #endif
-#elif HAVE_LONG_LONG
-    snprintf(szTemp, sizeof(szTemp), "%*llu", nMaxLen, iValue);
 #else
-    snprintf(szTemp, sizeof(szTemp), "%*lu", nMaxLen, iValue);
+    snprintf(szTemp, sizeof(szTemp), "%*llu", nMaxLen, iValue);
 #endif
 
     return CPLPrintString(pszBuffer, szTemp, nMaxLen);
@@ -2008,6 +1991,234 @@ void CPL_STDCALL CPLFreeConfig()
 }
 
 /************************************************************************/
+/*                    CPLLoadConfigOptionsFromFile()                    */
+/************************************************************************/
+
+/** Load configuration from a given configuration file.
+
+A configuration file is a text file in a .ini style format, that lists
+configuration options and their values.
+Lines starting with # are comment lines.
+
+Example:
+\verbatim
+[configoptions]
+# set BAR as the value of configuration option FOO
+FOO=BAR
+\endverbatim
+
+Starting with GDAL 3.5, a configuration file can also contain credentials
+(or more generally options related to a virtual file system) for a given path prefix,
+that can also be set with VSISetCredential(). Credentials should be put under
+a [credentials] section, and for each path prefix, under a relative subsection
+whose name starts with "[." (e.g. "[.some_arbitrary_name]"), and whose first
+key is "path".
+
+Example:
+\verbatim
+[credentials]
+
+[.private_bucket]
+path=/vsis3/my_private_bucket
+AWS_SECRET_ACCESS_KEY=...
+AWS_ACCESS_KEY_ID=...
+
+[.sentinel_s2_l1c]
+path=/vsis3/sentinel-s2-l1c
+AWS_REQUEST_PAYER=requester
+\endverbatim
+
+This function is typically called by CPLLoadConfigOptionsFromPredefinedFiles()
+
+@param pszFilename File where to load configuration from.
+@param bOverrideEnvVars Whether configuration options from the configuration
+                        file should override environment variables.
+@since GDAL 3.3
+ */
+void CPLLoadConfigOptionsFromFile(const char* pszFilename, int bOverrideEnvVars)
+{
+    VSILFILE* fp = VSIFOpenL(pszFilename, "rb");
+    if( fp == nullptr )
+        return;
+    CPLDebug("CPL", "Loading configuration from %s", pszFilename);
+    const char* pszLine;
+    bool bInConfigOptions = false;
+    bool bInCredentials = false;
+    bool bInSubsection = false;
+    std::string osPath;
+
+    const auto IsSpaceOnly = [](const char* pszStr)
+    {
+        for(; *pszStr; ++pszStr)
+        {
+            if( !isspace(*pszStr) )
+                return false;
+        }
+        return true;
+    };
+
+    while( (pszLine = CPLReadLine2L(fp, -1, nullptr)) != nullptr )
+    {
+        if( IsSpaceOnly(pszLine) )
+        {
+            // Blank line
+        }
+        else if( pszLine[0] == '#' )
+        {
+            // Comment line
+        }
+        else if( strcmp(pszLine, "[configoptions]") == 0 )
+        {
+            bInConfigOptions = true;
+            bInCredentials = false;
+        }
+        else if( strcmp(pszLine, "[credentials]") == 0 )
+        {
+            bInConfigOptions = false;
+            bInCredentials = true;
+            bInSubsection = false;
+            osPath.clear();
+        }
+        else if( bInCredentials )
+        {
+            if( strncmp(pszLine, "[.", 2) == 0 )
+            {
+                bInSubsection = true;
+                osPath.clear();
+            }
+            else if( bInSubsection )
+            {
+                char* pszKey = nullptr;
+                const char* pszValue = CPLParseNameValue(pszLine, &pszKey);
+                if( pszKey && pszValue )
+                {
+                    if( strcmp(pszKey, "path") == 0 )
+                    {
+                        if( !osPath.empty() )
+                        {
+                            CPLError(CE_Warning, CPLE_AppDefined,
+                                     "Duplicated 'path' key in the same subsection. "
+                                     "Ignoring %s=%s",
+                                     pszKey, pszValue);
+                        }
+                        else
+                        {
+                            osPath = pszValue;
+                        }
+                    }
+                    else if( osPath.empty() )
+                    {
+                        CPLError(CE_Warning, CPLE_AppDefined,
+                                 "First entry in a credentials subsection "
+                                 "should be 'path'.");
+                    }
+                    else
+                    {
+                        VSISetCredential(osPath.c_str(), pszKey, pszValue);
+                    }
+                }
+                CPLFree(pszKey);
+            }
+            else if( pszLine[0] == '[' )
+            {
+                bInConfigOptions = false;
+                bInCredentials = false;
+            }
+            else
+            {
+                CPLError(CE_Warning, CPLE_AppDefined,
+                         "Ignoring content in [credential] section that is not "
+                         "in a [.xxxxx] subsection");
+            }
+        }
+        else if( pszLine[0] == '[' )
+        {
+            bInConfigOptions = false;
+            bInCredentials = false;
+        }
+        else if( bInConfigOptions )
+        {
+            char* pszKey = nullptr;
+            const char* pszValue = CPLParseNameValue(pszLine, &pszKey);
+            if( pszKey && pszValue )
+            {
+                if( bOverrideEnvVars || getenv(pszKey) == nullptr )
+                {
+                    CPLDebugOnly("CPL",
+                                 "Setting configuration option %s=%s",
+                                 pszKey, pszValue);
+                    CPLSetConfigOption(pszKey, pszValue);
+                }
+                else
+                {
+                    CPLDebugOnly("CPL",
+                                 "Ignoring configuration option %s from "
+                                 "configuration file as it is already set "
+                                 "as an environment variable", pszKey);
+                }
+            }
+            CPLFree(pszKey);
+        }
+    }
+    VSIFCloseL(fp);
+}
+
+/************************************************************************/
+/*                CPLLoadConfigOptionsFromPredefinedFiles()             */
+/************************************************************************/
+
+/** Load configuration from a set of predefined files.
+ *
+ * If the environment variable (or configuration option) GDAL_CONFIG_FILE is
+ * set, then CPLLoadConfigOptionsFromFile() will be called with the value of
+ * this configuration option as the file location.
+ *
+ * Otherwise, for Unix builds, CPLLoadConfigOptionsFromFile() will be called
+ * with ${sysconfdir}/gdal/gdalrc first where ${sysconfdir} evaluates
+ * to ${prefix}/etc, unless the --sysconfdir switch of configure has been invoked.
+ *
+ * Then CPLLoadConfigOptionsFromFile() will be called with $(HOME)/.gdal/gdalrc
+ * on Unix builds (potentially overriding what was loaded with the sysconfdir)
+ * or $(USERPROFILE)/.gdal/gdalrc on Windows builds.
+ *
+ * CPLLoadConfigOptionsFromFile() will be called with bOverrideEnvVars = false,
+ * that is the value of environment variables previously set will be used instead
+ * of the value set in the configuration files.
+ *
+ * This function is automatically called by GDALDriverManager() constructor
+ *
+ * @since GDAL 3.3
+ */
+void CPLLoadConfigOptionsFromPredefinedFiles()
+{
+    const char* pszFile = CPLGetConfigOption("GDAL_CONFIG_FILE", nullptr);
+    if( pszFile != nullptr )
+    {
+        CPLLoadConfigOptionsFromFile(pszFile, false);
+    }
+    else
+    {
+#ifdef SYSCONFDIR
+        pszFile = CPLFormFilename(CPLFormFilename(SYSCONFDIR, "gdal", nullptr),
+                                  "gdalrc", nullptr);
+        CPLLoadConfigOptionsFromFile(pszFile, false);
+#endif
+
+#ifdef WIN32
+        const char* pszHome = CPLGetConfigOption("USERPROFILE", nullptr);
+#else
+        const char* pszHome = CPLGetConfigOption("HOME", nullptr);
+#endif
+        if( pszHome != nullptr )
+        {
+            pszFile = CPLFormFilename(CPLFormFilename( pszHome, ".gdal", nullptr),
+                                      "gdalrc", nullptr);
+            CPLLoadConfigOptionsFromFile(pszFile, false);
+        }
+    }
+}
+
+/************************************************************************/
 /*                              CPLStat()                               */
 /************************************************************************/
 
@@ -2065,10 +2276,8 @@ constexpr double vm[] = { 1.0, 0.0166666666667, 0.00027777778 };
 double CPLDMSToDec( const char *is )
 
 {
-    int sign = 0;
-
     // Copy string into work space.
-    while( isspace(static_cast<unsigned char>(sign = *is)) )
+    while( isspace(static_cast<unsigned char>(*is)) )
         ++is;
 
     const char *p = is;
@@ -2080,7 +2289,8 @@ double CPLDMSToDec( const char *is )
     *s = '\0';
     // It is possible that a really odd input (like lots of leading
     // zeros) could be truncated in copying into work.  But...
-    sign = *(s = work);
+    s = work;
+    int sign = *s;
 
     if( sign == '+' || sign == '-' )
         s++;

@@ -28,7 +28,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-// Must be first for DEBUG_BOOL case
 #include "xercesc_headers.h"
 
 // Hack to avoid bool, possibly redefined to pedantic bool class, being later used
@@ -40,6 +39,8 @@ static XSModel* getGrammarPool(XMLGrammarPool* pool)
 
 #include "ogr_gmlas.h"
 #include "ogr_pgdump.h"
+
+#include <list>
 
 CPL_CVSID("$Id$")
 
@@ -190,7 +191,35 @@ void CollectNamespacePrefixes(const char* pszXSDFilename,
     GMLASErrorHandler oErrorHandler;
     poReader->setErrorHandler(&oErrorHandler);
 
-    poReader->parse(oSource);
+    std::string osErrorMsg;
+    try
+    {
+        poReader->parse(oSource);
+    }
+    catch( const SAXException& e )
+    {
+        osErrorMsg += transcode(e.getMessage());
+    }
+    catch( const XMLException& e )
+    {
+        osErrorMsg += transcode(e.getMessage());
+    }
+    catch( const OutOfMemoryException& e )
+    {
+        if( strstr(CPLGetLastErrorMsg(), "configuration option") == nullptr )
+        {
+            osErrorMsg += transcode(e.getMessage());
+        }
+    }
+    catch( const DOMException& e )
+    {
+        osErrorMsg += transcode(e.getMessage());
+    }
+    if( !osErrorMsg.empty() )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "%s",
+                 osErrorMsg.c_str());
+    }
     delete poReader;
 }
 
@@ -347,89 +376,160 @@ static CPLString GetNSOfLastXPathComponent(const CPLString& osXPath )
 /************************************************************************/
 
 // Make sure that field names are unique within the class
-void GMLASSchemaAnalyzer::LaunderFieldNames( GMLASFeatureClass& oClass )
+bool GMLASSchemaAnalyzer::LaunderFieldNames( GMLASFeatureClass& oClass )
 {
     std::vector<GMLASField>& aoFields = oClass.GetFields();
 
     // Duplicates can happen if a class has both an element and an attribute
     // with same name, and/or attributes/elements with same name in different
     // namespaces.
-    bool bHasDoneSomeRenaming = false;
-    do
+
+    // Detect duplicated field names
+    std::map<CPLString, std::list<int> > oMapNameToFieldIndex;
+    for(int i=0; i< static_cast<int>(aoFields.size());i++)
     {
-        bHasDoneSomeRenaming = false;
-
-        // Detect duplicated field names
-        std::map<CPLString, std::vector<int> > oSetNames;
-        for(int i=0; i< static_cast<int>(aoFields.size());i++)
+        if( aoFields[i].GetCategory() == GMLASField::REGULAR )
         {
-            if( aoFields[i].GetCategory() == GMLASField::REGULAR )
-            {
-                oSetNames[ aoFields[i].GetName() ].push_back(i ) ;
-            }
+            oMapNameToFieldIndex[ aoFields[i].GetName() ].push_back(i);
         }
+    }
 
-        // Iterate over the unique names
-        for( const auto& oIter: oSetNames )
+    std::set<CPLString> oSetDuplicates;
+    for( const auto& oIter: oMapNameToFieldIndex )
+    {
+        // Has it duplicates ?
+        const size_t nOccurrences = oIter.second.size();
+        if( nOccurrences > 1 )
         {
-            // Has it duplicates ?
-            const size_t nOccurrences = oIter.second.size();
-            if( nOccurrences > 1 )
+            oSetDuplicates.insert(oIter.first);
+        }
+    }
+
+    while( !oSetDuplicates.empty() )
+    {
+        // Iterate over the unique names
+        auto oIterSet = oSetDuplicates.begin();
+        while( oIterSet != oSetDuplicates.end() )
+        {
+            auto oIterSetNext = oIterSet;
+            ++oIterSetNext;
+
+            auto oIterMap = oMapNameToFieldIndex.find(*oIterSet);
+            CPLAssert( oIterMap != oMapNameToFieldIndex.end() );
+            auto& list = oIterMap->second;
+
+            const CPLString oClassNS =
+                    GetNSOfLastXPathComponent(oClass.GetXPath());
+            bool bHasDoneRenamingForThatCase = false;
+
+            auto oIterList = list.begin();
+
+            // Update oMapNameToFieldIndex and oSetDuplicates with the
+            // new field name, and removing the old one.
+            const auto updateSetAndMapWithNewName = [
+                &oIterList, &list, &oMapNameToFieldIndex, &oSetDuplicates]
+                (int nFieldIdx, const std::string& osNewName)
             {
-                const CPLString oClassNS =
-                        GetNSOfLastXPathComponent(oClass.GetXPath());
-                bool bHasDoneRenamingForThatCase = false;
+                list.erase(oIterList);
+                auto& newList = oMapNameToFieldIndex[osNewName];
+                newList.push_back(nFieldIdx);
+                if( newList.size() > 1 )
+                    oSetDuplicates.insert(osNewName);
+            };
 
-                for(size_t i=0; i<nOccurrences;i++)
+            while( oIterList != list.end() )
+            {
+                auto oIterListNext = oIterList;
+                ++oIterListNext;
+
+                const int nFieldIdx = *oIterList;
+                GMLASField& oField = aoFields[nFieldIdx];
+                // CPLDebug("GMLAS", "%s", oField.GetXPath().c_str() );
+                const CPLString oNS(
+                            GetNSOfLastXPathComponent(oField.GetXPath()));
+                // If the field has a namespace that is not the one of its
+                // class, then prefix its name with its namespace
+                if( !oNS.empty() && oNS != oClassNS &&
+                    !STARTS_WITH(oField.GetName(), (oNS + "_").c_str() ) )
                 {
-                    GMLASField& oField = aoFields[oIter.second[i]];
-                    // CPLDebug("GMLAS", "%s", oField.GetXPath().c_str() );
-                    const CPLString oNS(
-                                GetNSOfLastXPathComponent(oField.GetXPath()));
-                    // If the field has a namespace that is not the one of its
-                    // class, then prefix its name with its namespace
-                    if( !oNS.empty() && oNS != oClassNS &&
-                        !STARTS_WITH(oField.GetName(), (oNS + "_").c_str() ) )
-                    {
-                        bHasDoneSomeRenaming = true;
-                        bHasDoneRenamingForThatCase = true;
-                        oField.SetName( oNS + "_" + oField.GetName() );
-                        break;
-                    }
-                    // If it is an attribute without a particular namespace,
-                    // then suffix with _attr
-                    else if( oNS.empty() &&
-                             oField.GetXPath().find('@') != std::string::npos &&
-                             oField.GetName().find("_attr") == std::string::npos )
-                    {
-                        bHasDoneSomeRenaming = true;
-                        bHasDoneRenamingForThatCase = true;
-                        oField.SetName( oField.GetName() + "_attr" );
-                        break;
-                    }
+                    bHasDoneRenamingForThatCase = true;
+                    const auto osNewName = oNS + "_" + oField.GetName();
+                    oField.SetName(osNewName);
+                    updateSetAndMapWithNewName(nFieldIdx, osNewName);
+                    break;
+                }
+                // If it is an attribute without a particular namespace,
+                // then suffix with _attr
+                else if( oNS.empty() &&
+                         oField.GetXPath().find('@') != std::string::npos &&
+                         oField.GetName().find("_attr") == std::string::npos )
+                {
+                    bHasDoneRenamingForThatCase = true;
+                    const auto osNewName = oField.GetName() + "_attr";
+                    oField.SetName(osNewName);
+                    updateSetAndMapWithNewName(nFieldIdx, osNewName);
+                    break;
                 }
 
-                // If none of the above renaming strategies have worked, then
-                // append a counter to the duplicates.
-                if( !bHasDoneRenamingForThatCase )
+                oIterList = oIterListNext;
+            }
+
+            // If none of the above renaming strategies have worked, then
+            // append a counter to the duplicates.
+            if( !bHasDoneRenamingForThatCase )
+            {
+                int i = 0;
+                oIterList = list.begin();
+                while( oIterList != list.end() )
                 {
-                    for(size_t i=0; i<nOccurrences;i++)
+                    auto oIterListNext = oIterList;
+                    ++oIterListNext;
+
+                    const int nFieldIdx = *oIterList;
+                    GMLASField& oField = aoFields[nFieldIdx];
+                    if( i > 0 )
                     {
-                        GMLASField& oField = aoFields[oIter.second[i]];
-                        if( i > 0 )
-                        {
-                            bHasDoneSomeRenaming = true;
-                            oField.SetName( oField.GetName() +
-                                CPLSPrintf("%d", static_cast<int>(i)+1) );
-                        }
+                        const auto osNewName = oField.GetName() +
+                                    CPLSPrintf("%d", static_cast<int>(i)+1);
+                        oField.SetName(osNewName);
+                        updateSetAndMapWithNewName(nFieldIdx, osNewName);
                     }
+
+                    ++i;
+                    oIterList = oIterListNext;
                 }
+            }
+
+            // Update oSetDuplicates and oMapNameToFieldIndex if we have
+            // no longer duplicates for the current name
+            if( list.size() <= 1 )
+            {
+                if( list.empty() )
+                {
+                    oMapNameToFieldIndex.erase(oIterMap);
+                }
+                oSetDuplicates.erase(oIterSet);
+            }
+
+            oIterSet = oIterSetNext;
+        }
+    }
+
+#ifdef DEBUG
+    {
+        // Check that the above algorithm managed to deduplicate names
+        std::set<CPLString> oSetNames;
+        for( const auto& oField: aoFields )
+        {
+            if( oField.GetCategory() == GMLASField::REGULAR )
+            {
+                const auto& osName = oField.GetName();
+                CPLAssert( oSetNames.find(osName) == oSetNames.end() );
+                oSetNames.insert(osName);
             }
         }
     }
-    // As renaming could have created new duplicates (hopefully not!), loop
-    // until no renaming has been done.
-    while( bHasDoneSomeRenaming );
+#endif
 
     // Now check if we must truncate names
     if( m_nIdentifierMaxLength >= MIN_VALUE_OF_MAX_IDENTIFIER_LENGTH )
@@ -437,6 +537,15 @@ void GMLASSchemaAnalyzer::LaunderFieldNames( GMLASFeatureClass& oClass )
         for(size_t i=0; i< aoFields.size();i++)
         {
             int nNameSize = static_cast<int>(aoFields[i].GetName().size());
+            /* Somewhat arbitrary limitation to avoid performance issues in */
+            /* OGRGMLASTruncateIdentifier() */
+            if( nNameSize > 1024 )
+            {
+                CPLError(CE_Failure, CPLE_NotSupported,
+                         "Field name with excessive length (%d) found",
+                         nNameSize);
+                return false;
+            }
             if( nNameSize > m_nIdentifierMaxLength )
             {
                 aoFields[i].SetName(
@@ -492,8 +601,10 @@ void GMLASSchemaAnalyzer::LaunderFieldNames( GMLASFeatureClass& oClass )
     std::vector<GMLASFeatureClass>& aoNestedClasses = oClass.GetNestedClasses();
     for(size_t i=0; i<aoNestedClasses.size();i++)
     {
-        LaunderFieldNames( aoNestedClasses[i] );
+        if( !LaunderFieldNames( aoNestedClasses[i] ) )
+            return false;
     }
+    return true;
 }
 
 /************************************************************************/
@@ -631,17 +742,35 @@ XSElementDeclaration* GMLASSchemaAnalyzer::GetTopElementDeclarationFromXPath(
                 break;
             }
         }
-        XMLCh* xmlNS = XMLString::transcode(osNSURI);
-        XMLCh* xmlName = XMLString::transcode(osName);
-        poEltDecl = poModel->getElementDeclaration(xmlName, xmlNS);
+        XMLCh* xmlNS = nullptr;
+        XMLCh* xmlName = nullptr;
+        try
+        {
+            xmlNS = XMLString::transcode(osNSURI);
+            xmlName = XMLString::transcode(osName);
+            poEltDecl = poModel->getElementDeclaration(xmlName, xmlNS);
+        }
+        catch( const TranscodingException& e )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, "TranscodingException: %s",
+                     transcode(e.getMessage()).c_str());
+        }
         XMLString::release( &xmlNS );
         XMLString::release( &xmlName );
     }
     else
     {
-        XMLCh* xmlName = XMLString::transcode(pszTypename);
-        poEltDecl = poModel->getElementDeclaration(xmlName, nullptr);
-        XMLString::release( &xmlName );
+        try
+        {
+            XMLCh* xmlName = XMLString::transcode(pszTypename);
+            poEltDecl = poModel->getElementDeclaration(xmlName, nullptr);
+            XMLString::release( &xmlName );
+        }
+        catch( const TranscodingException& e )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, "TranscodingException: %s",
+                     transcode(e.getMessage()).c_str());
+        }
     }
     return poEltDecl;
 }
@@ -833,7 +962,17 @@ bool GMLASSchemaAnalyzer::Analyze(GMLASXSDCache& oCache,
             continue;
         }
 
-        XMLCh* xmlNamespace = XMLString::transcode(osNSURI.c_str());
+        XMLCh* xmlNamespace = nullptr;
+        try
+        {
+            xmlNamespace = XMLString::transcode(osNSURI.c_str());
+        }
+        catch( const TranscodingException& e )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, "TranscodingException: %s",
+                     transcode(e.getMessage()).c_str());
+            return false;
+        }
 
         XSNamedMap<XSObject>* poMapModelGroupDefinition =
             poModel->getComponentsByNamespace(XSConstants::MODEL_GROUP_DEFINITION,
@@ -906,11 +1045,21 @@ bool GMLASSchemaAnalyzer::Analyze(GMLASXSDCache& oCache,
     for( size_t iNS = 0; !bFoundElementsInFirstChoiceNamespaces &&
                          iNS < aoNamespaces.size(); iNS++ )
     {
-        XMLCh* xmlNamespace = XMLString::transcode(aoNamespaces[iNS].c_str());
+        XMLCh* xmlNamespace = nullptr;
+        try
+        {
+            xmlNamespace = XMLString::transcode(aoNamespaces[iNS].c_str());
+        }
+        catch( const TranscodingException& e )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, "TranscodingException: %s",
+                     transcode(e.getMessage()).c_str());
+            return false;
+        }
 
         XSNamedMap<XSObject>* poMapElements = poModel->getComponentsByNamespace(
             XSConstants::ELEMENT_DECLARATION, xmlNamespace);
-        bFoundElementsInFirstChoiceNamespaces = 
+        bFoundElementsInFirstChoiceNamespaces =
             poMapElements != nullptr && poMapElements->getLength() > 0;
         XMLString::release(&xmlNamespace);
     }
@@ -955,7 +1104,17 @@ bool GMLASSchemaAnalyzer::Analyze(GMLASXSDCache& oCache,
     {
         for( size_t iNS = 0; iNS < aoNamespaces.size(); iNS++ )
         {
-            XMLCh* xmlNamespace = XMLString::transcode(aoNamespaces[iNS].c_str());
+            XMLCh* xmlNamespace = nullptr;
+            try
+            {
+                xmlNamespace = XMLString::transcode(aoNamespaces[iNS].c_str());
+            }
+            catch( const TranscodingException& e )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined, "TranscodingException: %s",
+                         transcode(e.getMessage()).c_str());
+                return false;
+            }
 
             XSNamedMap<XSObject>* poMapElements = poModel->getComponentsByNamespace(
                 XSConstants::ELEMENT_DECLARATION, xmlNamespace);
@@ -1234,7 +1393,8 @@ bool GMLASSchemaAnalyzer::InstantiateClassFromEltDeclaration(
             // TODO ?
         }
 
-        LaunderFieldNames( oClass );
+        if( !LaunderFieldNames( oClass ) )
+            return false;
 
         m_aoClasses.push_back(oClass);
         return true;
@@ -3219,7 +3379,7 @@ bool GMLASSchemaAnalyzer::ExploreModelGroup(
                         for(size_t j = 0; j < osNestedClassFields.size(); j++ )
                         {
                             GMLASField oField(osNestedClassFields[j]);
-                            oField.SetName( 
+                            oField.SetName(
                                 osPrefixedEltName + "_" + oField.GetName() );
                             if( nMinOccurs == 0 ||
                                 (poEltCT->getParticle() != nullptr &&

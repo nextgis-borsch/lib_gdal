@@ -42,10 +42,7 @@ CPL_CVSID("$Id$")
 OGRPGResultLayer::OGRPGResultLayer( OGRPGDataSource *poDSIn,
                                     const char * pszRawQueryIn,
                                     PGresult *hInitialResultIn ) :
-    pszRawStatement(CPLStrdup(pszRawQueryIn)),
-    pszGeomTableName(nullptr),
-    pszGeomTableSchemaName(nullptr),
-    osWHERE("")
+    pszRawStatement(CPLStrdup(pszRawQueryIn))
 {
     poDS = poDSIn;
 
@@ -167,7 +164,7 @@ void OGRPGResultLayer::BuildFullQueryStatement()
     }
 
     const size_t nLen = strlen(pszRawStatement) + osWHERE.size() + 40;
-    pszQueryStatement = (char*) CPLMalloc(nLen);
+    pszQueryStatement = static_cast<char*>(CPLMalloc(nLen));
 
     if (osWHERE.empty())
         strcpy(pszQueryStatement, pszRawStatement);
@@ -228,7 +225,7 @@ int OGRPGResultLayer::TestCapability( const char * pszCap )
     {
         OGRPGGeomFieldDefn* poGeomFieldDefn = nullptr;
         if( poFeatureDefn->GetGeomFieldCount() > 0 )
-            poGeomFieldDefn = poFeatureDefn->myGetGeomFieldDefn(m_iGeomFieldFilter);
+            poGeomFieldDefn = poFeatureDefn->GetGeomFieldDefn(m_iGeomFieldFilter);
         return (m_poFilterGeom == nullptr ||
                 poGeomFieldDefn == nullptr ||
                 poGeomFieldDefn->ePostgisType == GEOM_TYPE_GEOMETRY ||
@@ -239,7 +236,7 @@ int OGRPGResultLayer::TestCapability( const char * pszCap )
     {
         OGRPGGeomFieldDefn* poGeomFieldDefn = nullptr;
         if( poFeatureDefn->GetGeomFieldCount() > 0 )
-            poGeomFieldDefn = poFeatureDefn->myGetGeomFieldDefn(m_iGeomFieldFilter);
+            poGeomFieldDefn = poFeatureDefn->GetGeomFieldDefn(m_iGeomFieldFilter);
         return (poGeomFieldDefn == nullptr ||
                 poGeomFieldDefn->ePostgisType == GEOM_TYPE_GEOMETRY ||
                 poGeomFieldDefn->ePostgisType == GEOM_TYPE_GEOGRAPHY )
@@ -250,7 +247,7 @@ int OGRPGResultLayer::TestCapability( const char * pszCap )
     {
         OGRPGGeomFieldDefn* poGeomFieldDefn = nullptr;
         if( poFeatureDefn->GetGeomFieldCount() > 0 )
-            poGeomFieldDefn = poFeatureDefn->myGetGeomFieldDefn(0);
+            poGeomFieldDefn = poFeatureDefn->GetGeomFieldDefn(0);
         return (poGeomFieldDefn == nullptr ||
                 poGeomFieldDefn->ePostgisType == GEOM_TYPE_GEOMETRY )
                && m_poAttrQuery == nullptr;
@@ -271,7 +268,7 @@ OGRFeature *OGRPGResultLayer::GetNextFeature()
 {
     OGRPGGeomFieldDefn* poGeomFieldDefn = nullptr;
     if( poFeatureDefn->GetGeomFieldCount() != 0 )
-        poGeomFieldDefn = poFeatureDefn->myGetGeomFieldDefn(m_iGeomFieldFilter);
+        poGeomFieldDefn = poFeatureDefn->GetGeomFieldDefn(m_iGeomFieldFilter);
 
     while( true )
     {
@@ -300,7 +297,7 @@ void OGRPGResultLayer::SetSpatialFilter( int iGeomField, OGRGeometry * poGeomIn 
 
 {
     if( iGeomField < 0 || iGeomField >= GetLayerDefn()->GetGeomFieldCount() ||
-        GetLayerDefn()->GetGeomFieldDefn(iGeomField)->GetType() == wkbNone )
+        CPLAssertNotNull(GetLayerDefn()->GetGeomFieldDefn(iGeomField))->GetType() == wkbNone )
     {
         if( iGeomField != 0 )
         {
@@ -312,7 +309,7 @@ void OGRPGResultLayer::SetSpatialFilter( int iGeomField, OGRGeometry * poGeomIn 
     m_iGeomFieldFilter = iGeomField;
 
     OGRPGGeomFieldDefn* poGeomFieldDefn =
-        poFeatureDefn->myGetGeomFieldDefn(m_iGeomFieldFilter);
+        poFeatureDefn->GetGeomFieldDefn(m_iGeomFieldFilter);
     if( InstallFilter( poGeomIn ) )
     {
         if ( poGeomFieldDefn->ePostgisType == GEOM_TYPE_GEOMETRY ||
@@ -365,22 +362,35 @@ void OGRPGResultLayer::ResolveSRID(const OGRPGGeomFieldDefn* poGFldDefn)
     /* We have to get the SRID of the geometry column, so to be able */
     /* to do spatial filtering */
     int nSRSId = UNDETERMINED_SRID;
-    if( poGFldDefn->ePostgisType == GEOM_TYPE_GEOMETRY )
+
+    if( poGFldDefn->ePostgisType == GEOM_TYPE_GEOGRAPHY )
+    {
+        if( !(poDS->sPostGISVersion.nMajor >= 3 ||
+             (poDS->sPostGISVersion.nMajor == 2 && poDS->sPostGISVersion.nMinor >= 2)) )
+        {
+            // EPSG:4326 was a requirement for geography before PostGIS 2.2
+            nSRSId = 4326;
+        }
+    }
+
+    if( nSRSId == UNDETERMINED_SRID &&
+        (poGFldDefn->ePostgisType == GEOM_TYPE_GEOMETRY ||
+         poGFldDefn->ePostgisType == GEOM_TYPE_GEOGRAPHY) )
     {
         if (pszGeomTableName != nullptr)
         {
             CPLString osName(pszGeomTableSchemaName);
             osName += ".";
             osName += pszGeomTableName;
-            OGRPGLayer* poBaseLayer = (OGRPGLayer*) poDS->GetLayerByName(osName);
+            OGRPGLayer* poBaseLayer = cpl::down_cast<OGRPGLayer*>(poDS->GetLayerByName(osName));
             if (poBaseLayer)
             {
                 int iBaseIdx = poBaseLayer->GetLayerDefn()->
                     GetGeomFieldIndex( poGFldDefn->GetNameRef() );
                 if( iBaseIdx >= 0 )
                 {
-                    OGRPGGeomFieldDefn* poBaseGFldDefn =
-                        poBaseLayer->myGetLayerDefn()->myGetGeomFieldDefn(iBaseIdx);
+                    const OGRPGGeomFieldDefn* poBaseGFldDefn =
+                        poBaseLayer->GetLayerDefn()->GetGeomFieldDefn(iBaseIdx);
                     poBaseGFldDefn->GetSpatialRef(); /* To make sure nSRSId is resolved */
                     nSRSId = poBaseGFldDefn->nSRSId;
                 }
@@ -424,9 +434,6 @@ void OGRPGResultLayer::ResolveSRID(const OGRPGGeomFieldDefn* poGFldDefn)
             OGRPGClearResult(hSRSIdResult);
         }
     }
-    else if( poGFldDefn->ePostgisType == GEOM_TYPE_GEOGRAPHY )
-    {
-        nSRSId = 4326;
-    }
+
     poGFldDefn->nSRSId = nSRSId;
 }

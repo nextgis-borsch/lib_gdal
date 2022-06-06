@@ -42,7 +42,6 @@ if(ENABLE_CSW)
 
     set(LIB_HHEADERS_PRIV
         ${CMAKE_SOURCE_DIR}/drivers/vector/wfs/ogr_wfs.h 
-        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h
     )
 
     set(LIB_CSOURCES

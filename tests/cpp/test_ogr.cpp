@@ -6,28 +6,31 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (c) 2006, Mateusz Loskot <mateusz@loskot.net>
-//
-// This library is free software; you can redistribute it and/or
-// modify it under the terms of the GNU Library General Public
-// License as published by the Free Software Foundation; either
-// version 2 of the License, or (at your option) any later version.
-//
-// This library is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-// Library General Public License for more details.
-//
-// You should have received a copy of the GNU Library General Public
-// License along with this library; if not, write to the
-// Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-// Boston, MA 02111-1307, USA.
-///////////////////////////////////////////////////////////////////////////////
+/*
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
+ ****************************************************************************/
 
 #include "gdal_unit_test.h"
 
 #include "ogr_p.h"
 #include "ogrsf_frmts.h"
-#include "../../gdal/ogr/ogrsf_frmts/osm/gpb.h"
+#include "../../ogr/ogrsf_frmts/osm/gpb.h"
 
 #include <string>
 
@@ -160,6 +163,14 @@ namespace tut
         testSpatialReferenceLeakOnCopy<OGRTriangulatedSurface>(poSRS);
 
         delete poSRS;
+
+        // Check that assignSpatialReference() works when passed the SRS
+        // object it already owns and whose has a single reference.
+        poSRS = new OGRSpatialReference();
+        OGRPoint oPoint;
+        oPoint.assignSpatialReference(poSRS);
+        poSRS->Release();
+        oPoint.assignSpatialReference(oPoint.getSpatialReference());
     }
 
     template<class T>
@@ -650,7 +661,7 @@ namespace tut
 
         ensure_equals( GetVarSIntSize(0), 1 );
         ensure_equals( GetVarSIntSize(63), 1 );
-        ensure_equals( GetVarSIntSize(64), 2 ); 
+        ensure_equals( GetVarSIntSize(64), 2 );
         ensure_equals( GetVarSIntSize(-1), 1 );
         ensure_equals( GetVarSIntSize(-64), 1 );
         ensure_equals( GetVarSIntSize(-65), 2 );
@@ -821,6 +832,223 @@ namespace tut
             OGRGeometry* poGeom = &o;
             ensure_equals( poGeom->toSurface(), &o );
         }
+
+        {
+            OGRPoint o;
+            // ensure_equals(o.toPoint(), &o);
+        }
+
+        {
+            OGRLineString o;
+            ensure_equals(o.toCurve(), &o);
+            ensure_equals(o.toSimpleCurve(), &o);
+            // ensure_equals(o.toLineString(), &o);
+
+            {
+                OGRCurve& oRef = o;
+                ensure_equals(oRef.toLineString(), &o);
+            }
+
+            {
+                OGRSimpleCurve& oRef = o;
+                ensure_equals(oRef.toLineString(), &o);
+            }
+        }
+
+        {
+            OGRLinearRing o;
+            ensure_equals(o.toCurve(), &o);
+            ensure_equals(o.toSimpleCurve(), &o);
+            // ensure_equals(o.toLinearRing(), &o);
+
+            {
+                OGRCurve& oRef = o;
+                ensure_equals(oRef.toLinearRing(), &o);
+            }
+            {
+                OGRSimpleCurve& oRef = o;
+                ensure_equals(oRef.toLinearRing(), &o);
+            }
+            {
+                OGRLineString& oRef = o;
+                ensure_equals(oRef.toLinearRing(), &o);
+            }
+        }
+
+        {
+            OGRCircularString o;
+            ensure_equals(o.toCurve(), &o);
+            ensure_equals(o.toSimpleCurve(), &o);
+            // ensure_equals(o.toCircularString(), &o);
+
+            {
+                OGRCurve& oRef = o;
+                ensure_equals(oRef.toCircularString(), &o);
+            }
+
+            {
+                OGRSimpleCurve& oRef = o;
+                ensure_equals(oRef.toCircularString(), &o);
+            }
+        }
+
+        {
+            OGRCompoundCurve o;
+            ensure_equals(o.toCurve(), &o);
+            // ensure_equals(o.toCompoundCurve(), &o);
+
+            {
+                OGRCurve& oRef = o;
+                ensure_equals(oRef.toCompoundCurve(), &o);
+            }
+        }
+
+        {
+            OGRCurvePolygon o;
+            ensure_equals(o.toSurface(), &o);
+            // ensure_equals(o.toCurvePolygon(), &o);
+
+            {
+                OGRSurface& oRef = o;
+                ensure_equals(oRef.toCurvePolygon(), &o);
+            }
+        }
+
+        {
+            OGRPolygon o;
+            ensure_equals(o.toSurface(), &o);
+            ensure_equals(o.toCurvePolygon(), &o);
+            // ensure_equals(o.toPolygon(), &o);
+
+            {
+                OGRSurface& oRef = o;
+                ensure_equals(oRef.toPolygon(), &o);
+            }
+
+            {
+                OGRCurvePolygon& oRef = o;
+                ensure_equals(oRef.toPolygon(), &o);
+            }
+        }
+
+        {
+            OGRTriangle o;
+            ensure_equals(o.toSurface(), &o);
+            ensure_equals(o.toCurvePolygon(), &o);
+            ensure_equals(o.toPolygon(), &o);
+            // ensure_equals(o.toTriangle(), &o);
+
+            {
+                OGRSurface& oRef = o;
+                ensure_equals(oRef.toTriangle(), &o);
+            }
+
+            {
+                OGRCurvePolygon& oRef = o;
+                ensure_equals(oRef.toTriangle(), &o);
+            }
+
+            {
+                OGRPolygon& oRef = o;
+                ensure_equals(oRef.toTriangle(), &o);
+            }
+        }
+
+        {
+            OGRMultiPoint o;
+            ensure_equals(o.toGeometryCollection(), &o);
+            // ensure_equals(o.toMultiPoint(), &o);
+
+            {
+                OGRGeometryCollection& oRef = o;
+                ensure_equals(oRef.toMultiPoint(), &o);
+            }
+        }
+
+        {
+            OGRMultiCurve o;
+            ensure_equals(o.toGeometryCollection(), &o);
+            // ensure_equals(o.toMultiCurve(), &o);
+
+            {
+                OGRGeometryCollection& oRef = o;
+                ensure_equals(oRef.toMultiCurve(), &o);
+            }
+        }
+
+        {
+            OGRMultiLineString o;
+            ensure_equals(o.toGeometryCollection(), &o);
+            ensure_equals(o.toMultiCurve(), &o);
+            // ensure_equals(o.toMultiLineString(), &o);
+
+            {
+                OGRMultiCurve& oRef = o;
+                ensure_equals(oRef.toMultiLineString(), &o);
+            }
+
+            {
+                OGRGeometryCollection& oRef = o;
+                ensure_equals(oRef.toMultiLineString(), &o);
+            }
+        }
+
+        {
+            OGRMultiSurface o;
+            ensure_equals(o.toGeometryCollection(), &o);
+            // ensure_equals(o.toMultiSurface(), &o);
+
+            {
+                OGRGeometryCollection& oRef = o;
+                ensure_equals(oRef.toMultiSurface(), &o);
+            }
+        }
+
+        {
+            OGRMultiPolygon o;
+            ensure_equals(o.toGeometryCollection(), &o);
+            ensure_equals(o.toMultiSurface(), &o);
+            // ensure_equals(o.toMultiPolygon(), &o);
+
+            {
+                OGRMultiSurface& oRef = o;
+                ensure_equals(oRef.toMultiPolygon(), &o);
+            }
+
+            {
+                OGRGeometryCollection& oRef = o;
+                ensure_equals(oRef.toMultiPolygon(), &o);
+            }
+        }
+
+        {
+            OGRPolyhedralSurface o;
+            ensure_equals(o.toSurface(), &o);
+            // ensure_equals(o.toPolyhedralSurface(), &o);
+
+            {
+                OGRSurface& oRef = o;
+                ensure_equals(oRef.toPolyhedralSurface(), &o);
+            }
+        }
+
+        {
+            OGRTriangulatedSurface o;
+            ensure_equals(o.toSurface(), &o);
+            ensure_equals(o.toPolyhedralSurface(), &o);
+            // ensure_equals(o.toTriangulatedSurface(), &o);
+
+            {
+                OGRSurface& oRef = o;
+                ensure_equals(oRef.toTriangulatedSurface(), &o);
+            }
+
+            {
+                OGRPolyhedralSurface& oRef = o;
+                ensure_equals(oRef.toTriangulatedSurface(), &o);
+            }
+        }
+
     }
 
     template<typename T> void TestIterator(T* obj,
@@ -1356,121 +1584,6 @@ namespace tut
         poFeatureDefn->Release();
     }
 
-    // Test OGRGetXMLDateTime()
-    template<>
-    template<>
-    void object::test<15>()
-    {
-        OGRField sField;
-        char *pszDateTime;
-
-        sField.Date.Year = 2001;
-        sField.Date.Month = 2;
-        sField.Date.Day = 3;
-        sField.Date.Hour = 4;
-        sField.Date.Minute = 5;
-
-        // Unknown time zone (TZFlag = 0), no millisecond count
-        sField.Date.TZFlag = 0;
-        sField.Date.Second = 6.0f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "unknown time zone, no millisecond count",
-               strcmp("2001-02-03T04:05:06", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-
-        // Unknown time zone (TZFlag = 0), millisecond count
-        sField.Date.TZFlag = 0;
-        sField.Date.Second = 6.789f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "unknown time zone, millisecond count",
-               strcmp("2001-02-03T04:05:06.789", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-
-        // Local time zone (TZFlag = 1), no millisecond count
-        sField.Date.TZFlag = 1;
-        sField.Date.Second = 6.0f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "local time zone, no millisecond count",
-               strcmp("2001-02-03T04:05:06", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-
-        // Local time zone (TZFlag = 1), millisecond count
-        sField.Date.TZFlag = 1;
-        sField.Date.Second = 6.789f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "local time zone, millisecond count",
-               strcmp("2001-02-03T04:05:06.789", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-
-        // GMT time zone (TZFlag = 100), no millisecond count
-        sField.Date.TZFlag = 100;
-        sField.Date.Second = 6.0f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "GMT time zone, no millisecond count",
-               strcmp("2001-02-03T04:05:06Z", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-
-        // GMT time zone (TZFlag = 100), millisecond count
-        sField.Date.TZFlag = 100;
-        sField.Date.Second = 6.789f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "GMT time zone, millisecond count",
-               strcmp("2001-02-03T04:05:06.789Z", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-
-        // Positive time-zone offset, no millisecond count
-        sField.Date.TZFlag = 111;
-        sField.Date.Second = 6.0f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "positive time-zone offset, no millisecond count",
-               strcmp("2001-02-03T04:05:06+02:45", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-
-        // Positive time-zone offset, millisecond count
-        sField.Date.TZFlag = 111;
-        sField.Date.Second = 6.789f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "positive time-zone offset, millisecond count",
-               strcmp("2001-02-03T04:05:06.789+02:45", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-
-        // Negative time-zone offset, no millisecond count
-        sField.Date.TZFlag = 88;
-        sField.Date.Second = 6.0f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "negative time-zone offset, no millisecond count",
-               strcmp("2001-02-03T04:05:06-03:00", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-
-        // Negative time-zone offset, millisecond count
-        sField.Date.TZFlag = 88;
-        sField.Date.Second = 6.789f;
-        pszDateTime = OGRGetXMLDateTime(&sField);
-        ensure(nullptr != pszDateTime);
-        ensure("OGRGetXMLDateTime formats date/time field with "
-               "negative time-zone offset, millisecond count",
-               strcmp("2001-02-03T04:05:06.789-03:00", pszDateTime) == 0);
-        CPLFree(pszDateTime);
-    }
-
     // Test OGRLinearRing::isPointOnRingBoundary()
     template<>
     template<>
@@ -1553,6 +1666,175 @@ namespace tut
         ensure(pszWKT != nullptr);
         ensure_equals(std::string(pszWKT), "POINT (1 2)");
         CPLFree(pszWKT);
+    }
+
+    // Test OGRGeometry::clone()
+    template<>
+    template<>
+    void object::test<18>()
+    {
+        const char* apszWKT[] =
+        {
+            "POINT (0 0)",
+            "POINT ZM EMPTY",
+            "LINESTRING (0 0)",
+            "LINESTRING ZM EMPTY",
+            "POLYGON ((0 0),(0 0))",
+            "MULTIPOLYGON ZM EMPTY",
+            "MULTIPOINT ((0 0))",
+            "MULTIPOINT ZM EMPTY",
+            "MULTILINESTRING ((0 0))",
+            "MULTILINESTRING ZM EMPTY",
+            "MULTIPOLYGON (((0 0)))",
+            "MULTIPOLYGON ZM EMPTY",
+            "GEOMETRYCOLLECTION (POINT (0 0))",
+            "GEOMETRYCOLLECTION ZM EMPTY",
+            "CIRCULARSTRING (0 0,1 1,0 0)",
+            "CIRCULARSTRING Z EMPTY",
+            "CIRCULARSTRING ZM EMPTY",
+            "COMPOUNDCURVE ((0 0,1 1))",
+            "COMPOUNDCURVE ZM EMPTY",
+            "CURVEPOLYGON ((0 0,1 1,1 0,0 0))",
+            "CURVEPOLYGON ZM EMPTY",
+            "MULTICURVE ((0 0))",
+            "MULTICURVE ZM EMPTY",
+            "MULTISURFACE (((0 0)))",
+            "MULTISURFACE ZM EMPTY",
+            "TRIANGLE ((0 0,0 1,1 1,0 0))",
+            "TRIANGLE ZM EMPTY",
+            "POLYHEDRALSURFACE (((0 0,0 1,1 1,0 0)))",
+            "POLYHEDRALSURFACE ZM EMPTY",
+            "TIN (((0 0,0 1,1 1,0 0)))",
+            "TIN ZM EMPTY",
+        };
+        OGRSpatialReference oSRS;
+        for( const char* pszWKT: apszWKT )
+        {
+            OGRGeometry* poGeom = nullptr;
+            OGRGeometryFactory::createFromWkt(pszWKT, &oSRS, &poGeom);
+            auto poClone = poGeom->clone();
+            ensure(poClone != nullptr);
+            char* outWKT = nullptr;
+            poClone->exportToWkt(&outWKT, wkbVariantIso);
+            ensure_equals(std::string(pszWKT), std::string(outWKT));
+            CPLFree(outWKT);
+            delete poClone;
+            delete poGeom;
+        }
+    }
+
+    // Test OGRLineString::removePoint()
+    template<>
+    template<>
+    void object::test<20>()
+    {
+        {
+            OGRLineString ls;
+            ls.addPoint(0,1);
+            ls.addPoint(2,3);
+            ls.addPoint(4,5);
+            ensure( !ls.removePoint(-1) );
+            ensure( !ls.removePoint(3) );
+            ensure_equals( ls.getNumPoints(), 3 );
+            ensure( ls.removePoint(1) );
+            ensure_equals( ls.getNumPoints(), 2 );
+            ensure_equals( ls.getX(0), 0.0 );
+            ensure_equals( ls.getY(0), 1.0 );
+            ensure_equals( ls.getX(1), 4.0 );
+            ensure_equals( ls.getY(1), 5.0 );
+            ensure( ls.removePoint(1) );
+            ensure_equals( ls.getNumPoints(), 1 );
+            ensure( ls.removePoint(0) );
+            ensure_equals( ls.getNumPoints(), 0 );
+        }
+        {
+            // With Z, M
+            OGRLineString ls;
+            ls.addPoint(0,1,20,30);
+            ls.addPoint(2,3,40,50);
+            ls.addPoint(4,5,60,70);
+            ensure( !ls.removePoint(-1) );
+            ensure( !ls.removePoint(3) );
+            ensure_equals( ls.getNumPoints(), 3 );
+            ensure( ls.removePoint(1) );
+            ensure_equals( ls.getNumPoints(), 2 );
+            ensure_equals( ls.getX(0), 0.0 );
+            ensure_equals( ls.getY(0), 1.0 );
+            ensure_equals( ls.getZ(0), 20.0 );
+            ensure_equals( ls.getM(0), 30.0 );
+            ensure_equals( ls.getX(1), 4.0 );
+            ensure_equals( ls.getY(1), 5.0 );
+            ensure_equals( ls.getZ(1), 60.0 );
+            ensure_equals( ls.getM(1), 70.0 );
+            ensure( ls.removePoint(1) );
+            ensure_equals( ls.getNumPoints(), 1 );
+            ensure( ls.removePoint(0) );
+            ensure_equals( ls.getNumPoints(), 0 );
+        }
+    }
+
+
+    // Test effect of MarkSuppressOnClose() on DXF
+    template<>
+    template<>
+    void object::test<21>()
+    {
+        CPLString tmpFilename(CPLGenerateTempFilename(nullptr));
+        tmpFilename += ".dxf";
+        auto poDrv = GDALDriver::FromHandle(GDALGetDriverByName("DXF"));
+        if( poDrv )
+        {
+            auto poDS(GDALDatasetUniquePtr(poDrv->Create(
+                tmpFilename, 0, 0, 0, GDT_Unknown, nullptr )));
+            ensure( poDS != nullptr );
+
+            OGRLayer *poLayer = poDS->CreateLayer("test", nullptr, wkbPoint, nullptr);
+            ensure ( poLayer != nullptr );
+
+            for (double x = 0; x < 100; x++)
+            {
+                OGRFeature *poFeature = OGRFeature::CreateFeature(poLayer->GetLayerDefn());
+                ensure ( poFeature != nullptr );
+                OGRPoint pt(x, 42);
+                ensure ( OGRERR_NONE == poFeature->SetGeometry(&pt) );
+                ensure ( OGRERR_NONE == poLayer->CreateFeature(poFeature) );
+                OGRFeature::DestroyFeature( poFeature );
+            }
+
+            poDS->MarkSuppressOnClose();
+
+            poDS.reset();
+            VSIStatBufL sStat;
+            ensure( 0 != VSIStatL(tmpFilename, &sStat) );
+        }
+    }
+
+    // Test OGREnvelope
+    template<>
+    template<>
+    void object::test<22>()
+    {
+        OGREnvelope s1;
+        ensure(!s1.IsInit());
+        {
+            OGREnvelope s2(s1);
+            ensure(s1 == s2);
+            ensure(!(s1 != s2));
+        }
+
+        s1.MinX = 0;
+        s1.MinY = 1;
+        s1.MaxX = 2;
+        s1.MaxX = 3;
+        ensure(s1.IsInit());
+        {
+            OGREnvelope s2(s1);
+            ensure(s1 == s2);
+            ensure(!(s1 != s2));
+            s2.MinX += 1;
+            ensure(s1 != s2);
+            ensure(!(s1 == s2));
+        }
     }
 
 } // namespace tut

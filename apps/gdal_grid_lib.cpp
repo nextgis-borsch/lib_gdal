@@ -515,13 +515,6 @@ static CPLErr ProcessLayer( OGRLayerH hSrcLayer, GDALDatasetH hDstDS,
 
     GDALRasterBandH hBand = GDALGetRasterBand( hDstDS, nBand );
 
-    if (adfX.empty())
-    {
-        // FIXME: Should have set to nodata value instead
-        GDALFillRaster( hBand, 0.0 , 0.0 );
-        return CE_None;
-    }
-
     int nBlockXSize = 0;
     int nBlockYSize = 0;
     const int nDataTypeSize = GDALGetDataTypeSizeBytes(eType);
@@ -657,8 +650,7 @@ static OGRGeometryCollection* LoadGeometry( const char* pszDS,
         poLyr->SetAttributeFilter( pszWhere );
 
     OGRGeometryCollection *poGeom = nullptr;
-    OGRFeature *poFeat = nullptr;
-    while ( (poFeat = poLyr->GetNextFeature()) != nullptr )
+    for( auto& poFeat: poLyr )
     {
         OGRGeometry* poSrcGeom = poFeat->GetGeometryRef();
         if ( poSrcGeom )
@@ -691,15 +683,12 @@ static OGRGeometryCollection* LoadGeometry( const char* pszDS,
                 CPLError(CE_Failure, CPLE_AppDefined,
                          "Geometry not of polygon type.");
                 OGRGeometryFactory::destroyGeometry( poGeom );
-                OGRFeature::DestroyFeature( poFeat );
                 if ( pszSQL != nullptr )
                     poDS->ReleaseResultSet( poLyr );
                 GDALClose(poDS);
                 return nullptr;
             }
         }
-
-        OGRFeature::DestroyFeature( poFeat );
     }
 
     if( pszSQL != nullptr )
@@ -843,6 +832,7 @@ GDALDatasetH GDALGrid( const char *pszDest, GDALDatasetH hSrcDataset,
 
             if(pbUsageError)
                 *pbUsageError = TRUE;
+            GDALGridOptionsFree(psOptionsToFree);
             return nullptr;
         }
 
@@ -859,6 +849,7 @@ GDALDatasetH GDALGrid( const char *pszDest, GDALDatasetH hSrcDataset,
 
             if(pbUsageError)
                 *pbUsageError = TRUE;
+            GDALGridOptionsFree(psOptionsToFree);
             return nullptr;
         }
     }
@@ -1318,14 +1309,14 @@ GDALGridOptions *GDALGridOptionsNew(char** papszArgv, GDALGridOptionsForBinary* 
                 return nullptr;
             }
 
-            char **papszParms = CSLTokenizeString2( pszAlgorithm, ":", FALSE );
-            const char* pszNoDataValue = CSLFetchNameValue( papszParms, "nodata" );
+            char **papszParams = CSLTokenizeString2( pszAlgorithm, ":", FALSE );
+            const char* pszNoDataValue = CSLFetchNameValue( papszParams, "nodata" );
             if( pszNoDataValue != nullptr )
             {
                 psOptions->bNoDataSet = true;
                 psOptions->dfNoDataValue = CPLAtofM(pszNoDataValue);
             }
-            CSLDestroy(papszParms);
+            CSLDestroy(papszParams);
         }
         else if( papszArgv[i][0] == '-' )
         {

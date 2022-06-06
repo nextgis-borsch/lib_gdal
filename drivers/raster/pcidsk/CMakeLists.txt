@@ -59,7 +59,9 @@ if(ENABLE_PCIDSK AND JPEG_FOUND)
         sdk/core/pcidskopen.cpp
         sdk/core/pcidsk_pubutils.cpp
         sdk/core/pcidsk_utils.cpp
-        sdk/core/sysvirtualfile.cpp
+        sdk/core/cpcidskblockfile.cpp
+        sdk/core/pcidsk_raster.cpp
+        sdk/core/pcidsk_scanint.cpp
         sdk/segment/cpcidskgeoref.cpp
         sdk/segment/cpcidsksegment.cpp
         sdk/segment/cpcidskvectorsegment.cpp
@@ -67,19 +69,30 @@ if(ENABLE_PCIDSK AND JPEG_FOUND)
         sdk/segment/vecsegheader.cpp
         sdk/segment/vecsegdataindex.cpp
         sdk/segment/metadatasegment_p.cpp
-        sdk/segment/sysblockmap.cpp
         sdk/segment/cpcidskpct.cpp
         sdk/segment/cpcidskrpcmodel.cpp
         sdk/segment/cpcidskgcp2segment.cpp
         sdk/segment/cpcidskbitmap.cpp
         sdk/segment/cpcidsk_tex.cpp
-        sdk/segment/cpcidskapmodel.cpp
+        sdk/segment/cpcidskblut.cpp
+        sdk/segment/cpcidskbpct.cpp
+        sdk/segment/cpcidsklut.cpp
+        sdk/segment/cpcidskpolymodel.cpp
+        sdk/segment/systiledir.cpp
         sdk/core/clinksegment.cpp
         sdk/segment/cpcidsktoutinmodel.cpp
         sdk/segment/cpcidskbinarysegment.cpp
         sdk/segment/cpcidsk_array.cpp
         sdk/segment/cpcidskephemerissegment.cpp
-        sdk/segment/cpcidskads40model.cpp
+        sdk/blockdir/asciitiledir.cpp
+        sdk/blockdir/asciitilelayer.cpp
+        sdk/blockdir/binarytiledir.cpp
+        sdk/blockdir/binarytilelayer.cpp
+        sdk/blockdir/blockdir.cpp
+        sdk/blockdir/blockfile.cpp
+        sdk/blockdir/blocklayer.cpp
+        sdk/blockdir/blocktiledir.cpp
+        sdk/blockdir/blocktilelayer.cpp
     )
 
     set(LIB_CSOURCES ${SDK_CSOURCES}

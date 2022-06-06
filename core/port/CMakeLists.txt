@@ -73,6 +73,8 @@ set(LIB_HHEADERS
     cpl_auto_close.h
     cpl_json_streaming_writer.h
     cpl_vax.h
+    cpl_compressor.h
+    cpl_float.h
 )
 
 set(LIB_HHEADERS_PRIV
@@ -85,6 +87,8 @@ set(LIB_HHEADERS_PRIV
     cpl_swift.h
     cpl_safemaths.hpp
     cpl_error_internal.h
+    cpl_curl_priv.h
+    cpl_zlib_header.h
 )
 
 set(LIB_CSOURCES
@@ -155,6 +159,8 @@ set(LIB_CSOURCES
     cpl_json_streaming_writer.cpp
     cpl_vax.cpp
     cpl_vsil_uploadonclose.cpp
+    cpl_compressor.cpp
+    cpl_float.cpp
 )
 
 if(WIN32)
@@ -168,10 +174,6 @@ if(WITH_ODBC)
     list(APPEND LIB_HHEADERS_PRIV cpl_odbc.h)
     list(APPEND LIB_CSOURCES cpl_odbc.cpp)
 endif()
-
-# if(WITH_XMLREFORMAT)
-#     list(APPEND LIB_CSOURCES xmlreformat.cpp)
-# endif()
 
 if(WITH_ONLY_CRYPTODLL_ALG)
     # TODO: Check cryptopp func

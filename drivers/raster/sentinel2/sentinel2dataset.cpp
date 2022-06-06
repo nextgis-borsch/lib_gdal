@@ -30,7 +30,6 @@
 #include "cpl_minixml.h"
 #include "cpl_string.h"
 #include "gdal_pam.h"
-#include "gdal_proxy.h"
 #include "ogr_spatialref.h"
 #include "ogr_geometry.h"
 #include "gdaljp2metadata.h"
@@ -144,6 +143,7 @@ static const SENTINEL2_L2A_BandDescription asL2ABandDesc[] =
 
 #define NB_L2A_BANDS (sizeof(asL2ABandDesc)/sizeof(asL2ABandDesc[0]))
 
+static bool SENTINEL2isZipped(const char* pszHeader, int nHeaderBytes);
 static
 const char* SENTINEL2GetOption( GDALOpenInfo* poOpenInfo,
                                 const char* pszName,
@@ -400,7 +400,9 @@ int SENTINEL2Dataset::Identify( GDALOpenInfo *poOpenInfo )
     if( EQUAL( pszJustFilename, "MTD_TL.xml") )
         return FALSE;
 
-    /* Accept directly .zip as provided by https://scihub.esa.int/ */
+    /* Accept directly .zip as provided by https://scihub.esa.int/
+     * First we check just by file name as it is faster than looking
+     * inside to detect content. */
     if( (STARTS_WITH_CI(pszJustFilename, "S2A_MSIL1C_") ||
          STARTS_WITH_CI(pszJustFilename, "S2B_MSIL1C_") ||
          STARTS_WITH_CI(pszJustFilename, "S2A_MSIL2A_") ||
@@ -437,6 +439,9 @@ int SENTINEL2Dataset::Identify( GDALOpenInfo *poOpenInfo )
 
     if( strstr(pszHeader,  "<n1:Level-2A_User_Product" ) != nullptr &&
         strstr(pszHeader, "User_Product_Level-2A" ) != nullptr )
+        return TRUE;
+
+    if( SENTINEL2isZipped(pszHeader, poOpenInfo->nHeaderBytes) )
         return TRUE;
 
     return FALSE;
@@ -595,7 +600,72 @@ GDALDataset *SENTINEL2Dataset::Open( GDALOpenInfo * poOpenInfo )
         return OpenL1C_L2A(poOpenInfo->pszFilename, SENTINEL2_L2A);
     }
 
+    if( SENTINEL2isZipped(pszHeader, poOpenInfo->nHeaderBytes) )
+    {
+        CPLString osFilename(poOpenInfo->pszFilename);
+        if( strncmp(osFilename, "/vsizip/", strlen("/vsizip/")) != 0 )
+            osFilename = "/vsizip/" + osFilename;
+
+        auto psDir = VSIOpenDir(osFilename.c_str(), 1, nullptr);
+        if( psDir == nullptr ) {
+            CPLError(CE_Failure, CPLE_AppDefined, "SENTINEL2: Cannot open ZIP file %s",
+                     osFilename.c_str());
+            return nullptr;
+        }
+        while ( const VSIDIREntry* psEntry = VSIGetNextDirEntry(psDir) )
+        {
+            const char* pszInsideFilename = CPLGetFilename(psEntry->pszName);
+            if( VSI_ISREG(psEntry->nMode) && (
+                STARTS_WITH_CI(pszInsideFilename, "MTD_MSIL2A") ||
+                STARTS_WITH_CI(pszInsideFilename, "MTD_MSIL1C") ||
+                STARTS_WITH_CI(pszInsideFilename, "S2A_OPER_MTD_SAFL1B") ||
+                STARTS_WITH_CI(pszInsideFilename, "S2B_OPER_MTD_SAFL1B") ||
+                STARTS_WITH_CI(pszInsideFilename, "S2A_OPER_MTD_SAFL1C") ||
+                STARTS_WITH_CI(pszInsideFilename, "S2B_OPER_MTD_SAFL1C") ||
+                STARTS_WITH_CI(pszInsideFilename, "S2A_USER_MTD_SAFL2A") ||
+                STARTS_WITH_CI(pszInsideFilename, "S2B_USER_MTD_SAFL2A")) )
+            {
+                osFilename = osFilename + "/" + psEntry->pszName;
+                CPLDebug("SENTINEL2", "Trying %s", osFilename.c_str());
+                GDALOpenInfo oOpenInfo(osFilename, GA_ReadOnly);
+                VSICloseDir(psDir);
+                return Open(&oOpenInfo);
+            }
+        }
+        VSICloseDir(psDir);
+    }
+
     return nullptr;
+}
+
+/************************************************************************/
+/*                        SENTINEL2isZipped()                           */
+/************************************************************************/
+
+static bool SENTINEL2isZipped(const char* pszHeader, int nHeaderBytes)
+{
+    if( nHeaderBytes < 50 )
+        return FALSE;
+
+    /* According to Sentinel-2 Products Specification Document,
+     * all files are located inside a folder with a specific name pattern
+     * Ref: S2-PDGS-TAS-DI-PSD Issue: 14.6.
+     */
+    return (
+        // inside a ZIP file
+        memcmp(pszHeader, "\x50\x4b", 2) == 0 && (
+        // a "4.2.1 Compact Naming Convention" confirming file
+        ( memcmp(pszHeader + 34, "MSIL2A", 6) == 0 ||
+          memcmp(pszHeader + 34, "MSIL1C", 6) == 0 ) ||
+        // a "4.2 S2 User Product Naming Convention" confirming file
+        ( memcmp(pszHeader + 34, "OPER_PRD_MSIL2A", 15) == 0 ||
+          memcmp(pszHeader + 34, "OPER_PRD_MSIL1B", 15) == 0 ||
+          memcmp(pszHeader + 34, "OPER_PRD_MSIL1C", 15) == 0 ) ||
+        // some old / validation naming convention
+        ( memcmp(pszHeader + 34, "USER_PRD_MSIL2A", 15) == 0 ||
+          memcmp(pszHeader + 34, "USER_PRD_MSIL1B", 15) == 0 ||
+          memcmp(pszHeader + 34, "USER_PRD_MSIL1C", 15) == 0 ) )
+    );
 }
 
 /************************************************************************/
@@ -1554,7 +1624,7 @@ static CPLString SENTINEL2GetTilename(const CPLString& osGranulePath,
     bool procBaseLineIs1 = false;
     if( osJPEG2000Name.size() > 12 && osJPEG2000Name[8] == '_' && osJPEG2000Name[12] == '_' )
         procBaseLineIs1 = true;
-    if( bIsPreview || 
+    if( bIsPreview ||
         (psL2ABandDesc != nullptr &&
             (psL2ABandDesc->eLocation == TL_QI_DATA ) ) )
     {
@@ -2119,17 +2189,9 @@ GDALDataset *SENTINEL2Dataset::OpenL1BSubdataset( GDALOpenInfo * poOpenInfo )
             continue;
         }
 
-        GDALProxyPoolDataset* proxyDS =
-            new GDALProxyPoolDataset( osTile,
-                                      poDS->nRasterXSize,
-                                      poDS->nRasterYSize,
-                                      GA_ReadOnly,
-                                      TRUE );
-        proxyDS->AddSrcBandDescription(eDT, 128, 128);
-
         if( nBand != nAlphaBand )
         {
-            poBand->AddSimpleSource( proxyDS->GetRasterBand(1),
+            poBand->AddSimpleSource( osTile, 1,
                                     0, 0,
                                     poDS->nRasterXSize,
                                     poDS->nRasterYSize,
@@ -2140,7 +2202,7 @@ GDALDataset *SENTINEL2Dataset::OpenL1BSubdataset( GDALOpenInfo * poOpenInfo )
         }
         else
         {
-            poBand->AddComplexSource( proxyDS->GetRasterBand(1),
+            poBand->AddComplexSource( osTile, 1,
                                         0, 0,
                                         poDS->nRasterXSize,
                                         poDS->nRasterYSize,
@@ -2151,8 +2213,6 @@ GDALDataset *SENTINEL2Dataset::OpenL1BSubdataset( GDALOpenInfo * poOpenInfo )
                                         nValMax /* offset */,
                                         0 /* scale */);
         }
-
-        proxyDS->Dereference();
 
         if( (nBits % 8) != 0 )
         {
@@ -3551,8 +3611,6 @@ SENTINEL2Dataset* SENTINEL2Dataset::CreateL1CL2ADataset(
     const int nAlphaBand = (bIsPreview || bIsTCI || !bAlpha) ? 0 : nBands;
     const GDALDataType eDT = (bIsPreview || bIsTCI) ? GDT_Byte: GDT_UInt16;
 
-    std::map<CPLString, GDALProxyPoolDataset*> oMapPVITile;
-
     for( int nBand = 1; nBand <= nBands; nBand++ )
     {
         VRTSourcedRasterBand* poBand = nullptr;
@@ -3659,34 +3717,6 @@ SENTINEL2Dataset* SENTINEL2Dataset::CreateL1CL2ADataset(
                 continue;
             }
 
-            GDALProxyPoolDataset* proxyDS = nullptr;
-            if( bIsPreview || bIsTCI )
-            {
-                proxyDS = oMapPVITile[osTile];
-                if( proxyDS == nullptr )
-                {
-                    proxyDS = new GDALProxyPoolDataset( osTile,
-                                                        oGranuleInfo.nWidth,
-                                                        oGranuleInfo.nHeight,
-                                                        GA_ReadOnly,
-                                                        TRUE);
-                    for(int j=0;j<nBands;j++)
-                        proxyDS->AddSrcBandDescription(eDT, 128, 128);
-                    oMapPVITile[osTile] = proxyDS;
-                }
-                else
-                    proxyDS->Reference();
-            }
-            else
-            {
-                proxyDS = new GDALProxyPoolDataset( osTile,
-                                                    oGranuleInfo.nWidth,
-                                                    oGranuleInfo.nHeight,
-                                                    GA_ReadOnly,
-                                                    TRUE);
-                proxyDS->AddSrcBandDescription(eDT, 128, 128);
-            }
-
             const int nDstXOff = static_cast<int>(
                     (oGranuleInfo.dfMinX - dfMinX) / nSubDSPrecision + 0.5);
             const int nDstYOff = static_cast<int>(
@@ -3694,7 +3724,7 @@ SENTINEL2Dataset* SENTINEL2Dataset::CreateL1CL2ADataset(
 
             if( nBand != nAlphaBand )
             {
-                poBand->AddSimpleSource( proxyDS->GetRasterBand((bIsPreview || bIsTCI) ? nBand : 1),
+                poBand->AddSimpleSource( osTile, (bIsPreview || bIsTCI) ? nBand : 1,
                                         0, 0,
                                         oGranuleInfo.nWidth,
                                         oGranuleInfo.nHeight,
@@ -3705,7 +3735,7 @@ SENTINEL2Dataset* SENTINEL2Dataset::CreateL1CL2ADataset(
             }
             else
             {
-                poBand->AddComplexSource( proxyDS->GetRasterBand(1),
+                poBand->AddComplexSource( osTile, 1,
                                           0, 0,
                                           oGranuleInfo.nWidth,
                                           oGranuleInfo.nHeight,
@@ -3716,8 +3746,6 @@ SENTINEL2Dataset* SENTINEL2Dataset::CreateL1CL2ADataset(
                                           nValMax /* offset */,
                                           0 /* scale */);
             }
-
-            proxyDS->Dereference();
         }
 
         if( (nBits % 8) != 0 )

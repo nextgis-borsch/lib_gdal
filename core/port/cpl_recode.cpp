@@ -94,6 +94,29 @@ char CPL_DLL *CPLRecode( const char *pszSource,
              || EQUAL(pszDstEncoding, CPL_ENC_ISO8859_1) ) )
         return CPLStrdup(pszSource);
 
+/* -------------------------------------------------------------------- */
+/*      For ZIP file handling                                           */
+/*      (CP437 might be missing even on some iconv, like on Mac)        */
+/* -------------------------------------------------------------------- */
+    if( EQUAL(pszSrcEncoding, "CP437") &&
+        EQUAL(pszDstEncoding, CPL_ENC_UTF8) ) //
+    {
+        bool bIsAllPrintableASCII = true;
+        const size_t nCharCount = strlen(pszSource);
+        for( size_t i = 0; i <nCharCount; i++ )
+        {
+            if( pszSource[i] < 32 || pszSource[i] > 126 )
+            {
+                bIsAllPrintableASCII = false;
+                break;
+            }
+        }
+        if( bIsAllPrintableASCII )
+        {
+            return CPLStrdup(pszSource);
+        }
+    }
+
 #ifdef CPL_RECODE_ICONV
 /* -------------------------------------------------------------------- */
 /*      CPL_ENC_ISO8859_1 -> CPL_ENC_UTF8                               */
@@ -109,6 +132,17 @@ char CPL_DLL *CPLRecode( const char *pszSource,
     {
         return CPLRecodeStub( pszSource, pszSrcEncoding, pszDstEncoding );
     }
+#ifdef _WIN32
+    else if( ( (EQUAL(pszSrcEncoding, "CP_ACP") ||
+                EQUAL(pszSrcEncoding, "CP_OEMCP"))
+              && EQUAL(pszDstEncoding, CPL_ENC_UTF8) )
+            || ( EQUAL(pszSrcEncoding, CPL_ENC_UTF8)
+                 && (EQUAL(pszDstEncoding, "CP_ACP")||
+                     EQUAL(pszDstEncoding, "CP_OEMCP")) ) )
+    {
+        return CPLRecodeStub( pszSource, pszSrcEncoding, pszDstEncoding );
+    }
+#endif
     else
     {
         return CPLRecodeIconv( pszSource, pszSrcEncoding, pszDstEncoding );

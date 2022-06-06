@@ -37,6 +37,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # TODO: remove this when change according include path in gdaldataset.cpp
 include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
+include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
 
 configure_file(gdal_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/gdal_version.h COPYONLY)
 
@@ -70,7 +71,6 @@ set(LIB_CSOURCES
     gdalabstractbandblockcache.cpp
     gdalallvalidmaskband.cpp
     gdalarraybandblockcache.cpp
-    gdalclientserver.cpp
     gdalcolortable.cpp
     gdaldataset.cpp
     gdaldefaultasync.cpp

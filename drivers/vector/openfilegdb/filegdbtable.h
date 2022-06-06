@@ -186,15 +186,27 @@ class FileGDBGeomField: public FileGDBField
 
 class FileGDBRasterField: public FileGDBGeomField
 {
+    public:
+        enum class Type
+        {
+            EXTERNAL,
+            MANAGED,
+            INLINE,
+        };
+
+    private:
         friend class FileGDBTable;
 
         std::string       osRasterColumnName;
+
+        Type              m_eType = Type::EXTERNAL;
 
     public:
         explicit          FileGDBRasterField(FileGDBTable* poParentIn) : FileGDBGeomField(poParentIn) {}
         virtual          ~FileGDBRasterField() {}
 
         const std::string& GetRasterColumnName() const { return osRasterColumnName; }
+        Type GetType() const { return m_eType; }
 };
 
 /************************************************************************/
@@ -261,6 +273,8 @@ class FileGDBTable
         FileGDBTableGeometryType    eTableGeomType;
         bool                        m_bGeomTypeHasZ = false;
         bool                        m_bGeomTypeHasM = false;
+        bool                        m_bStringsAreUTF8 = true; // if false, UTF16
+        std::string                 m_osTempString{}; // used as a temporary to store strings recoded from UTF16 to UTF8
         int                         nValidRecordCount;
         int                         nTotalRecordCount;
         int                         iGeomField;
@@ -271,6 +285,8 @@ class FileGDBTable
 
         GUInt32                     nBufferMaxSize;
         GByte*                      pabyBuffer;
+
+        std::string                 m_osCacheRasterFieldPath{};
 
         void                        Init();
 

@@ -53,11 +53,9 @@ set(LIB_HHEADERS
 
 set(LIB_HHEADERS_PRIV
     ograpispy.h
-    ogrgeomediageometry.h
     ogrpgeogeometry.h
     ogr_srs_esri_names.h
     ogr_swq.h
-    swq.h
     ogr_libs.h
     ogr_geo_utils.h
     ogr_proj_p.h
@@ -82,7 +80,6 @@ set(LIB_CSOURCES
     ogrfielddefn.cpp
     ogr_fromepsg.cpp
     ogr_geocoding.cpp
-    ogrgeomediageometry.cpp
     ogrgeometrycollection.cpp
     ogrgeometry.cpp
     ogrgeometryfactory.cpp

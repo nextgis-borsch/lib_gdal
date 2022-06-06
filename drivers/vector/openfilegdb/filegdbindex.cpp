@@ -274,9 +274,9 @@ class FileGDBIndexIterator final : public FileGDBIndexIteratorBase
     public:
         virtual             ~FileGDBIndexIterator();
 
-        static FileGDBIterator*      Build(FileGDBTable* poParent,
+        static FileGDBIterator*      Build(FileGDBTable* poParentIn,
                                            int nFieldIdx,
-                                           int bAscending,
+                                           int bAscendingIn,
                                            FileGDBSQLOp op,
                                            OGRFieldType eOGRFieldType,
                                            const OGRField* psValue);
@@ -754,15 +754,15 @@ FileGDBIndexIterator::~FileGDBIndexIterator()
 /*                             Build()                                  */
 /************************************************************************/
 
-FileGDBIterator* FileGDBIndexIterator::Build( FileGDBTable* poParent,
+FileGDBIterator* FileGDBIndexIterator::Build( FileGDBTable* poParentIn,
                                               int nFieldIdx,
-                                              int bAscending,
+                                              int bAscendingIn,
                                               FileGDBSQLOp op,
                                               OGRFieldType eOGRFieldType,
                                               const OGRField* psValue )
 {
     FileGDBIndexIterator* poIndexIterator =
-                new FileGDBIndexIterator(poParent, bAscending);
+                new FileGDBIndexIterator(poParentIn, bAscendingIn);
     if( poIndexIterator->SetConstraint(nFieldIdx, op, eOGRFieldType, psValue) )
     {
         return poIndexIterator;
@@ -876,7 +876,7 @@ int FileGDBIndexIterator::SetConstraint(int nFieldIdx,
     nValueCountInIdx = GetUInt32(abyTrailer + 10, 0);
     /* CPLDebug("OpenFileGDB", "nValueCountInIdx = %u", nValueCountInIdx); */
     /* negative like in sample_clcV15_esri_v10.gdb/a00000005.FDO_UUID.atx */
-    if( (int)nValueCountInIdx < 0 )
+    if( (nValueCountInIdx >> (8 * sizeof(nValueCountInIdx) - 1)) != 0 )
         return FALSE;
     /* QGIS_TEST_101.gdb/a00000006.FDO_UUID.atx */
     if( nValueCountInIdx == 0 )
@@ -1370,6 +1370,7 @@ int FileGDBIndexIteratorBase::LoadNextFeaturePage()
             int key;
             m_oCacheFeaturePage.getOldestEntry(key, cachedPage);
             m_oCacheFeaturePage.remove(key);
+            CPLAssert(cachedPage);
             cachedPage->clear();
         }
         else
@@ -2042,7 +2043,7 @@ bool FileGDBSpatialIndexIteratorImpl::Init()
     nValueCountInIdx = GetUInt32(abyTrailer + 10, 0);
     /* CPLDebug("OpenFileGDB", "nValueCountInIdx = %u", nValueCountInIdx); */
     /* negative like in sample_clcV15_esri_v10.gdb/a00000005.FDO_UUID.atx */
-    if( (int)nValueCountInIdx < 0 )
+    if( (nValueCountInIdx >> (8 * sizeof(nValueCountInIdx) - 1)) != 0 )
         return false;
 
     return ResetInternal();
@@ -2190,6 +2191,7 @@ bool FileGDBSpatialIndexIteratorImpl::FindPages(int iLevel, int nPage)
             int key;
             m_oCachePage[iLevel].getOldestEntry(key, cachedPage);
             m_oCachePage[iLevel].remove(key);
+            CPLAssert(cachedPage);
             cachedPage->clear();
         }
         else

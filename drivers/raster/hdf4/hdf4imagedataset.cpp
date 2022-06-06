@@ -28,7 +28,7 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(NOMINMAX)
 // min/max are defined here on Windows, so block them.
 // TODO: Move this to someplace more appropriate.
 #  define NOMINMAX
@@ -161,9 +161,9 @@ class HDF4ImageDataset final: public HDF4Dataset
 
     static GDALDataset  *Open( GDALOpenInfo * );
     static GDALDataset  *Create( const char * pszFilename,
-                                 int nXSize, int nYSize, int nBands,
-                                 GDALDataType eType, char ** papszParmList );
-    virtual void        FlushCache( void ) override;
+                                 int nXSize, int nYSize, int nBandsIn,
+                                 GDALDataType eType, char ** papszParamList );
+    virtual void        FlushCache( bool bAtClosing ) override;
     CPLErr              GetGeoTransform( double * padfTransform ) override;
     virtual CPLErr      SetGeoTransform( double * ) override;
     const char          *_GetProjectionRef() override;
@@ -827,7 +827,7 @@ HDF4ImageDataset::~HDF4ImageDataset()
 {
     CPLMutexHolderD(&hHDF4Mutex);
 
-    HDF4ImageDataset::FlushCache();
+    HDF4ImageDataset::FlushCache(true);
 
     CPLFree( pszFilename );
     if( iSDS != FAIL )
@@ -972,12 +972,12 @@ const GDAL_GCP *HDF4ImageDataset::GetGCPs()
 /*                             FlushCache()                             */
 /************************************************************************/
 
-void HDF4ImageDataset::FlushCache()
+void HDF4ImageDataset::FlushCache(bool bAtClosing)
 
 {
     CPLMutexHolderD(&hHDF4Mutex);
 
-    GDALDataset::FlushCache();
+    GDALDataset::FlushCache(bAtClosing);
 
     if( eAccess == GA_ReadOnly )
         return;
@@ -1465,7 +1465,7 @@ void HDF4ImageDataset::CaptureNRLGeoTransform()
             == OGRERR_NONE )
         {
             CPLDebug( "HDF4Image",
-                      "GCTP Parms = %g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,"
+                      "GCTP Params = %g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,"
                       "%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g,%g",
                       adfGCTP[0],
                       adfGCTP[1],
@@ -1614,16 +1614,16 @@ void HDF4ImageDataset::CaptureCoastwatchGCTPInfo()
         return;
     }
 
-    double adfParms[15];
-    for( int iParm = 0; iParm < 15; iParm++ )
-        adfParms[iParm] = CPLAtof( papszTokens[iParm] );
+    double adfParams[15];
+    for( int iParam = 0; iParam < 15; iParam++ )
+        adfParams[iParam] = CPLAtof( papszTokens[iParam] );
     CSLDestroy( papszTokens );
 
 /* -------------------------------------------------------------------- */
 /*      Convert into an SRS.                                            */
 /* -------------------------------------------------------------------- */
 
-    if( oSRS.importFromUSGS( nSys, nZone, adfParms, nDatum ) != OGRERR_NONE )
+    if( oSRS.importFromUSGS( nSys, nZone, adfParams, nDatum ) != OGRERR_NONE )
         return;
 
     CPLFree( pszProjection );
@@ -2502,7 +2502,7 @@ int HDF4ImageDataset::ProcessSwathGeolocation( int32 hSW, char **papszDimList )
 
             char *pszProjLine =
                 CPLStrdup(CPLSPrintf("MPMETHOD%s", pszBand));
-            char *pszParmsLine =
+            char *pszParamsLine =
                 CPLStrdup(CPLSPrintf("PROJECTIONPARAMETERS%s",
                                      pszBand));
             char *pszZoneLine =
@@ -2517,9 +2517,9 @@ int HDF4ImageDataset::ProcessSwathGeolocation( int32 hSW, char **papszDimList )
             const char *pszProj =
                 CSLFetchNameValue( papszLocalMetadata,
                                    pszProjLine );
-            const char *pszParms =
+            const char *pszParams =
                 CSLFetchNameValue( papszLocalMetadata,
-                                   pszParmsLine );
+                                   pszParamsLine );
             const char *pszZone =
                 CSLFetchNameValue( papszLocalMetadata,
                                    pszZoneLine );
@@ -2532,8 +2532,8 @@ int HDF4ImageDataset::ProcessSwathGeolocation( int32 hSW, char **papszDimList )
             CPLDebug( "HDF4Image",
                       "Projection %s=%s, parameters %s=%s, "
                       "zone %s=%s",
-                      pszProjLine, pszProj, pszParmsLine,
-                      pszParms, pszZoneLine, pszZone );
+                      pszProjLine, pszProj, pszParamsLine,
+                      pszParams, pszZoneLine, pszZone );
             CPLDebug( "HDF4Image", "Ellipsoid %s=%s",
                       pszEllipsoidLine, pszEllipsoid );
 #endif
@@ -2556,27 +2556,25 @@ int HDF4ImageDataset::ProcessSwathGeolocation( int32 hSW, char **papszDimList )
                     iEllipsoid = 8L;
             }
 #endif
-            char **papszParms = pszParms ?
-                CSLTokenizeString2( pszParms, ",", CSLT_HONOURSTRINGS ) : nullptr;
-            int nParms = CSLCount(papszParms);
-            if( nParms >= 15 )
-                nParms = 15;
-            double adfProjParms[15] = {};
-            for( int i = 0; i < nParms; i++)
-                adfProjParms[i] = CPLAtof( papszParms[i] );
-            for ( int i = nParms; i < 15; i++)
-                adfProjParms[i] = 0.0;
+            char **papszParams = pszParams ?
+                CSLTokenizeString2( pszParams, ",", CSLT_HONOURSTRINGS ) : nullptr;
+            std::vector<double> adfProjParams(15);
+            if( papszParams )
+            {
+                for( int i = 0; i < 15 && papszParams[i] != nullptr ; i++)
+                    adfProjParams[i] = CPLAtof( papszParams[i] );
+            }
 
             // Create projection definition
             oSRS.importFromUSGS( iProjSys, iZone,
-                                 adfProjParms, iEllipsoid );
+                                 adfProjParams.data(), iEllipsoid );
             oSRS.SetLinearUnits( SRS_UL_METER, 1.0 );
             oSRS.exportToWkt( &pszGCPProjection );
 
-            CSLDestroy( papszParms );
+            CSLDestroy( papszParams );
             CPLFree( pszEllipsoidLine );
             CPLFree( pszZoneLine );
-            CPLFree( pszParmsLine );
+            CPLFree( pszParamsLine );
             CPLFree( pszProjLine );
         }
 
@@ -3189,10 +3187,10 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
                 int32 iProjCode = 0;
                 int32 iZoneCode = 0;
                 int32 iSphereCode = 0;
-                double adfProjParms[15];
+                double adfProjParams[15];
 
                 if( GDprojinfo( hGD, &iProjCode, &iZoneCode,
-                                &iSphereCode, adfProjParms) >= 0 )
+                                &iSphereCode, adfProjParams) >= 0 )
                 {
 #ifdef DEBUG
                     CPLDebug( "HDF4Image",
@@ -3204,7 +3202,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
                               static_cast<long>( iSphereCode ) );
 #endif
                     poDS->oSRS.importFromUSGS( iProjCode, iZoneCode,
-                                               adfProjParms, iSphereCode,
+                                               adfProjParams, iSphereCode,
                                                USGS_ANGLE_RADIANS );
 
                     CPLFree( poDS->pszProjection );
@@ -3559,7 +3557,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
         poDS->hGR = GRstart( poDS->hHDF4 );
         if( poDS->hGR == -1 )
         {
-            // Release mutex otherwise wel deadlock with GDALDataset own mutex.
+            // Release mutex otherwise we deadlock with GDALDataset own mutex.
             CPLReleaseMutex(hHDF4Mutex);
             delete poDS;
             CPLAcquireMutex(hHDF4Mutex, 1000.0);
@@ -3892,7 +3890,7 @@ GDALDataset *HDF4ImageDataset::Open( GDALOpenInfo * poOpenInfo )
 /************************************************************************/
 
 GDALDataset *HDF4ImageDataset::Create( const char * pszFilename,
-                                       int nXSize, int nYSize, int nBands,
+                                       int nXSize, int nYSize, int nBandsIn,
                                        GDALDataType eType,
                                        char **papszOptions )
 
@@ -3900,7 +3898,7 @@ GDALDataset *HDF4ImageDataset::Create( const char * pszFilename,
 /* -------------------------------------------------------------------- */
 /*      Create the dataset.                                             */
 /* -------------------------------------------------------------------- */
-    if( nBands == 0 )
+    if( nBandsIn == 0 )
     {
         CPLError( CE_Failure, CPLE_NotSupported,
                   "Unable to export files with zero bands." );
@@ -3949,48 +3947,52 @@ GDALDataset *HDF4ImageDataset::Create( const char * pszFilename,
     int32 aiDimSizes[H4_MAX_VAR_DIMS] = {};
     aiDimSizes[poDS->iXDim] = nXSize;
     aiDimSizes[poDS->iYDim] = nYSize;
-    aiDimSizes[poDS->iBandDim] = nBands;
+    aiDimSizes[poDS->iBandDim] = nBandsIn;
+
+    const auto GetHDFType = [](GDALDataType eTypeIn)
+    {
+        switch ( eTypeIn )
+        {
+            case GDT_Float64:
+                return DFNT_FLOAT64;
+            case GDT_Float32:
+                return DFNT_FLOAT32;
+            case GDT_UInt64:
+                // SDCreate() doesn't like it
+                return DFNT_UINT64;
+            case GDT_UInt32:
+                return DFNT_UINT32;
+            case GDT_UInt16:
+                return DFNT_UINT16;
+            case GDT_Int64:
+                // SDCreate() doesn't like it
+                return DFNT_INT64;
+            case GDT_Int32:
+                return DFNT_INT32;
+            case GDT_Int16:
+                return DFNT_INT16;
+            case GDT_Byte:
+                return DFNT_UINT8;
+            default:
+                CPLError(CE_Warning, CPLE_NotSupported,
+                         "Datatype %s not supported. Defauting to Byte",
+                         GDALGetDataTypeName(eTypeIn));
+                return DFNT_UINT8;
+        }
+    };
 
     const char *pszSDSName = nullptr;
     int32 iSDS = -1;
 
     if( poDS->iRank == 2 )
     {
-        for( int iBand = 0; iBand < nBands; iBand++ )
+        for( int iBand = 0; iBand < nBandsIn; iBand++ )
         {
             pszSDSName = CPLSPrintf( "Band%d", iBand );
-            switch ( eType )
-            {
-                case GDT_Float64:
-                    iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_FLOAT64,
-                                     poDS->iRank, aiDimSizes );
-                    break;
-                case GDT_Float32:
-                    iSDS = SDcreate( poDS-> hSD, pszSDSName, DFNT_FLOAT32,
-                                     poDS->iRank, aiDimSizes );
-                    break;
-                case GDT_UInt32:
-                    iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_UINT32,
-                                     poDS->iRank, aiDimSizes );
-                    break;
-                case GDT_UInt16:
-                    iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_UINT16,
-                                     poDS->iRank, aiDimSizes );
-                    break;
-                case GDT_Int32:
-                    iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_INT32,
-                                     poDS->iRank, aiDimSizes );
-                    break;
-                case GDT_Int16:
-                    iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_INT16,
-                                     poDS->iRank, aiDimSizes );
-                    break;
-                case GDT_Byte:
-                default:
-                    iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_UINT8,
-                                     poDS->iRank, aiDimSizes );
-                    break;
-            }
+            iSDS = SDcreate( poDS->hSD, pszSDSName, GetHDFType(eType),
+                             poDS->iRank, aiDimSizes );
+            if( iSDS < 0 )
+                break;
             SDendaccess( iSDS );
         }
     }
@@ -3998,38 +4000,8 @@ GDALDataset *HDF4ImageDataset::Create( const char * pszFilename,
     {
         pszSDSName = "3-dimensional Scientific Dataset";
         poDS->iDataset = 0;
-        switch ( eType )
-        {
-            case GDT_Float64:
-                iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_FLOAT64,
-                                 poDS->iRank, aiDimSizes );
-                break;
-            case GDT_Float32:
-                iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_FLOAT32,
-                                 poDS->iRank, aiDimSizes );
-                break;
-            case GDT_UInt32:
-                iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_UINT32,
-                                 poDS->iRank, aiDimSizes );
-                break;
-            case GDT_UInt16:
-                iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_UINT16,
-                                 poDS->iRank, aiDimSizes );
-                break;
-            case GDT_Int32:
-                iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_INT32,
-                                 poDS->iRank, aiDimSizes );
-                break;
-            case GDT_Int16:
-                iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_INT16,
-                                 poDS->iRank, aiDimSizes );
-                break;
-            case GDT_Byte:
-            default:
-                iSDS = SDcreate( poDS->hSD, pszSDSName, DFNT_UINT8,
-                                 poDS->iRank, aiDimSizes );
-                break;
-        }
+        iSDS = SDcreate( poDS->hSD, pszSDSName, GetHDFType(eType),
+                         poDS->iRank, aiDimSizes );
     }
     else
     {
@@ -4058,12 +4030,12 @@ GDALDataset *HDF4ImageDataset::Create( const char * pszFilename,
     poDS->eAccess = GA_Update;
     poDS->iDatasetType = HDF4_SDS;
     poDS->iSubdatasetType = H4ST_GDAL;
-    poDS->nBands = nBands;
+    poDS->nBands = nBandsIn;
 
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    for( int iBand = 1; iBand <= nBands; iBand++ )
+    for( int iBand = 1; iBand <= nBandsIn; iBand++ )
         poDS->SetBand( iBand, new HDF4ImageRasterBand( poDS, iBand, eType ) );
 
     SDsetattr( poDS->hSD, "Signature", DFNT_CHAR8,
@@ -4091,6 +4063,7 @@ void GDALRegister_HDF4Image()
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/raster/hdf4.html" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
                                "Byte Int16 UInt16 Int32 UInt32 "
+                               // "Int64 UInt64 "
                                "Float32 Float64" );
     poDriver->SetMetadataItem(
         GDAL_DMD_CREATIONOPTIONLIST,

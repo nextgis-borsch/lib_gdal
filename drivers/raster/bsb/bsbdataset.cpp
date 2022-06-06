@@ -217,7 +217,7 @@ BSBDataset::BSBDataset() :
 BSBDataset::~BSBDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
 
     GDALDeinitGCPs( nGCPCount, pasGCPList );
     CPLFree( pasGCPList );
@@ -1219,6 +1219,7 @@ void GDALRegister_BSB()
                                "Maptech BSB Nautical Charts" );
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/raster/bsb.html" );
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+    poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "kap" );
 #ifdef BSB_CREATE
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, "Byte" );
 #endif

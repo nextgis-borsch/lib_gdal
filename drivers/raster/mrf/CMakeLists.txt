@@ -58,7 +58,6 @@ if(ENABLE_MRF AND JPEG_FOUND AND PNG_FOUND AND TIFF_FOUND)
     set(LIB_CSOURCES ${LIB_LERC_CSOURCES}
         Packer_RLE.cpp
         Tif_band.cpp
-        Raw_band.cpp
         PNG_band.cpp
         JPEG_band.cpp
         JPNG_band.cpp

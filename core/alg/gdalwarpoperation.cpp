@@ -542,7 +542,7 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
         && GDALGetRasterCount( psOptions->hSrcDS )
         == GDALGetRasterCount( psOptions->hDstDS ) )
     {
-        GDALWarpInitDefaultBandMapping( 
+        GDALWarpInitDefaultBandMapping(
             psOptions, GDALGetRasterCount( psOptions->hSrcDS ) );
     }
 
@@ -635,6 +635,36 @@ CPLErr GDALWarpOperation::Initialize( const GDALWarpOptions *psNewOptions )
                                         psOptions->pTransformerArg);
         if( psThreadData == nullptr )
             eErr = CE_Failure;
+
+/* -------------------------------------------------------------------- */
+/*      Compute dstcoordinates of a few special points.                 */
+/* -------------------------------------------------------------------- */
+
+        // South and north poles. Do not exactly take +/-90 as the round-tripping of
+        // the longitude value fails with some projections.
+        for( double dfY : { -89.9999, 89.9999 } )
+        {
+            double dfX = 0;
+            if( (psOptions->pfnTransformer == GDALApproxTransform &&
+                 GDALTransformLonLatToDestApproxTransformer(
+                     psOptions->pTransformerArg, &dfX, &dfY)) ||
+                (psOptions->pfnTransformer == GDALGenImgProjTransform &&
+                 GDALTransformLonLatToDestGenImgProjTransformer(
+                     psOptions->pTransformerArg, &dfX, &dfY)) )
+            {
+                aDstXYSpecialPoints.emplace_back(std::pair<double, double>(dfX, dfY));
+            }
+        }
+
+        m_bIsTranslationOnPixelBoundaries =
+            GDALTransformIsTranslationOnPixelBoundaries(
+                              psOptions->pfnTransformer,
+                              psOptions->pTransformerArg) &&
+            CPLTestBool(CPLGetConfigOption("GDAL_WARP_USE_TRANSLATION_OPTIM", "YES"));
+        if( m_bIsTranslationOnPixelBoundaries )
+        {
+            CPLDebug("WARP", "Using translation-on-pixel-boundaries optimization");
+        }
     }
 
     return eErr;
@@ -676,14 +706,14 @@ void* GDALWarpOperation::CreateDestinationBuffer(
     const char *pszInitDest = CSLFetchNameValue( psOptions->papszWarpOptions,
                                                  "INIT_DEST" );
 
-    if( pszInitDest == nullptr || EQUAL(pszInitDest, "") ) 
+    if( pszInitDest == nullptr || EQUAL(pszInitDest, "") )
     {
         if( pbInitialized != nullptr )
         {
             *pbInitialized = FALSE;
-        } 
-        
-        return pDstBuffer; 
+        }
+
+        return pDstBuffer;
     }
 
 
@@ -1547,7 +1577,7 @@ CPLErr GDALWarpOperation::WarpRegion( int nDstXOff, int nDstYOff,
 /*      Allocate the output buffer.                                     */
 /* -------------------------------------------------------------------- */
     int bDstBufferInitialized = FALSE;
-    void *pDstBuffer = CreateDestinationBuffer(nDstXSize, nDstYSize, &bDstBufferInitialized); 
+    void *pDstBuffer = CreateDestinationBuffer(nDstXSize, nDstYSize, &bDstBufferInitialized);
     if( pDstBuffer == nullptr )
     {
         return CE_Failure;
@@ -1800,7 +1830,8 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 /* -------------------------------------------------------------------- */
     GDALWarpKernel oWK;
 
-    oWK.eResample = psOptions->eResampleAlg;
+    oWK.eResample = m_bIsTranslationOnPixelBoundaries ? GRA_NearestNeighbour :
+                                                        psOptions->eResampleAlg;
     oWK.nBands = psOptions->nBandCount;
     oWK.eWorkingDataType = psOptions->eWorkingDataType;
 
@@ -1896,11 +1927,10 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     oWK.papabyDstImage = reinterpret_cast<GByte **>(
         CPLCalloc(sizeof(GByte*), psOptions->nBandCount));
 
-    int i1 = 0;  // Used after for.
-    for( ; i1 < psOptions->nBandCount && eErr == CE_None; i1++ )
+    for( int i = 0; i < psOptions->nBandCount && eErr == CE_None; i++ )
     {
-        oWK.papabyDstImage[i1] = static_cast<GByte *>(pDataBuf)
-            + i1 * static_cast<GPtrDiff_t>(nDstXSize) * nDstYSize * nWordSize;
+        oWK.papabyDstImage[i] = static_cast<GByte *>(pDataBuf)
+            + i * static_cast<GPtrDiff_t>(nDstXSize) * nDstYSize * nWordSize;
     }
 
 /* -------------------------------------------------------------------- */
@@ -1918,7 +1948,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     {
         CPLAssert( oWK.pafUnifiedSrcDensity == nullptr );
 
-        eErr = CreateKernelMask( &oWK, 0, "UnifiedSrcDensity" );
+        eErr = CreateKernelMask( &oWK, 0 /* not used */, "UnifiedSrcDensity" );
 
         if( eErr == CE_None )
         {
@@ -1953,7 +1983,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     {
         if( oWK.pafUnifiedSrcDensity == nullptr )
         {
-            eErr = CreateKernelMask( &oWK, 0, "UnifiedSrcDensity" );
+            eErr = CreateKernelMask( &oWK, 0 /* not used */, "UnifiedSrcDensity" );
 
             if( eErr == CE_None )
             {
@@ -1981,7 +2011,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
     {
         CPLAssert( oWK.pafDstDensity == nullptr );
 
-        eErr = CreateKernelMask( &oWK, i1, "DstDensity" );
+        eErr = CreateKernelMask( &oWK, 0 /* not used */, "DstDensity" );
 
         if( eErr == CE_None )
             eErr =
@@ -2003,16 +2033,15 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
         CPLAssert( oWK.papanBandSrcValid == nullptr );
 
         bool bAllBandsAllValid = true;
-        int i2 = 0;  // Used after for.
-        for( ; i2 < psOptions->nBandCount && eErr == CE_None; i2++ )
+        for( int i = 0; i < psOptions->nBandCount && eErr == CE_None; i++ )
         {
-            eErr = CreateKernelMask( &oWK, i2, "BandSrcValid" );
+            eErr = CreateKernelMask( &oWK, i, "BandSrcValid" );
             if( eErr == CE_None )
             {
                 double adfNoData[2] =
                 {
-                    psOptions->padfSrcNoDataReal[i2],
-                    psOptions->padfSrcNoDataImag != nullptr ? psOptions->padfSrcNoDataImag[i2] : 0.0
+                    psOptions->padfSrcNoDataReal[i],
+                    psOptions->padfSrcNoDataImag != nullptr ? psOptions->padfSrcNoDataImag[i] : 0.0
                 };
 
                 int bAllValid = FALSE;
@@ -2021,8 +2050,8 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
                                           psOptions->eWorkingDataType,
                                           oWK.nSrcXOff, oWK.nSrcYOff,
                                           oWK.nSrcXSize, oWK.nSrcYSize,
-                                          &(oWK.papabySrcImage[i2]),
-                                          FALSE, oWK.papanBandSrcValid[i2],
+                                          &(oWK.papabySrcImage[i]),
+                                          FALSE, oWK.papanBandSrcValid[i],
                                           &bAllValid );
                 if( !bAllValid )
                     bAllBandsAllValid = false;
@@ -2038,7 +2067,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
                 "WARP",
                 "No need for a source nodata mask as all values are valid");
 #endif
-            for( int k = 0; k < oWK.nBands; k++ )
+            for( int k = 0; k < psOptions->nBandCount; k++ )
                 CPLFree( oWK.papanBandSrcValid[k] );
             CPLFree( oWK.papanBandSrcValid );
             oWK.papanBandSrcValid = nullptr;
@@ -2057,35 +2086,63 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
         }
 
 /* -------------------------------------------------------------------- */
-/*      If UNIFIED_SRC_NODATA is set, then compute a unified input      */
-/*      pixel mask if and only if all bands nodata is true.  That       */
-/*      is, we only treat a pixel as nodata if all bands match their    */
-/*      respective nodata values.                                       */
+/*      Compute a unified input pixel mask if and only if all bands     */
+/*      nodata is true.  That is, we only treat a pixel as nodata if    */
+/*      all bands match their respective nodata values.                 */
 /* -------------------------------------------------------------------- */
-        else if( oWK.papanBandSrcValid != nullptr &&
-            CPLFetchBool( psOptions->papszWarpOptions, "UNIFIED_SRC_NODATA",
-                          false )
-            && eErr == CE_None )
+        else if( oWK.papanBandSrcValid != nullptr && eErr == CE_None )
         {
-            const GPtrDiff_t nBytesInMask = (static_cast<GPtrDiff_t>(oWK.nSrcXSize) * oWK.nSrcYSize + 31) / 8;
-
-            eErr = CreateKernelMask( &oWK, i2, "UnifiedSrcValid" );
-
-            if( eErr == CE_None )
+            bool bAtLeastOneBandAllValid = false;
+            for( int k = 0; k < psOptions->nBandCount; k++ )
             {
-                memset( oWK.panUnifiedSrcValid, 0, nBytesInMask );
-
-                for( int k = 0; k < psOptions->nBandCount; k++ )
+                if( oWK.papanBandSrcValid[k] == nullptr )
                 {
-                    for( GPtrDiff_t iWord = nBytesInMask/4 - 1; iWord >= 0; iWord-- )
-                        oWK.panUnifiedSrcValid[iWord] |=
-                            oWK.papanBandSrcValid[k][iWord];
-                    CPLFree( oWK.papanBandSrcValid[k] );
-                    oWK.papanBandSrcValid[k] = nullptr;
+                    bAtLeastOneBandAllValid = true;
+                    break;
                 }
+            }
 
-                CPLFree( oWK.papanBandSrcValid );
-                oWK.papanBandSrcValid = nullptr;
+            const char* pszUnifiedSrcNoData = CSLFetchNameValue(
+                            psOptions->papszWarpOptions, "UNIFIED_SRC_NODATA");
+            if( !bAtLeastOneBandAllValid &&
+                (pszUnifiedSrcNoData == nullptr || CPLTestBool(pszUnifiedSrcNoData)) )
+            {
+                const GPtrDiff_t nBytesInMask = (
+                    static_cast<GPtrDiff_t>(oWK.nSrcXSize) * oWK.nSrcYSize + 31) / 8;
+                const GPtrDiff_t nIters = nBytesInMask / 4;
+
+                eErr = CreateKernelMask( &oWK, 0 /* not used */, "UnifiedSrcValid" );
+
+                if( eErr == CE_None )
+                {
+                    memset( oWK.panUnifiedSrcValid, 0, nBytesInMask );
+
+                    for( int k = 0; k < psOptions->nBandCount; k++ )
+                    {
+                        for( GPtrDiff_t iWord = 0; iWord < nIters; iWord++ )
+                        {
+                            oWK.panUnifiedSrcValid[iWord] |=
+                                oWK.papanBandSrcValid[k][iWord];
+                        }
+                    }
+
+                    // If UNIFIED_SRC_NODATA is set, then we will ignore the individual
+                    // nodata status of each band.
+                    // If it is not set, both mechanism apply:
+                    // - if panUnifiedSrcValid[] indicates a pixel is invalid
+                    //   (that is all its bands are at nodata), then the output
+                    //   pixel will be invalid
+                    // - otherwise, the status band per band will be check with
+                    //   papanBandSrcValid[iBand][], and the output pixel will be valid
+                    if( pszUnifiedSrcNoData != nullptr
+                            && !EQUAL(pszUnifiedSrcNoData, "PARTIAL") )
+                    {
+                        for( int k = 0; k < psOptions->nBandCount; k++ )
+                            CPLFree( oWK.papanBandSrcValid[k] );
+                        CPLFree( oWK.papanBandSrcValid );
+                        oWK.papanBandSrcValid = nullptr;
+                    }
+                }
             }
         }
     }
@@ -2110,7 +2167,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
         && nSrcXSize > 0 && nSrcYSize > 0 )
 
     {
-        eErr = CreateKernelMask( &oWK, 0, "UnifiedSrcValid" );
+        eErr = CreateKernelMask( &oWK, 0 /* not used */, "UnifiedSrcValid" );
 
         if( eErr == CE_None )
             eErr =
@@ -2138,7 +2195,7 @@ CPLErr GDALWarpOperation::WarpRegionToBuffer(
 
         const GPtrDiff_t nMaskWords = (static_cast<GPtrDiff_t>(oWK.nDstXSize) * oWK.nDstYSize + 31)/32;
 
-        eErr = CreateKernelMask( &oWK, 0, "DstValid" );
+        eErr = CreateKernelMask( &oWK, 0 /* not used */, "DstValid" );
         GUInt32 *panBandMask =
             eErr == CE_None
             ? static_cast<GUInt32 *>(CPLMalloc(nMaskWords * 4))
@@ -2579,6 +2636,22 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(
 
     bool bUseGrid =
         CPLFetchBool(psOptions->papszWarpOptions, "SAMPLE_GRID", false);
+
+    // Use grid sampling as soon as a special point falls into the extent of
+    // the target raster.
+    if( !bUseGrid && psOptions->hDstDS )
+    {
+        for( const auto &xy: aDstXYSpecialPoints )
+        {
+            if( 0 <= xy.first && GDALGetRasterXSize(psOptions->hDstDS) >= xy.first &&
+                0 <= xy.second && GDALGetRasterYSize(psOptions->hDstDS) >= xy.second )
+            {
+                bUseGrid = true;
+                break;
+            }
+        }
+    }
+
     bool bTryWithCheckWithInvertProj = false;
 
   TryAgain:
@@ -2739,7 +2812,10 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(
             static bool bNanCoordFound = false;
             if( !bNanCoordFound )
             {
-                CPLDebug("WARP", "NaN coordinate found.");
+                CPLDebug("WARP",
+                         "ComputeSourceWindow(): "
+                         "NaN coordinate found on point %d.",
+                         i);
                 bNanCoordFound = true;
             }
             nFailedCount++;
@@ -2858,6 +2934,31 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(
         return CE_None;
     }
 
+    // For scenarios where warping is used as a "decoration", try to clamp
+    // source pixel coordinates to integer when very close.
+    const auto roundIfCloseEnough = [](double dfVal)
+    {
+        const double dfRounded = std::round(dfVal);
+        if( std::fabs(dfRounded - dfVal) < 1e-6 )
+            return dfRounded;
+        return dfVal;
+    };
+
+    dfMinXOut = roundIfCloseEnough(dfMinXOut);
+    dfMinYOut = roundIfCloseEnough(dfMinYOut);
+    dfMaxXOut = roundIfCloseEnough(dfMaxXOut);
+    dfMaxYOut = roundIfCloseEnough(dfMaxYOut);
+
+    if( m_bIsTranslationOnPixelBoundaries )
+    {
+        CPLAssert( dfMinXOut == std::round(dfMinXOut) );
+        CPLAssert( dfMinYOut == std::round(dfMinYOut) );
+        CPLAssert( dfMaxXOut == std::round(dfMaxXOut) );
+        CPLAssert( dfMaxYOut == std::round(dfMaxYOut) );
+        CPLAssert( std::round(dfMaxXOut - dfMinXOut) == nDstXSize );
+        CPLAssert( std::round(dfMaxYOut - dfMinYOut) == nDstYSize );
+    }
+
 /* -------------------------------------------------------------------- */
 /*      How much of a window around our source pixel might we need      */
 /*      to collect data from based on the resampling kernel?  Even      */
@@ -2865,7 +2966,8 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(
 /*      we may need to collect data if some portion of the              */
 /*      resampling kernel could be on-image.                            */
 /* -------------------------------------------------------------------- */
-    const int nResWinSize = GWKGetFilterRadius(psOptions->eResampleAlg);
+    const int nResWinSize = m_bIsTranslationOnPixelBoundaries ? 0 :
+                                GWKGetFilterRadius(psOptions->eResampleAlg);
 
     // Take scaling into account.
     // Avoid ridiculous small scaling factors to avoid potential further integer
@@ -2905,7 +3007,7 @@ CPLErr GDALWarpOperation::ComputeSourceWindow(
 #if DEBUG_VERBOSE
     CPLDebug(
         "WARP",
-        "dst=(%d,%d,%d,%d) raw src=(minx=%.8g,miny=%.8g,maxx=%.8g,maxy=%.8g)",
+        "dst=(%d,%d,%d,%d) raw src=(minx=%.18g,miny=%.18g,maxx=%.18g,maxy=%.18g)",
         nDstXOff, nDstYOff, nDstXSize, nDstYSize,
         dfMinXOut, dfMinYOut, dfMaxXOut, dfMaxYOut);
 #endif

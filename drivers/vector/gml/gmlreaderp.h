@@ -33,7 +33,6 @@
 
 #if defined(HAVE_XERCES)
 
-// Must be first for DEBUG_BOOL case
 #include "xercesc_headers.h"
 #include "ogr_xerces.h"
 
@@ -135,6 +134,7 @@ class GMLHandler
 
     int        m_nDepth;
     int        m_nDepthFeature;
+    int        m_nUnlimitedDepth = -1; // -1 unknown, 0=false, 1=true
 
     int        m_inBoundedByDepth;
 
@@ -264,6 +264,8 @@ class GMLExpatHandler final: public GMLHandler
     XML_Parser m_oParser;
     bool       m_bStopParsing;
     int        m_nDataHandlerCounter;
+
+    void       DealWithError(OGRErr eErr);
 
 public:
     GMLExpatHandler( GMLReader *poReader, XML_Parser oParser );
@@ -403,6 +405,9 @@ class GMLReader final: public IGMLReader
 
     bool          m_bEmptyAsNull;
 
+    bool          m_bIsConsistentSingleGeomElemPath = true;
+    std::string   m_osSingleGeomElemPath {};
+
     bool          ParseXMLHugeFile( const char *pszOutputFilename,
                                     const bool bSqliteIsTempFile,
                                     const int iSqliteCacheMB );
@@ -495,6 +500,11 @@ public:
 
     void             SetEmptyAsNull( bool bFlag ) { m_bEmptyAsNull = bFlag; }
     bool             IsEmptyAsNull() const { return m_bEmptyAsNull; }
+
+    void             SetConsistentSingleGeomElemPath(bool b) { m_bIsConsistentSingleGeomElemPath = b; }
+    bool             IsConsistentSingleGeomElemPath() const { return m_bIsConsistentSingleGeomElemPath; }
+    void             SetSingleGeomElemPath(const std::string& s) { m_osSingleGeomElemPath = s; }
+    const std::string& GetSingleGeomElemPath() const { return m_osSingleGeomElemPath; }
 
     static CPLMutex* hMutex;
 };
