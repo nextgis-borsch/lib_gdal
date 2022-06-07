@@ -303,27 +303,8 @@ else()
     set(SWIG_PYTHON_LIBRARIES "'${LIB_NAME}'")
 endif()
 
-set(SWIG_PYTHON_LIBRARY_DIRS "'${CMAKE_BINARY_DIR}'")
-set(FILL_SWIG_PATHS
-    "Release"
-    "Debug"
-    "MinSizeRel"
-    "RelWithDebInfo"
-    ".libs"
-)
-
-macro(fill_swig_paths LIB_PATH)
-    if(EXISTS "${CMAKE_BINARY_DIR}/${LIB_PATH}")
-        set(SWIG_PYTHON_LIBRARY_DIRS "${SWIG_PYTHON_LIBRARY_DIRS}, '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${LIB_PATH}'")
-    endif()
-endmacro()
-
-foreach(swig_path ${FILL_SWIG_PATHS})
-    fill_swig_paths(${swig_path})
-endforeach()
-
-set(SWIG_PYTHON_LIBRARY_DIRS "${SWIG_PYTHON_LIBRARY_DIRS}, '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}'")
-
+set(SWIG_PYTHON_LIBRARY_DIRS "'${CMAKE_BINARY_DIR}', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}', '$<TARGET_LINKER_FILE_DIR:${LIB_NAME}>', '${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${CMAKE_BUILD_TYPE}'")
+message(${SWIG_PYTHON_LIBRARY_DIRS})
 set(SWIG_PYTHON_INCLUDE_DIRS "'${CMAKE_SOURCE_DIR}/core/alg', '${CMAKE_SOURCE_DIR}/core/port', '${CMAKE_SOURCE_DIR}/core/gcore', '${CMAKE_BINARY_DIR}/core/gcore', '${CMAKE_SOURCE_DIR}/core/gnm', '${CMAKE_SOURCE_DIR}/core/ogr', '${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts', '${CMAKE_SOURCE_DIR}/apps', '${CMAKE_BINARY_DIR}'")
 if(GDAL_ENABLE_GNM)
     set(GDAL_HAVE_GNM "True")
