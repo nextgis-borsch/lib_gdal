@@ -86,7 +86,6 @@ set(TEST_DEPENDENCIES
     lib_jbig
     lib_szip
     lib_uriparser
-    lib_proj
 )
 
 if(WIN32)
