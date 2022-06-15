@@ -69,7 +69,7 @@ class FITSDataset final : public GDALPamDataset {
   int m_fitsDataType = 0;   // FITS code for the image type
 
   bool m_isExistingFile = false;
-  long m_highestOffsetWritten = 0;  // How much of image has been written
+  LONGLONG m_highestOffsetWritten = 0;  // How much of image has been written
 
   bool        m_bNoDataChanged = false;
   bool        m_bNoDataSet = false;
@@ -88,8 +88,6 @@ class FITSDataset final : public GDALPamDataset {
 
   std::vector<std::unique_ptr<FITSLayer>> m_apoLayers{};
 
-  FITSDataset();     // Others should not call this constructor explicitly
-
   CPLErr Init(fitsfile* hFITS, bool isExistingFile, int hduNum);
 
   void        LoadGeoreferencing();
@@ -98,14 +96,16 @@ class FITSDataset final : public GDALPamDataset {
   void        LoadMetadata(GDALMajorObject* poTarget);
 
 public:
+
+  FITSDataset();     // Others should not call this constructor explicitly
   ~FITSDataset();
 
   static GDALDataset* Open( GDALOpenInfo* );
   static int          Identify( GDALOpenInfo* );
   static GDALDataset* Create( const char* pszFilename,
-                              int nXSize, int nYSize, int nBands,
+                              int nXSize, int nYSize, int nBandsIn,
                               GDALDataType eType,
-                              char** papszParmList );
+                              char** papszParamList );
   static CPLErr Delete( const char * pszFilename );
 
   const OGRSpatialReference* GetSpatialRef() const override;
@@ -272,8 +272,8 @@ FITSLayer::FITSLayer(FITSDataset* poDS, int hduNum, const char* pszExtName):
     }
 
     status = 0;
-    fits_read_btblhdrll(m_poDS->m_hFITS, nCols, nullptr, nullptr, 
-                        &apszNames[0],
+    fits_read_btblhdrll(m_poDS->m_hFITS, nCols, nullptr, nullptr,
+                        apszNames.data(),
                         nullptr,
                         nullptr, nullptr, nullptr, &status);
     if( status )
@@ -636,7 +636,7 @@ template<typename T_FITS, typename T_GDAL, int TYPECODE> struct ReadCol
         std::vector<T_FITS> x(nRepeat);
         fits_read_col(hFITS, TYPECODE,
                         colDesc.iCol, irow, 1, nRepeat, nullptr,
-                        &x[0], nullptr, &status);
+                        x.data(), nullptr, &status);
         if( nRepeat == 1 && colDesc.bHasNull &&
             x[0] == static_cast<T_FITS>(colDesc.nNullValue) )
         {
@@ -651,7 +651,7 @@ template<typename T_FITS, typename T_GDAL, int TYPECODE> struct ReadCol
                 scaled.push_back(static_cast<double>(x[i]) *
                                     colDesc.dfScale + colDesc.dfOffset);
             }
-            poFeature->SetField(iField, nRepeat, &scaled[0]);
+            poFeature->SetField(iField, nRepeat, scaled.data());
         }
         else if( nRepeat == 1 )
         {
@@ -663,7 +663,7 @@ template<typename T_FITS, typename T_GDAL, int TYPECODE> struct ReadCol
             xGDAL.reserve(nRepeat);
             for( int i = 0; i < nRepeat; i++ )
                 xGDAL.push_back(x[i]);
-            poFeature->SetField(iField, nRepeat, &xGDAL[0]);
+            poFeature->SetField(iField, nRepeat, xGDAL.data());
         }
     }
 };
@@ -707,7 +707,7 @@ OGRFeature* FITSLayer::GetFeature(GIntBig nFID)
             std::vector<char> x(nRepeat);
             fits_read_col(m_poDS->m_hFITS, TLOGICAL,
                           colDesc.iCol, nRow, 1, nRepeat, nullptr,
-                          &x[0], nullptr, &status);
+                          x.data(), nullptr, &status);
             if( nRepeat == 1 )
             {
                 poFeature->SetField(iField, x[0] == '1' ? 1 : 0);
@@ -720,7 +720,7 @@ OGRFeature* FITSLayer::GetFeature(GIntBig nFID)
                 {
                     intValues.push_back(x[i] == '1' ? 1 : 0);
                 }
-                poFeature->SetField(iField, nRepeat, &intValues[0]);
+                poFeature->SetField(iField, nRepeat, intValues.data());
             }
         }
         else if( typechar == 'X' )
@@ -789,21 +789,27 @@ OGRFeature* FITSLayer::GetFeature(GIntBig nFID)
                 for(int iItem = 1; iItem <= colDesc.nItems; iItem++ )
                 {
                     std::string osStr;
-                    osStr.resize(nRepeat);
-                    char* pszStr = &osStr[0];
-                    fits_read_col_str(m_poDS->m_hFITS, colDesc.iCol, nRow, iItem, 1,
-                                    nullptr, &pszStr, nullptr, &status);
-                    aosList.AddString(pszStr);
+                    if( nRepeat )
+                    {
+                        osStr.resize(nRepeat);
+                        char* pszStr = &osStr[0];
+                        fits_read_col_str(m_poDS->m_hFITS, colDesc.iCol, nRow, iItem, 1,
+                                        nullptr, &pszStr, nullptr, &status);
+                    }
+                    aosList.AddString(osStr.c_str());
                 }
                 poFeature->SetField(iField, aosList.List());
             }
             else
             {
                 std::string osStr;
-                osStr.resize(nRepeat);
-                char* pszStr = &osStr[0];
-                fits_read_col_str(m_poDS->m_hFITS, colDesc.iCol, nRow, 1, 1,
-                                nullptr, &pszStr, nullptr, &status);
+                if( nRepeat )
+                {
+                    osStr.resize(nRepeat);
+                    char* pszStr = &osStr[0];
+                    fits_read_col_str(m_poDS->m_hFITS, colDesc.iCol, nRow, 1, 1,
+                                    nullptr, &pszStr, nullptr, &status);
+                }
                 poFeature->SetField(iField, osStr.c_str());
             }
         }
@@ -817,18 +823,18 @@ OGRFeature* FITSLayer::GetFeature(GIntBig nFID)
             std::vector<double> x(nRepeat);
             fits_read_col(m_poDS->m_hFITS, TDOUBLE,
                             colDesc.iCol, nRow, 1, nRepeat, nullptr,
-                            &x[0], nullptr, &status);
+                            x.data(), nullptr, &status);
             if( nRepeat == 1 )
                 poFeature->SetField(iField, x[0]);
             else
-                poFeature->SetField(iField, nRepeat, &x[0]);
+                poFeature->SetField(iField, nRepeat, x.data());
         }
         else if( typechar == 'C' ) // IEEE754 32bit complex
         {
             std::vector<float> x(2 * nRepeat);
             fits_read_col(m_poDS->m_hFITS, TCOMPLEX,
                           colDesc.iCol, nRow, 1, nRepeat, nullptr,
-                          &x[0], nullptr, &status);
+                          x.data(), nullptr, &status);
             CPLStringList aosList;
             for( int i = 0; i < nRepeat; ++i )
                 aosList.AddString(CPLSPrintf("%.18g + %.18gj",
@@ -843,7 +849,7 @@ OGRFeature* FITSLayer::GetFeature(GIntBig nFID)
             std::vector<double> x(2 * nRepeat);
             fits_read_col(m_poDS->m_hFITS, TDBLCOMPLEX,
                           colDesc.iCol, nRow, 1, nRepeat, nullptr,
-                          &x[0], nullptr, &status);
+                          x.data(), nullptr, &status);
             CPLStringList aosList;
             for( int i = 0; i < nRepeat; ++i )
             {
@@ -1247,8 +1253,8 @@ void FITSLayer::RunDeferredFieldCreation(const OGRFeature* poFeature)
         {
             CPLString osKey;
             osKey.Printf("TUNIT%d", oCol.iCol);
-            fits_update_key_longstr(m_poDS->m_hFITS, &osKey[0],
-                                    &osUnit[0], nullptr, &status);
+            fits_update_key_longstr(m_poDS->m_hFITS, osKey.data(),
+                                    osUnit.data(), nullptr, &status);
         }
 
         m_aoColDescs.emplace_back(oCol);
@@ -1383,7 +1389,7 @@ template<typename T_FITS, typename T_GDAL, int TYPECODE,
                         (panList[i] - colDesc.dfOffset) / colDesc.dfScale));
                 }
                 fits_write_col(hFITS, TYPECODE,
-                               colDesc.iCol, irow, 1, nRepeat, &x[0], &status);
+                               colDesc.iCol, irow, 1, nRepeat, x.data(), &status);
             }
             else
             {
@@ -1392,7 +1398,7 @@ template<typename T_FITS, typename T_GDAL, int TYPECODE,
                     x.push_back(static_cast<T_FITS>(panList[i]));
                 }
                 fits_write_col(hFITS, TYPECODE,
-                               colDesc.iCol, irow, 1, nRepeat, &x[0], &status);
+                               colDesc.iCol, irow, 1, nRepeat, x.data(), &status);
             }
         }
         return status;
@@ -1436,7 +1442,7 @@ template<typename T, int TYPECODE> struct WriteComplex
                 x[2 * i + 1] = static_cast<T>(im);
             }
             fits_write_col(hFITS, TYPECODE, colDesc.iCol, irow,
-                           1, nRepeat, &x[0], &status);
+                           1, nRepeat, x.data(), &status);
         }
         else
         {
@@ -1448,7 +1454,7 @@ template<typename T, int TYPECODE> struct WriteComplex
             x[0] = static_cast<T>(re);
             x[1] = static_cast<T>(im);
             fits_write_col(hFITS, TYPECODE, colDesc.iCol, irow,
-                           1, 1, &x[0], &status);
+                           1, 1, x.data(), &status);
         }
         return status;
     }
@@ -1496,7 +1502,7 @@ bool FITSLayer::SetOrCreateFeature(const OGRFeature* poFeature, LONGLONG nRow)
                     x[i] = ToLogical(panVals[i]);
                 }
                 fits_write_col(m_poDS->m_hFITS, TLOGICAL,
-                               colDesc.iCol, nRow, 1, nRepeat, &x[0],
+                               colDesc.iCol, nRow, 1, nRepeat, x.data(),
                                &status);
             }
             else
@@ -1730,7 +1736,7 @@ FITSRasterBand::FITSRasterBand( FITSDataset *poDSIn, int nBandIn ) :
 
 FITSRasterBand::~FITSRasterBand()
 {
-    FlushCache();
+    FlushCache(true);
 }
 
 /************************************************************************/
@@ -1751,9 +1757,9 @@ CPLErr FITSRasterBand::IReadBlock(CPL_UNUSED int nBlockXOff, int nBlockYOff,
   CPLAssert(nBlockYOff < nRasterYSize);
 
   // Calculate offsets and read in the data. Note that FITS array offsets
-  // start at 1...
+  // start at 1 at the bottom left...
   LONGLONG offset = static_cast<LONGLONG>(nBand - 1) * nRasterXSize * nRasterYSize +
-    static_cast<LONGLONG>(nBlockYOff) * nRasterXSize + 1;
+    (static_cast<LONGLONG>(nRasterYSize - 1 - nBlockYOff) * nRasterXSize + 1);
   long nElements = nRasterXSize;
 
   // If we haven't written this block to the file yet, then attempting
@@ -1803,7 +1809,7 @@ CPLErr FITSRasterBand::IWriteBlock( CPL_UNUSED int nBlockXOff, int nBlockYOff,
   // Calculate offsets and read in the data. Note that FITS array offsets
   // start at 1 at the bottom left...
   LONGLONG offset = static_cast<LONGLONG>(nBand - 1) * nRasterXSize * nRasterYSize +
-    static_cast<LONGLONG>(nBlockYOff) * nRasterXSize + 1;
+    (static_cast<LONGLONG>(nRasterYSize - 1 - nBlockYOff) * nRasterXSize + 1);
   long nElements = nRasterXSize;
   fits_write_img(hFITS, dataset->m_fitsDataType, offset, nElements,
                  pImage, &status);
@@ -1891,7 +1897,7 @@ FITSDataset::~FITSDataset() {
                  "Couldn't move to HDU %d in FITS file %s (%d).\n",
                  m_hduNum, GetDescription(), status);
       }
-      char** metaData = GetMetadata();
+      char** metaData = FITSDataset::GetMetadata();
       int count = CSLCount(metaData);
       for (int i = 0; i < count; ++i) {
         const char* field = CSLGetField(metaData, i);
@@ -1925,7 +1931,7 @@ FITSDataset::~FITSDataset() {
                 // Check for errors.
                 if (status)
                 {
-                    // Throw a warning with CFITSIO error status, then ignore status 
+                    // Throw a warning with CFITSIO error status, then ignore status
                     CPLError(CE_Warning, CPLE_AppDefined,
                              "Couldn't update key %s in FITS file %s (%d).",
                              key, GetDescription(), status);
@@ -1943,7 +1949,7 @@ FITSDataset::~FITSDataset() {
         fits_update_key( m_hFITS, TDOUBLE, "BLANK", &m_dfNoDataValue, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key BLANK in FITS file %s (%d).",
                     GetDescription(), status);
@@ -1961,7 +1967,7 @@ FITSDataset::~FITSDataset() {
         fits_update_key( m_hFITS, TDOUBLE, "BSCALE", &dfScale, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key BSCALE in FITS file %s (%d).",
                     GetDescription(), status);
@@ -1971,7 +1977,7 @@ FITSDataset::~FITSDataset() {
         fits_update_key( m_hFITS, TDOUBLE, "BZERO", &dfOffset, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key BZERO in FITS file %s (%d).",
                     GetDescription(), status);
@@ -1989,7 +1995,7 @@ FITSDataset::~FITSDataset() {
       }
 
       // Make sure we flush the raster cache before we close the file!
-      FlushCache();
+      FlushCache(true);
     }
 
     // Close the FITS handle
@@ -2388,7 +2394,7 @@ GDALDataset* FITSDataset::Open(GDALOpenInfo* poOpenInfo) {
         return nullptr;
     }
     // Create a FITSDataset object
-    auto dataset = std::unique_ptr<FITSDataset>(new FITSDataset());
+    auto dataset = cpl::make_unique<FITSDataset>();
     dataset->m_isExistingFile = true;
     dataset->m_hFITS = hFITS;
     dataset->eAccess = poOpenInfo->eAccess;
@@ -2657,12 +2663,12 @@ GDALDataset* FITSDataset::Open(GDALOpenInfo* poOpenInfo) {
 
 GDALDataset *FITSDataset::Create( const char* pszFilename,
                                   int nXSize, int nYSize,
-                                  int nBands, GDALDataType eType,
-                                  CPL_UNUSED char** papszParmList )
+                                  int nBandsIn, GDALDataType eType,
+                                  CPL_UNUSED char** papszParamList )
 {
   int status = 0;
 
-  if( nXSize == 0 && nYSize == 0 && nBands == 0 && eType == GDT_Unknown )
+  if( nXSize == 0 && nYSize == 0 && nBandsIn == 0 && eType == GDT_Unknown )
   {
       // Create the file - to force creation, we prepend the name with '!'
       CPLString extFilename("!");
@@ -2688,14 +2694,14 @@ GDALDataset *FITSDataset::Create( const char* pszFilename,
   // excessive complications and didn't really fit into the GDAL
   // paradigm.
   // 2018 - BZERO BSCALE keywords are now set using SetScale() and
-  // SetOffset() functions 
+  // SetOffset() functions
 
-  if( nXSize < 1 || nYSize < 1 || nBands < 1 )  {
+  if( nXSize < 1 || nYSize < 1 || nBandsIn < 1 )  {
         CPLError(
             CE_Failure, CPLE_AppDefined,
             "Attempt to create %dx%dx%d raster FITS file, but width, height and bands"
             " must be positive.",
-            nXSize, nYSize, nBands );
+            nXSize, nYSize, nBandsIn );
 
         return nullptr;
   }
@@ -2734,8 +2740,8 @@ GDALDataset *FITSDataset::Create( const char* pszFilename,
   }
 
   // Now create an image of appropriate size and type
-  long naxes[3] = {nXSize, nYSize, nBands};
-  int naxis = (nBands == 1) ? 2 : 3;
+  long naxes[3] = {nXSize, nYSize, nBandsIn};
+  int naxis = (nBandsIn == 1) ? 2 : 3;
   fits_create_img(hFITS, bitpix, naxis, naxes, &status);
 
   // Check the status
@@ -2800,13 +2806,13 @@ void FITSDataset::WriteFITSInfo()
         // Set according to coordinate system (thanks to Trent Hare - USGS)
 
         std::string object, ctype1, ctype2;
-        
+
         const char* target = m_oSRS.GetAttrValue("DATUM",0);
         if ( target ) {
             if ( strstr(target, "Moon") ) {
               object.assign("Moon");
               ctype1.assign("SE");
-              ctype2.assign("SE");              
+              ctype2.assign("SE");
             } else if ( strstr(target, "Mercury") ) {
               object.assign("Mercury");
               ctype1.assign("ME");
@@ -2855,7 +2861,7 @@ void FITSDataset::WriteFITSInfo()
         fits_update_key( m_hFITS, TDOUBLE, "A_RADIUS", &aradius, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key A_RADIUS in FITS file %s (%d).",
                     GetDescription(), status);
@@ -2865,7 +2871,7 @@ void FITSDataset::WriteFITSInfo()
         fits_update_key( m_hFITS, TDOUBLE, "B_RADIUS", &bradius, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key B_RADIUS in FITS file %s (%d).",
                     GetDescription(), status);
@@ -2875,7 +2881,7 @@ void FITSDataset::WriteFITSInfo()
         fits_update_key( m_hFITS, TDOUBLE, "C_RADIUS", &cradius, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key C_RADIUS in FITS file %s (%d).",
                     GetDescription(), status);
@@ -2886,10 +2892,10 @@ void FITSDataset::WriteFITSInfo()
         const char* unit = m_oSRS.GetAttrValue("UNIT",0);
 
         ctype1.append("LN-");
-        ctype2.append("LT-"); 
+        ctype2.append("LT-");
 
         // strcat(ctype1a, "PX-");
-        // strcat(ctype2a, "PY-"); 
+        // strcat(ctype2a, "PY-");
 
         std::string fitsproj;
         const char* projection = m_oSRS.GetAttrValue("PROJECTION",0);
@@ -2929,7 +2935,7 @@ void FITSDataset::WriteFITSInfo()
                 #    #but planetary is almost always 0.0
                 #    falseEast =  hSRS.GetProjParm('false_easting')
                 #    falseNorth =  hSRS.GetProjParm('false_northing')
-*/ 
+*/
 
             ctype1.append(fitsproj);
             ctype2.append(fitsproj);
@@ -2940,7 +2946,7 @@ void FITSDataset::WriteFITSInfo()
                              nullptr, &status);
             if (status)
             {
-                // Throw a warning with CFITSIO error status, then ignore status 
+                // Throw a warning with CFITSIO error status, then ignore status
                 CPLError(CE_Warning, CPLE_AppDefined,
                         "Couldn't update key CTYPE1 in FITS file %s (%d).",
                         GetDescription(), status);
@@ -2954,7 +2960,7 @@ void FITSDataset::WriteFITSInfo()
                              nullptr, &status);
             if (status)
             {
-                // Throw a warning with CFITSIO error status, then ignore status 
+                // Throw a warning with CFITSIO error status, then ignore status
                 CPLError(CE_Warning, CPLE_AppDefined,
                         "Couldn't update key CTYPE2 in FITS file %s (%d).",
                         GetDescription(), status);
@@ -2971,7 +2977,7 @@ void FITSDataset::WriteFITSInfo()
           centlon = centlon - 180.;
         }
         if ( strstr(unit, "metre") ) {
-          // convert degrees/pixel to m/pixel 
+          // convert degrees/pixel to m/pixel
           mapres = 1. / m_adfGeoTransform[1] ; // mapres is pixel/meters
           mres = m_adfGeoTransform[1] / cfactor ; // mres is deg/pixel
           crpix1 = - (UpperLeftCornerX * mapres) + centlon / mres + 0.5;
@@ -2995,7 +3001,7 @@ void FITSDataset::WriteFITSInfo()
         fits_update_key( m_hFITS, TDOUBLE, "CRVAL1", &centlon, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key CRVAL1 in FITS file %s (%d).",
                     GetDescription(), status);
@@ -3005,7 +3011,7 @@ void FITSDataset::WriteFITSInfo()
         fits_update_key( m_hFITS, TDOUBLE, "CRVAL2", &centlat, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key CRVAL2 in FITS file %s (%d).",
                     GetDescription(), status);
@@ -3015,7 +3021,7 @@ void FITSDataset::WriteFITSInfo()
         fits_update_key( m_hFITS, TDOUBLE, "CRPIX1", &crpix1, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key CRPIX1 in FITS file %s (%d).",
                     GetDescription(), status);
@@ -3025,7 +3031,7 @@ void FITSDataset::WriteFITSInfo()
         fits_update_key( m_hFITS, TDOUBLE, "CRPIX2", &crpix2, nullptr, &status);
         if (status)
         {
-            // Throw a warning with CFITSIO error status, then ignore status 
+            // Throw a warning with CFITSIO error status, then ignore status
             CPLError(CE_Warning, CPLE_AppDefined,
                     "Couldn't update key CRPIX2 in FITS file %s (%d).",
                     GetDescription(), status);
@@ -3060,7 +3066,7 @@ void FITSDataset::WriteFITSInfo()
             fits_update_key( m_hFITS, TDOUBLE, "CDELT1", &cd[0], nullptr, &status);
             if (status)
             {
-                // Throw a warning with CFITSIO error status, then ignore status 
+                // Throw a warning with CFITSIO error status, then ignore status
                 CPLError(CE_Warning, CPLE_AppDefined,
                         "Couldn't update key CDELT1 in FITS file %s (%d).",
                         GetDescription(), status);
@@ -3071,7 +3077,7 @@ void FITSDataset::WriteFITSInfo()
             fits_update_key( m_hFITS, TDOUBLE, "CDELT2", &cd[3], nullptr, &status);
             if (status)
             {
-                // Throw a warning with CFITSIO error status, then ignore status 
+                // Throw a warning with CFITSIO error status, then ignore status
                 CPLError(CE_Warning, CPLE_AppDefined,
                         "Couldn't update key CDELT2 in FITS file %s (%d).",
                         GetDescription(), status);
@@ -3082,7 +3088,7 @@ void FITSDataset::WriteFITSInfo()
             fits_update_key( m_hFITS, TDOUBLE, "PC1_1", &pc[0], nullptr, &status);
             if (status)
             {
-                // Throw a warning with CFITSIO error status, then ignore status 
+                // Throw a warning with CFITSIO error status, then ignore status
                 CPLError(CE_Warning, CPLE_AppDefined,
                         "Couldn't update key PC1_1 in FITS file %s (%d).",
                         GetDescription(), status);
@@ -3093,7 +3099,7 @@ void FITSDataset::WriteFITSInfo()
             fits_update_key( m_hFITS, TDOUBLE, "PC1_2", &pc[1], nullptr, &status);
             if (status)
             {
-                // Throw a warning with CFITSIO error status, then ignore status 
+                // Throw a warning with CFITSIO error status, then ignore status
                 CPLError(CE_Warning, CPLE_AppDefined,
                         "Couldn't update key PC1_2 in FITS file %s (%d).",
                         GetDescription(), status);
@@ -3104,7 +3110,7 @@ void FITSDataset::WriteFITSInfo()
             fits_update_key( m_hFITS, TDOUBLE, "PC2_1", &pc[2], nullptr, &status);
             if (status)
             {
-                // Throw a warning with CFITSIO error status, then ignore status 
+                // Throw a warning with CFITSIO error status, then ignore status
                 CPLError(CE_Warning, CPLE_AppDefined,
                         "Couldn't update key PC2_1 in FITS file %s (%d).",
                         GetDescription(), status);
@@ -3115,7 +3121,7 @@ void FITSDataset::WriteFITSInfo()
             fits_update_key( m_hFITS, TDOUBLE, "PC2_2", &pc[3], nullptr, &status);
             if (status)
             {
-                // Throw a warning with CFITSIO error status, then ignore status 
+                // Throw a warning with CFITSIO error status, then ignore status
                 CPLError(CE_Warning, CPLE_AppDefined,
                         "Couldn't update key PC2_2 in FITS file %s (%d).",
                         GetDescription(), status);

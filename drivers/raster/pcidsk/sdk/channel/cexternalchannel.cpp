@@ -43,8 +43,7 @@
 #include <cstring>
 #include <cstdio>
 #include <cstdlib>
-
-#include "cpl_port.h"
+#include <climits>
 
 using namespace PCIDSK;
 
@@ -126,6 +125,8 @@ void CExternalChannel::AccessDB() const
             "Invalid channel number: %d", echannel );
     }
 
+    pixel_type = db->GetType(echannel);
+
 /* -------------------------------------------------------------------- */
 /*      Capture the block size.                                         */
 /* -------------------------------------------------------------------- */
@@ -137,6 +138,17 @@ void CExternalChannel::AccessDB() const
         block_height = height;
 
     blocks_per_row = (GetWidth() + block_width - 1) / block_width;
+}
+
+/************************************************************************/
+/*                              GetType()                               */
+/************************************************************************/
+
+eChanType CExternalChannel::GetType() const
+{
+    AccessDB();
+
+    return pixel_type;
 }
 
 /************************************************************************/
@@ -217,13 +229,18 @@ int CExternalChannel::ReadBlock( int block_index, void *buffer,
     int src_blocks_per_row = (db->GetWidth() + src_block_width - 1)
         / src_block_width;
     int pixel_size = DataTypeSize(GetType());
-    uint8 *temp_buffer = (uint8 *) calloc(src_block_width*src_block_height,
-                                          pixel_size);
+    std::vector<uint8> temp_buffer_vec;
+    try
+    {
+        temp_buffer_vec.resize(src_block_width*src_block_height*pixel_size);
+    }
+    catch( const std::exception& )
+    {
+        return ThrowPCIDSKException(0, "Failed to allocate temporary block buffer." );
+    }
+    uint8 *temp_buffer = &temp_buffer_vec[0];
     int txoff, tyoff, txsize, tysize;
     int dst_blockx, dst_blocky;
-
-    if( temp_buffer == nullptr )
-        return ThrowPCIDSKException(0, "Failed to allocate temporary block buffer." );
 
     dst_blockx = block_index % blocks_per_row;
     dst_blocky = block_index / blocks_per_row;
@@ -274,152 +291,142 @@ int CExternalChannel::ReadBlock( int block_index, void *buffer,
     else
         block1_ysize = 0;
 
-    try
+    if( axsize > 0 && aysize > 0 )
     {
-        if( axsize > 0 && aysize > 0 )
+        MutexHolder oHolder( mutex );
+        if( src_blocks_per_row > 0 &&
+            (ablock_y > INT_MAX / src_blocks_per_row ||
+             ablock_y * src_blocks_per_row > INT_MAX - ablock_x) )
         {
-            MutexHolder oHolder( mutex );
-            if( src_blocks_per_row > 0 &&
-                (ablock_y > INT_MAX / src_blocks_per_row ||
-                 ablock_y * src_blocks_per_row > INT_MAX - ablock_x) )
-            {
-                ThrowPCIDSKException(0, "Integer overflow." );
-            }
-            db->ReadBlock( echannel, ablock_x + ablock_y * src_blocks_per_row,
-                        temp_buffer, axoff, ayoff, axsize, aysize );
-
-            for( i_line = 0; i_line < aysize; i_line++ )
-            {
-                memcpy( ((uint8*) buffer) + i_line * xsize * pixel_size,
-                        temp_buffer + i_line * axsize * pixel_size,
-                        axsize * pixel_size );
-            }
+            ThrowPCIDSKException(0, "Integer overflow." );
         }
+        db->ReadBlock( echannel, ablock_x + ablock_y * src_blocks_per_row,
+                       temp_buffer, axoff, ayoff, axsize, aysize );
 
-    /* -------------------------------------------------------------------- */
-    /*      read external block for top right corner of target block.       */
-    /* -------------------------------------------------------------------- */
-        ttxoff = txoff + block1_xsize;
-        ttyoff = tyoff;
-        ttxsize = txsize - block1_xsize;
-        ttysize = tysize;
-
-        ablock_x = ttxoff / src_block_width;
-        ablock_y = ttyoff / src_block_height;
-
-        axoff = ttxoff - ablock_x * src_block_width;
-        ayoff = ttyoff - ablock_y * src_block_height;
-
-        if( axoff + ttxsize > src_block_width )
-            axsize = src_block_width - axoff;
-        else
-            axsize = ttxsize;
-
-        if( ayoff + ttysize > src_block_height )
-            aysize = src_block_height - ayoff;
-        else
-            aysize = ttysize;
-
-        if( axsize > 0 && aysize > 0 )
+        for( i_line = 0; i_line < aysize; i_line++ )
         {
-            MutexHolder oHolder( mutex );
-            db->ReadBlock( echannel, ablock_x + ablock_y * src_blocks_per_row,
-                        temp_buffer, axoff, ayoff, axsize, aysize );
-
-            for( i_line = 0; i_line < aysize; i_line++ )
-            {
-                memcpy( ((uint8*) buffer)
-                        + (block1_xsize + i_line * xsize) * pixel_size,
-                        temp_buffer + i_line * axsize * pixel_size,
-                        axsize * pixel_size );
-            }
-        }
-
-    /* -------------------------------------------------------------------- */
-    /*      read external block for bottom left corner of target block.     */
-    /* -------------------------------------------------------------------- */
-        ttxoff = txoff;
-        ttyoff = tyoff + block1_ysize;
-        ttxsize = txsize;
-        ttysize = tysize - block1_ysize;
-
-        ablock_x = ttxoff / src_block_width;
-        ablock_y = ttyoff / src_block_height;
-
-        axoff = ttxoff - ablock_x * src_block_width;
-        ayoff = ttyoff - ablock_y * src_block_height;
-
-        if( axoff + ttxsize > src_block_width )
-            axsize = src_block_width - axoff;
-        else
-            axsize = ttxsize;
-
-        if( ayoff + ttysize > src_block_height )
-            aysize = src_block_height - ayoff;
-        else
-            aysize = ttysize;
-
-        if( axsize > 0 && aysize > 0 )
-        {
-            MutexHolder oHolder( mutex );
-            db->ReadBlock( echannel, ablock_x + ablock_y * src_blocks_per_row,
-                        temp_buffer, axoff, ayoff, axsize, aysize );
-
-            for( i_line = 0; i_line < aysize; i_line++ )
-            {
-                memcpy( ((uint8*) buffer)
-                        + (i_line + block1_ysize) * xsize * pixel_size,
-                        temp_buffer + i_line * axsize * pixel_size,
-                        axsize * pixel_size );
-            }
-        }
-
-    /* -------------------------------------------------------------------- */
-    /*      read external block for bottom left corner of target block.     */
-    /* -------------------------------------------------------------------- */
-        ttxoff = txoff + block1_xsize;
-        ttyoff = tyoff + block1_ysize;
-        ttxsize = txsize - block1_xsize;
-        ttysize = tysize - block1_ysize;
-
-        ablock_x = ttxoff / src_block_width;
-        ablock_y = ttyoff / src_block_height;
-
-        axoff = ttxoff - ablock_x * src_block_width;
-        ayoff = ttyoff - ablock_y * src_block_height;
-
-        if( axoff + ttxsize > src_block_width )
-            axsize = src_block_width - axoff;
-        else
-            axsize = ttxsize;
-
-        if( ayoff + ttysize > src_block_height )
-            aysize = src_block_height - ayoff;
-        else
-            aysize = ttysize;
-
-        if( axsize > 0 && aysize > 0 )
-        {
-            MutexHolder oHolder( mutex );
-            db->ReadBlock( echannel, ablock_x + ablock_y * src_blocks_per_row,
-                        temp_buffer, axoff, ayoff, axsize, aysize );
-
-            for( i_line = 0; i_line < aysize; i_line++ )
-            {
-                memcpy( ((uint8*) buffer)
-                        + (block1_xsize + (i_line + block1_ysize) * xsize) * pixel_size,
-                        temp_buffer + i_line * axsize * pixel_size,
-                        axsize * pixel_size );
-            }
+            memcpy( ((uint8*) buffer) + i_line * xsize * pixel_size,
+                    temp_buffer + i_line * axsize * pixel_size,
+                    axsize * pixel_size );
         }
     }
-    catch( ... )
+
+/* -------------------------------------------------------------------- */
+/*      read external block for top right corner of target block.       */
+/* -------------------------------------------------------------------- */
+    ttxoff = txoff + block1_xsize;
+    ttyoff = tyoff;
+    ttxsize = txsize - block1_xsize;
+    ttysize = tysize;
+
+    ablock_x = ttxoff / src_block_width;
+    ablock_y = ttyoff / src_block_height;
+
+    axoff = ttxoff - ablock_x * src_block_width;
+    ayoff = ttyoff - ablock_y * src_block_height;
+
+    if( axoff + ttxsize > src_block_width )
+        axsize = src_block_width - axoff;
+    else
+        axsize = ttxsize;
+
+    if( ayoff + ttysize > src_block_height )
+        aysize = src_block_height - ayoff;
+    else
+        aysize = ttysize;
+
+    if( axsize > 0 && aysize > 0 )
     {
-        free( temp_buffer );
-        throw;
+        MutexHolder oHolder( mutex );
+        db->ReadBlock( echannel, ablock_x + ablock_y * src_blocks_per_row,
+                       temp_buffer, axoff, ayoff, axsize, aysize );
+
+        for( i_line = 0; i_line < aysize; i_line++ )
+        {
+            memcpy( ((uint8*) buffer)
+                    + (block1_xsize + i_line * xsize) * pixel_size,
+                    temp_buffer + i_line * axsize * pixel_size,
+                    axsize * pixel_size );
+        }
     }
 
-    free( temp_buffer );
+/* -------------------------------------------------------------------- */
+/*      read external block for bottom left corner of target block.     */
+/* -------------------------------------------------------------------- */
+    ttxoff = txoff;
+    ttyoff = tyoff + block1_ysize;
+    ttxsize = txsize;
+    ttysize = tysize - block1_ysize;
+
+    ablock_x = ttxoff / src_block_width;
+    ablock_y = ttyoff / src_block_height;
+
+    axoff = ttxoff - ablock_x * src_block_width;
+    ayoff = ttyoff - ablock_y * src_block_height;
+
+    if( axoff + ttxsize > src_block_width )
+        axsize = src_block_width - axoff;
+    else
+        axsize = ttxsize;
+
+    if( ayoff + ttysize > src_block_height )
+        aysize = src_block_height - ayoff;
+    else
+        aysize = ttysize;
+
+    if( axsize > 0 && aysize > 0 )
+    {
+        MutexHolder oHolder( mutex );
+        db->ReadBlock( echannel, ablock_x + ablock_y * src_blocks_per_row,
+                       temp_buffer, axoff, ayoff, axsize, aysize );
+
+        for( i_line = 0; i_line < aysize; i_line++ )
+        {
+            memcpy( ((uint8*) buffer)
+                    + (i_line + block1_ysize) * xsize * pixel_size,
+                    temp_buffer + i_line * axsize * pixel_size,
+                    axsize * pixel_size );
+        }
+    }
+
+/* -------------------------------------------------------------------- */
+/*      read external block for bottom left corner of target block.     */
+/* -------------------------------------------------------------------- */
+    ttxoff = txoff + block1_xsize;
+    ttyoff = tyoff + block1_ysize;
+    ttxsize = txsize - block1_xsize;
+    ttysize = tysize - block1_ysize;
+
+    ablock_x = ttxoff / src_block_width;
+    ablock_y = ttyoff / src_block_height;
+
+    axoff = ttxoff - ablock_x * src_block_width;
+    ayoff = ttyoff - ablock_y * src_block_height;
+
+    if( axoff + ttxsize > src_block_width )
+        axsize = src_block_width - axoff;
+    else
+        axsize = ttxsize;
+
+    if( ayoff + ttysize > src_block_height )
+        aysize = src_block_height - ayoff;
+    else
+        aysize = ttysize;
+
+    if( axsize > 0 && aysize > 0 )
+    {
+        MutexHolder oHolder( mutex );
+        db->ReadBlock( echannel, ablock_x + ablock_y * src_blocks_per_row,
+                       temp_buffer, axoff, ayoff, axsize, aysize );
+
+        for( i_line = 0; i_line < aysize; i_line++ )
+        {
+            memcpy( ((uint8*) buffer)
+                    + (block1_xsize + (i_line + block1_ysize) * xsize) * pixel_size,
+                    temp_buffer + i_line * axsize * pixel_size,
+                    axsize * pixel_size );
+        }
+    }
 
     return 1;
 }
@@ -801,7 +808,7 @@ void CExternalChannel::SetEChanInfo( std::string filenameIn, int echannelIn,
 /* -------------------------------------------------------------------- */
 /*      Update local configuration.                                     */
 /* -------------------------------------------------------------------- */
-    this->filename = MergeRelativePath( file->GetInterfaces()->io,
+    this->filename = file->GetInterfaces()->MergeRelativePath( file->GetInterfaces()->io,
                                         file->GetFilename(),
                                         filenameIn );
 

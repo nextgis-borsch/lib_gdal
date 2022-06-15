@@ -224,7 +224,7 @@ class HKVDataset final: public RawDataset
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
                                 int nXSize, int nYSize, int nBands,
-                                GDALDataType eType, char ** papszParmList );
+                                GDALDataType eType, char ** papszParamList );
     static GDALDataset *CreateCopy( const char * pszFilename,
                                     GDALDataset *poSrcDS,
                                     int bStrict, char ** papszOptions,
@@ -316,7 +316,7 @@ HKVDataset::HKVDataset() :
 HKVDataset::~HKVDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
     if( bGeorefChanged )
     {
         const char *pszFilename = CPLFormFilename(pszPath, "georef", nullptr );
@@ -1531,18 +1531,18 @@ GDALDataset *HKVDataset::Open( GDALOpenInfo * poOpenInfo )
 /************************************************************************/
 
 GDALDataset *HKVDataset::Create( const char * pszFilenameIn,
-                                 int nXSize, int nYSize, int nBands,
+                                 int nXSize, int nYSize, int nBandsIn,
                                  GDALDataType eType,
-                                 char ** /* papszParmList */ )
+                                 char ** /* papszParamList */ )
 
 {
 /* -------------------------------------------------------------------- */
 /*      Verify input options.                                           */
 /* -------------------------------------------------------------------- */
-    if (nBands <= 0)
+    if (nBandsIn <= 0)
     {
         CPLError( CE_Failure, CPLE_NotSupported,
-                  "HKV driver does not support %d bands.", nBands );
+                  "HKV driver does not support %d bands.", nBandsIn );
         return nullptr;
     }
 
@@ -1597,7 +1597,7 @@ GDALDataset *HKVDataset::Create( const char * pszFilenameIn,
 /* -------------------------------------------------------------------- */
     CPLErr CEHeaderCreated
         = SaveHKVAttribFile( pszFilenameIn, nXSize, nYSize,
-                             nBands, eType, FALSE, 0.0 );
+                             nBandsIn, eType, FALSE, 0.0 );
 
     if (CEHeaderCreated != CE_None )
         return nullptr;
@@ -1845,7 +1845,7 @@ HKVDataset::CreateCopy( const char * pszFilename,
     {
         RawRasterBand *poDstBand = reinterpret_cast<RawRasterBand *>(
             poDS->GetRasterBand( iBand+1 ) );
-        poDstBand->FlushCache();
+        poDstBand->FlushCache(false);
     }
 
     if( !pfnProgress( 1.0, nullptr, pProgressData ) )

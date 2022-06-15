@@ -43,7 +43,7 @@ std::string WStringToString(const std::wstring& s);
 //
 
 // Type mapping
-bool GDBToOGRGeometry(std::string geoType, bool hasZ, bool hasM, OGRwkbGeometryType* pOut);
+bool GDBToOGRGeometry(const std::string& geoType, bool hasZ, bool hasM, OGRwkbGeometryType* pOut);
 bool OGRGeometryToGDB(OGRwkbGeometryType ogrType, std::string *gdbType, bool *hasZ, bool *hasM);
 
 bool GDBToOGRSpatialReference(const std::string & wkt, OGRSpatialReference** ppSR);
@@ -58,19 +58,18 @@ bool GhettoGDBGeometryToOGRGeometry(bool forceMulti, FileGDBAPI::ShapeBuffer* pG
 //
 // GDB API to OGR Field Mapping
 //
-bool GDBToOGRFieldType(const std::string& gdbType, OGRFieldType* ogrType, OGRFieldSubType* pSubType);
 bool OGRToGDBFieldType(OGRFieldType ogrType, OGRFieldSubType eSubType, std::string* gdbType);
 
 //
 // GDB Field Width defaults
 //
-bool GDBFieldTypeToWidthPrecision(std::string &gdbType, int *width, int *precision);
+bool GDBFieldTypeToWidthPrecision(const std::string &gdbType, int *width, int *precision);
 
 //
 // GDBAPI error to OGR
 //
-bool GDBErr(long hr, std::string desc, CPLErr errType = CE_Failure, const char* pszAddMsg = "");
-bool GDBDebug(long hr, std::string desc);
+bool GDBErr(long hr, const std::string& desc, CPLErr errType = CE_Failure, const char* pszAddMsg = "");
+bool GDBDebug(long hr, const std::string& desc);
 
 //
 // Utility for adding attributes to CPL nodes

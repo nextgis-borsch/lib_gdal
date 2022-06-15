@@ -166,6 +166,7 @@ class OGROpenFileGDBDataSource final: public OGRDataSource
   std::vector <OGRLayer*>        m_apoHiddenLayers;
   char                         **m_papszFiles;
   std::map<std::string, int>     m_osMapNameToIdx;
+  std::shared_ptr<GDALGroup>     m_poRootGroup{};
 
   /* For debugging/testing */
   bool                           bLastSQLUsedOptimizedImplementation;
@@ -177,7 +178,7 @@ class OGROpenFileGDBDataSource final: public OGRDataSource
                                      int nInterestTable);
 
   int                 FileExists(const char* pszFilename);
-  void                AddLayer( const CPLString& osName,
+  OGRLayer*           AddLayer( const CPLString& osName,
                                 int nInterestTable,
                                 int& nCandidateLayers,
                                 int& nLayersSDCOrCDF,
@@ -185,18 +186,20 @@ class OGROpenFileGDBDataSource final: public OGRDataSource
                                 const CPLString& osDocumentation,
                                 const char* pszGeomName,
                                 OGRwkbGeometryType eGeomType );
+  static bool         IsPrivateLayerName( const CPLString& osName );
 
 public:
            OGROpenFileGDBDataSource();
   virtual ~OGROpenFileGDBDataSource();
 
-  int                 Open(const char * );
+  int                 Open( const GDALOpenInfo* poOpenInfo );
 
   virtual const char* GetName() override { return m_pszName; }
   virtual int         GetLayerCount() override { return static_cast<int>(m_apoLayers.size()); }
 
   virtual OGRLayer*   GetLayer( int ) override;
   virtual OGRLayer*   GetLayerByName( const char* pszName ) override;
+  bool                IsLayerPrivate( int ) const override;
 
   virtual OGRLayer *  ExecuteSQL( const char *pszSQLCommand,
                                   OGRGeometry *poSpatialFilter,
@@ -206,8 +209,32 @@ public:
   virtual int         TestCapability( const char * ) override;
 
   virtual char      **GetFileList() override;
+
+  std::shared_ptr<GDALGroup> GetRootGroup() const override { return m_poRootGroup; }
 };
 
 int OGROpenFileGDBIsComparisonOp(int op);
+
+/************************************************************************/
+/*                   OGROpenFileGDBSingleFeatureLayer                   */
+/************************************************************************/
+
+class OGROpenFileGDBSingleFeatureLayer final: public OGRLayer
+{
+  private:
+    char               *pszVal;
+    OGRFeatureDefn     *poFeatureDefn;
+    int                 iNextShapeId;
+
+  public:
+                        OGROpenFileGDBSingleFeatureLayer( const char* pszLayerName,
+                                                          const char *pszVal );
+               virtual ~OGROpenFileGDBSingleFeatureLayer();
+
+    virtual void        ResetReading() override { iNextShapeId = 0; }
+    virtual OGRFeature *GetNextFeature() override;
+    virtual OGRFeatureDefn *GetLayerDefn() override { return poFeatureDefn; }
+    virtual int         TestCapability( const char * ) override { return FALSE; }
+};
 
 #endif /* ndef OGR_OPENFILEGDB_H_INCLUDED */

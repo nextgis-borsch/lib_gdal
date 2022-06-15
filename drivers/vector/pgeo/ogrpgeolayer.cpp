@@ -176,12 +176,14 @@ CPLErr OGRPGeoLayer::BuildFeatureDefn( const char *pszLayerName,
             /* leave it as OFTString */;
         }
 
-        if( pszGeomColumn != nullptr )
-            poFeatureDefn->GetGeomFieldDefn(0)->SetName(pszGeomColumn);
-
         poFeatureDefn->AddFieldDefn( &oField );
         panFieldOrdinals[poFeatureDefn->GetFieldCount() - 1] = iCol+1;
     }
+
+    if( pszGeomColumn != nullptr )
+        poFeatureDefn->GetGeomFieldDefn(0)->SetName(pszGeomColumn);
+    else
+        poFeatureDefn->SetGeomType( wkbNone );
 
     return CE_None;
 }
@@ -194,6 +196,7 @@ void OGRPGeoLayer::ResetReading()
 
 {
     iNextShapeId = 0;
+    m_bEOF = false;
 }
 
 /************************************************************************/
@@ -228,7 +231,7 @@ OGRFeature *OGRPGeoLayer::GetNextRawFeature()
 {
     OGRErr err = OGRERR_NONE;
 
-    if( GetStatement() == nullptr )
+    if( m_bEOF || GetStatement() == nullptr )
         return nullptr;
 
 /* -------------------------------------------------------------------- */
@@ -238,6 +241,7 @@ OGRFeature *OGRPGeoLayer::GetNextRawFeature()
     {
         delete poStmt;
         poStmt = nullptr;
+        m_bEOF = true;
         return nullptr;
     }
 
@@ -260,17 +264,36 @@ OGRFeature *OGRPGeoLayer::GetNextRawFeature()
 /* -------------------------------------------------------------------- */
     for( int iField = 0; iField < poFeatureDefn->GetFieldCount(); iField++ )
     {
+        const OGRFieldType eType = poFeatureDefn->GetFieldDefn(iField)->GetType();
         int iSrcField = panFieldOrdinals[iField]-1;
-        const char *pszValue = poStmt->GetColData( iSrcField );
 
-        if( pszValue == nullptr )
-            poFeature->SetFieldNull( iField );
-        else if( poFeature->GetFieldDefnRef(iField)->GetType() == OFTBinary )
-            poFeature->SetField( iField,
-                                 poStmt->GetColDataLength(iSrcField),
-                                 (GByte *) pszValue );
+        if ( eType == OFTReal && (poStmt->Flags() & CPLODBCStatement::Flag::RetrieveNumericColumnsAsDouble) )
+        {
+            // for OFTReal fields we retrieve the value directly as a double
+            // to avoid loss of precision associated with double/float->string conversion
+            const double dfValue = poStmt->GetColDataAsDouble( iSrcField );
+            if ( std::isnan( dfValue ) )
+            {
+                poFeature->SetFieldNull( iField );
+            }
+            else
+            {
+                poFeature->SetField( iField, dfValue );
+            }
+        }
         else
-            poFeature->SetField( iField, pszValue );
+        {
+            const char *pszValue = poStmt->GetColData( iSrcField );
+
+            if( pszValue == nullptr )
+                poFeature->SetFieldNull( iField );
+            else if( poFeature->GetFieldDefnRef(iField)->GetType() == OFTBinary )
+                poFeature->SetField( iField,
+                                     poStmt->GetColDataLength(iSrcField),
+                                     (GByte *) pszValue );
+            else
+                poFeature->SetField( iField, pszValue );
+        }
     }
 
 /* -------------------------------------------------------------------- */
@@ -296,6 +319,13 @@ OGRFeature *OGRPGeoLayer::GetNextRawFeature()
 
         if( poGeom != nullptr && OGRERR_NONE == err )
         {
+            // always promote polygon/linestring geometries to multipolygon/multilinestring,
+            // so that the geometry types returned for the layer are predictable and match
+            // the advertised layer geometry type. See more details in OGRPGeoTableLayer::Initialize
+            const OGRwkbGeometryType eFlattenType = wkbFlatten(poGeom->getGeometryType());
+            if( eFlattenType == wkbPolygon || eFlattenType == wkbLineString )
+                poGeom = OGRGeometryFactory::forceTo(poGeom, OGR_GT_GetCollection(poGeom->getGeometryType()));
+
             poGeom->assignSpatialReference( poSRS );
             poFeature->SetGeometryDirectly( poGeom );
         }
@@ -365,7 +395,7 @@ void OGRPGeoLayer::LookupSRID( int nSRID )
 
     if( pszSRText[0] == '{' )
     {
-        CPLDebug( "PGEO", "Ignoreing GUID SRTEXT: %s", pszSRText );
+        CPLDebug( "PGEO", "Ignoring GUID SRTEXT: %s", pszSRText );
         return;
     }
 

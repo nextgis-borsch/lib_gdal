@@ -29,10 +29,6 @@
 
 // $Id$
 
-#ifdef DEBUG_BOOL
-#define DO_NOT_USE_DEBUG_BOOL
-#endif
-
 #include <cstring>
 #include <algorithm>
 #include <cmath>
@@ -71,21 +67,21 @@ class JP2KAKDataset final: public GDALJP2AbstractDataset
     friend class JP2KAKRasterBand;
 
     kdu_codestream oCodeStream;
-    kdu_compressed_source *poInput;
-    kdu_compressed_source *poRawInput;
-    jp2_family_src  *family;
-    kdu_client      *jpip_client;
+    kdu_compressed_source *poInput = nullptr;
+    kdu_compressed_source *poRawInput = nullptr;
+    jp2_family_src  *family = nullptr;
+    kdu_client      *jpip_client = nullptr;
     kdu_dims dims;
-    int            nResCount;
-    bool           bPreferNPReads;
-    kdu_thread_env *poThreadEnv;
+    int            nResCount = 0;
+    bool           bPreferNPReads = false;
+    kdu_thread_env *poThreadEnv = nullptr;
 
-    bool           bCached;
-    bool           bResilient;
-    bool           bFussy;
-    bool           bUseYCC;
+    bool           bCached = false;
+    bool           bResilient = false;
+    bool           bFussy = false;
+    bool           bUseYCC = false;
 
-    bool           bPromoteTo8Bit;
+    bool           bPromoteTo8Bit = false;
 
     bool        TestUseBlockIO( int, int, int, int, int, int,
                                 GDALDataType, int, int * );

@@ -37,6 +37,7 @@ if(ENABLE_PDS_ISIS2_ISIS3_VICAR)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/raw)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
     include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/gtiff)
 
     set(LIB_HHEADERS
     )

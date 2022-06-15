@@ -53,8 +53,6 @@ static int    bNCSInitialized = FALSE;
 
 void ECWInitialize( void );
 
-extern "C" int CPL_DLL GDALIsInGlobalDestructor(void);
-
 #define BLOCK_SIZE 256
 
 GDALDataset* ECWDatasetOpenJPEG2000(GDALOpenInfo* poOpenInfo);
@@ -197,7 +195,7 @@ ECWRasterBand::ECWRasterBand( ECWDataset *poDSIn, int nBandIn, int iOverviewIn,
                         CPLString().Printf("%d",poDSIn->psFileInfo->pBands[nBand-1].nBits),
                         "IMAGE_STRUCTURE" );
 
-    GDALPamRasterBand::SetDescription(poDSIn->psFileInfo->pBands[nBand-1].szDesc);
+    GDALRasterBand::SetDescription(poDSIn->psFileInfo->pBands[nBand-1].szDesc);
 }
 
 /************************************************************************/
@@ -206,7 +204,7 @@ ECWRasterBand::ECWRasterBand( ECWDataset *poDSIn, int nBandIn, int iOverviewIn,
 
 ECWRasterBand::~ECWRasterBand()
 {
-    GDALRasterBand::FlushCache();
+    GDALRasterBand::FlushCache(true);
 
     while( !apoOverviews.empty() )
     {
@@ -526,6 +524,20 @@ double ECWRasterBand::GetMaximum(int* pbSuccess)
     }
     return GDALPamRasterBand::GetMaximum(pbSuccess);
 }
+
+/************************************************************************/
+/*                          SetMetadataItem()                           */
+/************************************************************************/
+
+CPLErr ECWRasterBand::SetMetadataItem( const char * pszName,
+                                 const char * pszValue,
+                                 const char * pszDomain)
+{
+    if( EQUAL(pszName, "STATISTICS_VALID_PERCENT") )
+        return CE_None;
+    return GDALPamRasterBand::SetMetadataItem(pszName, pszValue, pszDomain);
+}
+
 /************************************************************************/
 /*                          GetStatistics()                             */
 /************************************************************************/
@@ -605,7 +617,7 @@ CPLErr ECWRasterBand::GetStatistics( int bApproxOK, int bForce,
             const CPLErr err = SetStatistics(dfMin,dfMax,dfMean,dfStdDev);
             if (err !=CE_None){
                 CPLError (CE_Warning, CPLE_AppDefined,
-                    "SetStatistics failed in ECWRasterBand::GetDefaultHistogram. Statistics might not be saved in .ecw file." );
+                    "SetStatistics failed in ECWRasterBand::GetStatistics. Statistics might not be saved in .ecw file." );
             }
             return CE_None;
         }
@@ -880,6 +892,13 @@ CPLErr ECWRasterBand::IRasterIO( GDALRWFlag eRWFlag,
 
     int nResFactor = 1 << (iOverview+1);
 
+
+    GDALRasterIOExtraArg sExtraArgTmp;
+    INIT_RASTERIO_EXTRA_ARG(sExtraArgTmp);
+    sExtraArgTmp.eResampleAlg = psExtraArg->eResampleAlg;
+    sExtraArgTmp.pfnProgress = psExtraArg->pfnProgress;
+    sExtraArgTmp.pProgressData = psExtraArg->pProgressData;
+
     return poGDS->IRasterIO(eRWFlag,
                             nXOff * nResFactor,
                             nYOff * nResFactor,
@@ -887,7 +906,7 @@ CPLErr ECWRasterBand::IRasterIO( GDALRWFlag eRWFlag,
                             (nYSize == nRasterYSize) ? poGDS->nRasterYSize : nYSize * nResFactor,
                             pData, nBufXSize, nBufYSize,
                             eBufType, 1, &nBand,
-                            nPixelSpace, nLineSpace, nLineSpace*nBufYSize, psExtraArg);
+                            nPixelSpace, nLineSpace, nLineSpace*nBufYSize, &sExtraArgTmp);
 }
 
 /************************************************************************/
@@ -1003,7 +1022,7 @@ ECWDataset::ECWDataset(int bIsJPEG2000In)
 ECWDataset::~ECWDataset()
 
 {
-    GDALPamDataset::FlushCache();
+    GDALPamDataset::FlushCache(true);
     CleanupWindow();
 
 #if ECWSDK_VERSION>=50
@@ -1026,35 +1045,7 @@ ECWDataset::~ECWDataset()
 
     CPLMutexHolder oHolder( &hECWDatasetMutex );
 
-    // bInGDALGlobalDestructor is set to TRUE by gdaldllmain.cpp/GDALDestroy() so as
-    // to avoid an issue with the ECW SDK 3.3 where the destructor of CNCSJP2File::CNCSJP2FileVector CNCSJP2File::sm_Files;
-    // static resource allocated in NCJP2File.cpp can be called before GDALDestroy(), causing
-    // ECW SDK resources ( CNCSJP2File files ) to be closed before we get here.
-    //
-    // We also have an issue with ECW SDK 5.0 and ECW files on Linux when
-    // running a multi-threaded test under Java if there's still an ECW dataset
-    // not explicitly closed at process termination.
-    /*  #0  0x00007fffb26e7a80 in NCSAtomicAdd64 () from /home/even/ecwjp2_sdk/redistributable/x64/libNCSEcw.so
-        #1  0x00007fffb2aa7684 in NCS::SDK::CBuffer2D::Free() () from /home/even/ecwjp2_sdk/redistributable/x64/libNCSEcw.so
-        #2  0x00007fffb2aa7727 in NCS::SDK::CBuffer2D::~CBuffer2D() () from /home/even/ecwjp2_sdk/redistributable/x64/libNCSEcw.so
-        #3  0x00007fffb29aa7be in NCS::ECW::CReader::~CReader() () from /home/even/ecwjp2_sdk/redistributable/x64/libNCSEcw.so
-        #4  0x00007fffb29aa819 in NCS::ECW::CReader::~CReader() () from /home/even/ecwjp2_sdk/redistributable/x64/libNCSEcw.so
-        #5  0x00007fffb291fd3a in NCS::CView::Close(bool) () from /home/even/ecwjp2_sdk/redistributable/x64/libNCSEcw.so
-        #6  0x00007fffb2927529 in NCS::CView::~CView() () from /home/even/ecwjp2_sdk/redistributable/x64/libNCSEcw.so
-        #7  0x00007fffb29277f9 in NCS::CView::~CView() () from /home/even/ecwjp2_sdk/redistributable/x64/libNCSEcw.so
-        #8  0x00007fffb71a9a53 in ECWDataset::~ECWDataset (this=0x7fff942cce10, __in_chrg=<optimized out>) at ecwdataset.cpp:1003
-        #9  0x00007fffb71a9cca in ECWDataset::~ECWDataset (this=0x7fff942cce10, __in_chrg=<optimized out>) at ecwdataset.cpp:1039
-        #10 0x00007fffb7551f98 in GDALDriverManager::~GDALDriverManager (this=0x7ffff01981a0, __in_chrg=<optimized out>) at gdaldrivermanager.cpp:196
-        #11 0x00007fffb7552140 in GDALDriverManager::~GDALDriverManager (this=0x7ffff01981a0, __in_chrg=<optimized out>) at gdaldrivermanager.cpp:288
-        #12 0x00007fffb7552e18 in GDALDestroyDriverManager () at gdaldrivermanager.cpp:824
-        #13 0x00007fffb7551c61 in GDALDestroy () at gdaldllmain.cpp:80
-        #14 0x00007ffff7de990e in _dl_fini () at dl-fini.c:254
-    */
-    // Not reproducible with similar test in C++, but this might be
-    // just a matter of luck related to the order in which the
-    // libraries are unloaded, so just don't try to delete poFileView
-    // from the GDAL destructor.
-    if( poFileView != nullptr && !GDALIsInGlobalDestructor() )
+    if( poFileView != nullptr )
     {
 #if ECWSDK_VERSION >= 55
         delete poFileView;
@@ -1181,20 +1172,22 @@ CPLErr ECWDataset::SetGeoTransform( double * padfGeoTransform )
 }
 
 /************************************************************************/
-/*                            SetProjection()                           */
+/*                            SetSpatialRef()                           */
 /************************************************************************/
 
-CPLErr ECWDataset::_SetProjection( const char* pszProjectionIn )
+CPLErr ECWDataset::SetSpatialRef( const OGRSpatialReference* poSRS )
 {
     if ( bIsJPEG2000 || eAccess == GA_ReadOnly )
-        return GDALPamDataset::_SetProjection(pszProjectionIn);
+        return GDALPamDataset::SetSpatialRef(poSRS);
 
-    if ( !( (pszProjection == nullptr && pszProjectionIn == nullptr) ||
-            (pszProjection != nullptr && pszProjectionIn != nullptr &&
-             strcmp(pszProjection, pszProjectionIn) == 0) ) )
+    if ( !( (m_oSRS.IsEmpty() && poSRS == nullptr) ||
+            (!m_oSRS.IsEmpty() && poSRS != nullptr &&
+             m_oSRS.IsSame(poSRS)) ) )
     {
-        CPLFree(pszProjection);
-        pszProjection = pszProjectionIn ? CPLStrdup(pszProjectionIn) : nullptr;
+        m_oSRS.Clear();
+        if( poSRS )
+            m_oSRS = *poSRS;
+
         bHdrDirty = TRUE;
         bProjectionChanged = TRUE;
     }
@@ -1455,7 +1448,7 @@ void ECWDataset::WriteHeader()
     char szProjCode[32], szDatumCode[32], szUnits[32];
     if (bProjectionChanged)
     {
-        if (ECWTranslateFromWKT( pszProjection, szProjCode, sizeof(szProjCode),
+        if (ECWTranslateFromWKT( &m_oSRS, szProjCode, sizeof(szProjCode),
                                  szDatumCode, sizeof(szDatumCode), szUnits ) )
         {
             psEditInfo->szDatum = szDatumCode;
@@ -1569,7 +1562,7 @@ CPLErr ECWDataset::AdviseRead( int nXOff, int nYOff, int nXSize, int nYSize,
     // We don't setup the reading window right away, in case the actual read
     // pattern wouldn't be compatible of it. Which might be the case for
     // example if AdviseRead() requests a full image, but we don't read by
-    // chunks of the full width of one or several lines 
+    // chunks of the full width of one or several lines
     m_nAdviseReadXOff = nXOff;
     m_nAdviseReadYOff = nYOff;
     m_nAdviseReadXSize = nXSize;
@@ -1934,13 +1927,18 @@ CPLErr ECWDataset::IRasterIO( GDALRWFlag eRWFlag,
             return CE_Failure;
         }
 
+        GDALRasterIOExtraArg sExtraArgDefault;
+        INIT_RASTERIO_EXTRA_ARG(sExtraArgDefault);
+        sExtraArgDefault.pfnProgress = psExtraArg->pfnProgress;
+        sExtraArgDefault.pProgressData = psExtraArg->pProgressData;
+
         CPLErr eErr = IRasterIO(eRWFlag, nXOff, nYOff, nXSize, nYSize,
                                 pabyTemp, nXSize, nYSize,
                                 eBufType, nBandCount, panBandMap,
                                 nBufDataTypeSize,
                                 (GIntBig)nBufDataTypeSize* nXSize,
                                 (GIntBig)nBufDataTypeSize*nXSize*nYSize,
-                                psExtraArg);
+                                &sExtraArgDefault);
 
         if( eErr == CE_None )
         {
@@ -1952,15 +1950,17 @@ CPLErr ECWDataset::IRasterIO( GDALRWFlag eRWFlag,
 
             for( int i = 0; i < nBandCount; i++ )
             {
-                nRet = CPLPrintPointer(szBuffer, pabyTemp + i * nBufDataTypeSize, sizeof(szBuffer));
+                nRet = CPLPrintPointer(szBuffer,
+                                       pabyTemp + static_cast<size_t>(i) * nBufDataTypeSize * nXSize * nYSize,
+                                       sizeof(szBuffer));
                 szBuffer[nRet] = 0;
                 char** papszOptions = CSLSetNameValue(nullptr, "DATAPOINTER", szBuffer);
 
                 papszOptions = CSLSetNameValue(papszOptions, "PIXELOFFSET",
-                    CPLSPrintf(CPL_FRMT_GIB, (GIntBig)nBufDataTypeSize * nBandCount));
+                    CPLSPrintf("%d", nBufDataTypeSize));
 
                 papszOptions = CSLSetNameValue(papszOptions, "LINEOFFSET",
-                    CPLSPrintf(CPL_FRMT_GIB, (GIntBig)nBufDataTypeSize * nBandCount * nXSize));
+                    CPLSPrintf(CPL_FRMT_GIB, (GIntBig)nBufDataTypeSize * nXSize));
 
                 poMEMDS->AddBand(eBufType, papszOptions);
                 CSLDestroy(papszOptions);
@@ -2751,6 +2751,72 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo, int bIsJPEG2000 )
             break;
     }
 
+
+/* -------------------------------------------------------------------- */
+/*      If decoding a UInt32 image, check that the SDK is not buggy     */
+/*      There are issues at least in the 5.x series.                    */
+/* -------------------------------------------------------------------- */
+#if ECWSDK_VERSION >= 40
+    if( bIsJPEG2000 &&
+        poDS->eNCSRequestDataType == NCSCT_UINT32 &&
+        CPLTestBool(CPLGetConfigOption("ECW_CHECK_CORRECT_DECODING", "TRUE")) &&
+        !STARTS_WITH_CI(poOpenInfo->pszFilename, "/vsimem/detect_ecw_uint32_bug") )
+    {
+        static bool bUINT32_Ok = false;
+        {
+            CPLMutexHolder oHolder( &hECWDatasetMutex );
+            static bool bTestDone = false;
+            if( !bTestDone )
+            {
+                bTestDone = true;
+                // Minimal J2K 2x2 image with NBITS=20, unsigned, reversible compression
+                // and following values
+                // 0 1048575
+                // 1048574 524288
+
+                static const GByte abyTestUInt32ImageData[] = {
+                    0xFF, 0x4F, 0xFF, 0x51, 0x00, 0x29, 0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00,
+                    0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x02, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00, 0x01, 0x13, 0x01, 0x01, 0xFF, 0x52, 0x00, 0x0D, 0x01, 0x00, 0x00,
+                    0x01, 0x00, 0x00, 0x04, 0x04, 0x00, 0x01, 0x99, 0xFF, 0x5C, 0x00, 0x04, 0x40,
+                    0xA0, 0xFF, 0x90, 0x00, 0x0A, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1C, 0x00, 0x01,
+                    0xFF, 0x93, 0xDF, 0xF9, 0x40, 0x50, 0x07, 0x68, 0xE0, 0x12, 0xD2, 0xDA, 0xDF,
+                    0xFF, 0x7F, 0x5F, 0xFF, 0xD9 };
+
+                const std::string osTmpFilename = CPLSPrintf("/vsimem/detect_ecw_uint32_bug_%p.j2k", poDS);
+                VSIFCloseL(VSIFileFromMemBuffer(osTmpFilename.c_str(),
+                                                const_cast<GByte*>(abyTestUInt32ImageData),
+                                                sizeof(abyTestUInt32ImageData),
+                                                false));
+                GDALOpenInfo oOpenInfo(osTmpFilename.c_str(), GA_ReadOnly);
+                auto poTmpDS = std::unique_ptr<GDALDataset>(Open( &oOpenInfo, true ));
+                if( poTmpDS )
+                {
+                    uint32_t anValues[4] = {0};
+                    if( poTmpDS->GetRasterBand(1)->RasterIO(GF_Read, 0, 0, 2, 2,
+                            anValues, 2, 2, GDT_UInt32, 0, 0, nullptr) == CE_None &&
+                        anValues[0] == 0 &&
+                        anValues[1] == 1048575 &&
+                        anValues[2] == 1048574 &&
+                        anValues[3] == 524288 )
+                    {
+                        bUINT32_Ok = true;
+                    }
+                }
+                VSIUnlink(osTmpFilename.c_str());
+            }
+        }
+
+        if( !bUINT32_Ok )
+        {
+            CPLDebug("ECW", "ECW SDK used cannot correctly decode UInt32 images. Giving up");
+            delete poDS;
+            return nullptr;
+        }
+    }
+#endif
+
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
@@ -2783,11 +2849,11 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo, int bIsJPEG2000 )
         }
     }
 
-    poDS->SetMetadataItem("COMPRESSION_RATE_TARGET", CPLString().Printf("%d", poDS->psFileInfo->nCompressionRate));
-    poDS->SetMetadataItem("COLORSPACE", ECWGetColorSpaceName(poDS->psFileInfo->eColorSpace));
+    poDS->GDALDataset::SetMetadataItem("COMPRESSION_RATE_TARGET", CPLString().Printf("%d", poDS->psFileInfo->nCompressionRate));
+    poDS->GDALDataset::SetMetadataItem("COLORSPACE", ECWGetColorSpaceName(poDS->psFileInfo->eColorSpace));
 #if ECWSDK_VERSION>=50
     if( !bIsJPEG2000 )
-         poDS->SetMetadataItem("VERSION", CPLString().Printf("%d", poDS->psFileInfo->nFormatVersion));
+         poDS->GDALDataset::SetMetadataItem("VERSION", CPLString().Printf("%d", poDS->psFileInfo->nFormatVersion));
 #if ECWSDK_VERSION>=51
     // output jp2 header info
     if( bIsJPEG2000 && poDS->poFileView ) {
@@ -2795,7 +2861,7 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo, int bIsJPEG2000 )
         char *csComments = nullptr;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:COMMENTS", &csComments);
         if (csComments) {
-            poDS->SetMetadataItem("ALL_COMMENTS", CPLString().Printf("%s", csComments));
+            poDS->GDALDataset::SetMetadataItem("ALL_COMMENTS", CPLString().Printf("%s", csComments));
             NCSFree(csComments);
         }
 
@@ -2809,33 +2875,33 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo, int bIsJPEG2000 )
             nProfile = 0; // Profile 0
         else if (nRsiz == 2)
             nProfile = 1; // Profile 1, NITF_BIIF_NPJE, NITF_BIIF_EPJE
-        poDS->SetMetadataItem("PROFILE", CPLString().Printf("%d", nProfile), JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("PROFILE", CPLString().Printf("%d", nProfile), JPEG2000_DOMAIN_NAME);
 
         // number of tiles on X axis
         UINT32 nTileNrX = 1;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:TILENR:X", &nTileNrX);
-        poDS->SetMetadataItem("TILES_X", CPLString().Printf("%d", nTileNrX), JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("TILES_X", CPLString().Printf("%d", nTileNrX), JPEG2000_DOMAIN_NAME);
 
         // number of tiles on X axis
         UINT32 nTileNrY = 1;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:TILENR:Y", &nTileNrY);
-        poDS->SetMetadataItem("TILES_Y", CPLString().Printf("%d", nTileNrY), JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("TILES_Y", CPLString().Printf("%d", nTileNrY), JPEG2000_DOMAIN_NAME);
 
         // Tile Width
         UINT32 nTileSizeX = 0;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:TILESIZE:X", &nTileSizeX);
-        poDS->SetMetadataItem("TILE_WIDTH", CPLString().Printf("%d", nTileSizeX), JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("TILE_WIDTH", CPLString().Printf("%d", nTileSizeX), JPEG2000_DOMAIN_NAME);
 
         // Tile Height
         UINT32 nTileSizeY = 0;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:TILESIZE:Y", &nTileSizeY);
-        poDS->SetMetadataItem("TILE_HEIGHT", CPLString().Printf("%d", nTileSizeY), JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("TILE_HEIGHT", CPLString().Printf("%d", nTileSizeY), JPEG2000_DOMAIN_NAME);
 
         // Precinct Sizes on X axis
         char *csPreSizeX = nullptr;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:PRECINCTSIZE:X", &csPreSizeX);
         if (csPreSizeX) {
-                poDS->SetMetadataItem("PRECINCT_SIZE_X", csPreSizeX, JPEG2000_DOMAIN_NAME);
+                poDS->GDALDataset::SetMetadataItem("PRECINCT_SIZE_X", csPreSizeX, JPEG2000_DOMAIN_NAME);
             NCSFree(csPreSizeX);
         }
 
@@ -2843,43 +2909,43 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo, int bIsJPEG2000 )
         char *csPreSizeY = nullptr;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:PRECINCTSIZE:Y", &csPreSizeY);
         if (csPreSizeY) {
-            poDS->SetMetadataItem("PRECINCT_SIZE_Y", csPreSizeY, JPEG2000_DOMAIN_NAME);
+            poDS->GDALDataset::SetMetadataItem("PRECINCT_SIZE_Y", csPreSizeY, JPEG2000_DOMAIN_NAME);
             NCSFree(csPreSizeY);
         }
 
         // Code Block Size on X axis
         UINT32 nCodeBlockSizeX = 0;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:CODEBLOCK:X", &nCodeBlockSizeX);
-        poDS->SetMetadataItem("CODE_BLOCK_SIZE_X", CPLString().Printf("%d", nCodeBlockSizeX), JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("CODE_BLOCK_SIZE_X", CPLString().Printf("%d", nCodeBlockSizeX), JPEG2000_DOMAIN_NAME);
 
         // Code Block Size on Y axis
         UINT32 nCodeBlockSizeY = 0;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:CODEBLOCK:Y", &nCodeBlockSizeY);
-        poDS->SetMetadataItem("CODE_BLOCK_SIZE_Y", CPLString().Printf("%d", nCodeBlockSizeY), JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("CODE_BLOCK_SIZE_Y", CPLString().Printf("%d", nCodeBlockSizeY), JPEG2000_DOMAIN_NAME);
 
         // Bitdepth
         char *csBitdepth = nullptr;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:BITDEPTH", &csBitdepth);
         if (csBitdepth) {
-            poDS->SetMetadataItem("PRECISION", csBitdepth, JPEG2000_DOMAIN_NAME);
+            poDS->GDALDataset::SetMetadataItem("PRECISION", csBitdepth, JPEG2000_DOMAIN_NAME);
             NCSFree(csBitdepth);
         }
 
         // Resolution Levels
         UINT32 nLevels = 0;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:RESOLUTION:LEVELS", &nLevels);
-        poDS->SetMetadataItem("RESOLUTION_LEVELS", CPLString().Printf("%d", nLevels), JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("RESOLUTION_LEVELS", CPLString().Printf("%d", nLevels), JPEG2000_DOMAIN_NAME);
 
         // Qualaity Layers
         UINT32 nLayers = 0;
         poDS->poFileView->GetParameter((char*)"JP2:DECOMPRESS:LAYERS", &nLayers);
-        poDS->SetMetadataItem("QUALITY_LAYERS", CPLString().Printf("%d", nLayers), JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("QUALITY_LAYERS", CPLString().Printf("%d", nLayers), JPEG2000_DOMAIN_NAME);
 
         // Progression Order
         char *csOrder = nullptr;
         poDS->poFileView->GetParameter((char*)"JPC:DECOMPRESS:PROGRESSION:ORDER", &csOrder);
         if (csOrder) {
-            poDS->SetMetadataItem("PROGRESSION_ORDER", csOrder, JPEG2000_DOMAIN_NAME);
+            poDS->GDALDataset::SetMetadataItem("PROGRESSION_ORDER", csOrder, JPEG2000_DOMAIN_NAME);
             NCSFree(csOrder);
         }
 
@@ -2891,7 +2957,7 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo, int bIsJPEG2000 )
             csFilter = "5x3";
         else
             csFilter = "9x7";
-        poDS->SetMetadataItem("TRANSFORMATION_TYPE", csFilter, JPEG2000_DOMAIN_NAME);
+        poDS->GDALDataset::SetMetadataItem("TRANSFORMATION_TYPE", csFilter, JPEG2000_DOMAIN_NAME);
 
         // SOP used?
         bool bSOP = 0;
@@ -2910,14 +2976,14 @@ GDALDataset *ECWDataset::Open( GDALOpenInfo * poOpenInfo, int bIsJPEG2000 )
     }
     #endif //ECWSDK_VERSION>=51
     if ( !bIsJPEG2000 && poDS->psFileInfo->nFormatVersion >=3 ){
-        poDS->SetMetadataItem("COMPRESSION_RATE_ACTUAL", CPLString().Printf("%f", poDS->psFileInfo->fActualCompressionRate));
-        poDS->SetMetadataItem("CLOCKWISE_ROTATION_DEG", CPLString().Printf("%f", poDS->psFileInfo->fCWRotationDegrees));
-        poDS->SetMetadataItem("COMPRESSION_DATE", poDS->psFileInfo->sCompressionDate);
+        poDS->GDALDataset::SetMetadataItem("COMPRESSION_RATE_ACTUAL", CPLString().Printf("%f", poDS->psFileInfo->fActualCompressionRate));
+        poDS->GDALDataset::SetMetadataItem("CLOCKWISE_ROTATION_DEG", CPLString().Printf("%f", poDS->psFileInfo->fCWRotationDegrees));
+        poDS->GDALDataset::SetMetadataItem("COMPRESSION_DATE", poDS->psFileInfo->sCompressionDate);
         //Get file metadata.
         poDS->ReadFileMetaDataFromFile();
     }
 #else
-    poDS->SetMetadataItem("VERSION", CPLString().Printf("%d",bIsJPEG2000?1:2));
+    poDS->GDALDataset::SetMetadataItem("VERSION", CPLString().Printf("%d",bIsJPEG2000?1:2));
 #endif
 
 /* -------------------------------------------------------------------- */
@@ -3117,7 +3183,7 @@ void ECWDataset::ECW2WKTProjection()
         /* have "Upward" orientation (Y coordinates increase "Upward"). */
         /* Setting ECW_ALWAYS_UPWARD=FALSE option relexes that policy   */
         /* and makes the driver rely on the actual Y-resolution         */
-        /* value (sign) of an image. This allows to correctly process   */
+        /* value (sign) of an image. This allows correctly processing   */
         /* rare images with "Downward" orientation, where Y coordinates */
         /* increase "Downward" and Y-resolution is positive.            */
         if( CPLTestBool( CPLGetConfigOption("ECW_ALWAYS_UPWARD","TRUE") ) )
@@ -3156,7 +3222,8 @@ void ECWDataset::ECW2WKTProjection()
                             psFileInfo->szDatum,
                             osUnits ) == OGRERR_NONE )
     {
-        oSRS.exportToWkt( &pszProjection );
+        m_oSRS = oSRS;
+        m_oSRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
     }
 
     CPLErrorReset(); /* see #4187 */
@@ -3166,7 +3233,7 @@ void ECWDataset::ECW2WKTProjection()
 /*                        ECWTranslateFromWKT()                         */
 /************************************************************************/
 
-int ECWTranslateFromWKT( const char *pszWKT,
+int ECWTranslateFromWKT( const OGRSpatialReference *poSRS,
                          char *pszProjection,
                          int nProjectionLen,
                          char *pszDatum,
@@ -3180,10 +3247,10 @@ int ECWTranslateFromWKT( const char *pszWKT,
     strcpy( pszDatum, "RAW" );
     strcpy( pszUnits, "METERS" );
 
-    if( pszWKT == nullptr || strlen(pszWKT) == 0 )
+    if( poSRS == nullptr || poSRS->IsEmpty() )
         return FALSE;
 
-    oSRS.importFromWkt( pszWKT );
+    oSRS = *poSRS;
 
     if( oSRS.IsLocal() )
         return TRUE;
@@ -3506,10 +3573,7 @@ static void GDALDeregister_ECW( GDALDriver * )
     if( bNCSInitialized )
     {
         bNCSInitialized = FALSE;
-        if( !GDALIsInGlobalDestructor() )
-        {
-            NCSecwShutdown();
-        }
+        NCSecwShutdown();
     }
 #endif
 #endif
@@ -3520,6 +3584,80 @@ static void GDALDeregister_ECW( GDALDriver * )
         hECWDatasetMutex = nullptr;
     }
 }
+
+#if ECWSDK_VERSION < 40
+namespace{
+NCSError NCS_CALL EcwFileOpenForReadACB(char *szFileName, void **ppClientData)
+{
+    *ppClientData = VSIFOpenL(szFileName, "rb");
+    if(*ppClientData == nullptr)
+    {
+        return NCS_FILE_OPEN_FAILED;
+    }
+    else
+    {
+        return NCS_SUCCESS;
+    }
+}
+
+NCSError NCS_CALL EcwFileOpenForReadWCB(wchar_t *wszFileName, void **ppClientData)
+{
+    char* szFileName = CPLRecodeFromWChar( wszFileName, CPL_ENC_UCS2, CPL_ENC_UTF8);
+    *ppClientData = VSIFOpenL(szFileName, "rb");
+    CPLFree( szFileName );
+    if(*ppClientData == nullptr)
+    {
+        return NCS_FILE_OPEN_FAILED;
+    }
+    else
+    {
+        return NCS_SUCCESS;
+    }
+}
+
+NCSError NCS_CALL EcwFileCloseCB(void *pClientData)
+{
+    if(0 == VSIFCloseL(reinterpret_cast<VSILFILE*>(pClientData)))
+    {
+        return NCS_SUCCESS;
+    }
+    else
+    {
+        return NCS_FILE_CLOSE_ERROR;
+    }
+}
+
+NCSError NCS_CALL EcwFileReadCB(void *pClientData, void *pBuffer, UINT32 nLength)
+{
+    if(nLength == VSIFReadL(pBuffer, 1, nLength ,reinterpret_cast<VSILFILE*>(pClientData)))
+    {
+        return NCS_SUCCESS;
+    }
+    else
+    {
+        return NCS_FILE_IO_ERROR;
+    }
+}
+
+NCSError NCS_CALL EcwFileSeekCB(void *pClientData, UINT64 nOffset)
+{
+    if(0 == VSIFSeekL(reinterpret_cast<VSILFILE*>(pClientData), nOffset, SEEK_SET))
+    {
+        return NCS_SUCCESS;
+    }
+    else
+    {
+        return NCS_FILE_SEEK_ERROR;
+    }
+}
+
+NCSError NCS_CALL EcwFileTellCB(void *pClientData, UINT64 *pOffset)
+{
+    *pOffset = VSIFTellL(reinterpret_cast<VSILFILE*>(pClientData));
+    return NCS_SUCCESS;
+}
+}//namespace
+#endif // ECWSDK_VERSION < 40
 
 /************************************************************************/
 /*                          GDALRegister_ECW()                          */
@@ -3539,7 +3677,11 @@ void GDALRegister_ECW()
 
     if( GDALGetDriverByName( "ECW" ) != nullptr )
         return;
-
+#if ECWSDK_VERSION < 40
+    CNCSJPCFileIOStream::SetIOCallbacks(EcwFileOpenForReadACB, EcwFileOpenForReadWCB,
+                                        EcwFileCloseCB, EcwFileReadCB,
+                                        EcwFileSeekCB, EcwFileTellCB);
+#endif // ECWSDK_VERSION < 40
     GDALDriver *poDriver = new GDALDriver();
 
     poDriver->SetDescription( "ECW" );

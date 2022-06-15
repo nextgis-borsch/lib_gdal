@@ -402,7 +402,7 @@ void OGRSXFDataSource::CreateLayers(const OGREnvelope &oEnv,
     poLayers.emplace_back(new OGRSXFLayer(this, oNotClassify, bIsNewBehavior));
 }
 
-void OGRSXFDataSource::FlushCache(void)
+void OGRSXFDataSource::FlushCache(bool bAtClosing)
 {
     if (!bHasChanges)
     {

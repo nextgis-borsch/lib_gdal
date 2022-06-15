@@ -33,6 +33,7 @@ if(ENABLE_DXF)
 	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DDXF_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+    include_directories(${CMAKE_SOURCE_DIR}/core/alg)
 
     set(LIB_HHEADERS
     )

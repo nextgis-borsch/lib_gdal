@@ -844,9 +844,10 @@ static bool TranslateArray(DimensionRemapper& oDimRemapper,
         viewExpr += ']';
         if( bHasModifiedDim )
         {
-            tmpArray = tmpArray->GetView(viewExpr, false, viewSpecs);
-            if( !tmpArray )
+            auto tmpArrayNew = tmpArray->GetView(viewExpr, false, viewSpecs);
+            if( !tmpArrayNew )
                 return false;
+            tmpArray = tmpArrayNew;
             size_t j = 0;
             const auto& tmpArrayDims(tmpArray->GetDimensions());
             for( size_t i = 0; i < srcArrayDims.size(); ++i )
@@ -1209,13 +1210,14 @@ static std::shared_ptr<GDALGroup> GetGroup(const std::shared_ptr<GDALGroup>& poR
         fullName.c_str(), "/", 0));
     for( int i = 0; i < aosTokens.size(); i++ )
     {
-        poCurGroup = poCurGroup->OpenGroup(aosTokens[i], nullptr);
-        if( !poCurGroup )
+        auto poCurGroupNew = poCurGroup->OpenGroup(aosTokens[i], nullptr);
+        if( !poCurGroupNew )
         {
             CPLError(CE_Failure, CPLE_AppDefined,
                     "Cannot find group %s", aosTokens[i]);
             return nullptr;
         }
+        poCurGroup = poCurGroupNew;
     }
     return poCurGroup;
 }
@@ -1497,6 +1499,12 @@ static bool TranslateInternal(std::shared_ptr<GDALGroup>& poDstRootGroup,
     }
     else
     {
+        if( poSrcRootGroup == nullptr )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                 "No multidimensional source dataset");
+            return false;
+        }
         return CopyGroup(oDimRemapper,
                          poDstRootGroup,
                          poDstRootGroup,
@@ -1661,7 +1669,7 @@ GDALDatasetH GDALMultiDimTranslate( const char* pszDest,
     }
 
     CPLString osFormat(psOptions ? psOptions->osFormat : "");
-    if( pszDest == nullptr && hDstDS == nullptr )
+    if( pszDest == nullptr /* && hDstDS == nullptr */ )
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "Both pszDest and hDstDS are NULL.");
@@ -1670,14 +1678,17 @@ GDALDatasetH GDALMultiDimTranslate( const char* pszDest,
         return nullptr;
     }
 
-    const bool bCloseOutDSOnError = hDstDS == nullptr;
+    GDALDriver* poDriver = nullptr;
+
 #ifdef this_is_dead_code_for_now
+    const bool bCloseOutDSOnError = hDstDS == nullptr;
     if( pszDest == nullptr )
         pszDest = GDALGetDescription(hDstDS);
 #endif
 
-    GDALDriver* poDriver = nullptr;
+#ifdef this_is_dead_code_for_now
     if( hDstDS == nullptr )
+#endif
     {
         if( osFormat.empty() )
         {
@@ -1720,7 +1731,9 @@ GDALDatasetH GDALMultiDimTranslate( const char* pszDest,
         auto poVRTDriver = GDALDriver::FromHandle(GDALGetDriverByName("VRT"));
         if( !poVRTDriver )
         {
+#ifdef this_is_dead_code_for_now
             if( bCloseOutDSOnError )
+#endif
             {
                 GDALClose(hDstDS);
                 hDstDS = nullptr;
@@ -1737,7 +1750,9 @@ GDALDatasetH GDALMultiDimTranslate( const char* pszDest,
 
         if( !TranslateInternal(poDstRootGroup, poSrcDS, psOptions) )
         {
+#ifdef this_is_dead_code_for_now
             if( bCloseOutDSOnError )
+#endif
             {
                 GDALClose(hDstDS);
                 hDstDS = nullptr;
@@ -1856,6 +1871,13 @@ GDALMultiDimTranslateOptions *GDALMultiDimTranslateOptionsNew(
             psOptions->aosCreateOptions.AddString( papszArgv[i] );
         }
 
+        else if( EQUAL(papszArgv[i], "-oo") && i+1 < argc )
+        {
+            if( psOptionsForBinary )
+                psOptionsForBinary->papszOpenOptions = CSLAddString(
+                                                psOptionsForBinary->papszOpenOptions,
+                                                papszArgv[++i] );
+        }
         else if( papszArgv[i][0] == '-' )
         {
             CPLError(CE_Failure, CPLE_NotSupported,

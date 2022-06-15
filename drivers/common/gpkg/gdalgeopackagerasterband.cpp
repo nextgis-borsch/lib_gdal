@@ -29,9 +29,10 @@
 #include "ogr_geopackage.h"
 #include "memdataset.h"
 #include "gdal_alg_priv.h"
+#include "ogrsqlitevfs.h"
+#include "cpl_error.h"
 
 #include <algorithm>
-#include <cassert>
 #include <limits>
 
 CPL_CVSID("$Id$")
@@ -142,29 +143,39 @@ void GDALGPKGMBTilesLikePseudoDataset::SetGlobalOffsetScale(double dfOffset,
 /*                      GDALGPKGMBTilesLikeRasterBand()                 */
 /************************************************************************/
 
+// Recent GCC versions complain about null dereference of m_poTPD in
+// the constructor body
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
+
 GDALGPKGMBTilesLikeRasterBand::GDALGPKGMBTilesLikeRasterBand(
     GDALGPKGMBTilesLikePseudoDataset* poTPD, int nTileWidth, int nTileHeight) :
     m_poTPD(poTPD),
     m_bHasNoData(false),
     m_dfNoDataValue(0.0)
 {
-    assert( m_poTPD != nullptr ); // make GCC 7 -Wnull-dereference happy in -O2
     eDataType = m_poTPD->m_eDT;
     m_nDTSize = m_poTPD->m_nDTSize;
     nBlockXSize = nTileWidth;
     nBlockYSize = nTileHeight;
 }
 
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
 /************************************************************************/
 /*                              FlushCache()                            */
 /************************************************************************/
 
-CPLErr GDALGPKGMBTilesLikeRasterBand::FlushCache()
+CPLErr GDALGPKGMBTilesLikeRasterBand::FlushCache(bool bAtClosing)
 {
     m_poTPD->m_nLastSpaceCheckTimestamp = -1; // disable partial flushes
-    CPLErr eErr = GDALPamRasterBand::FlushCache();
+    CPLErr eErr = GDALPamRasterBand::FlushCache(bAtClosing);
     if( eErr == CE_None )
-        eErr = m_poTPD->IFlushCacheWithErrCode();
+        eErr = m_poTPD->IFlushCacheWithErrCode(bAtClosing);
     m_poTPD->m_nLastSpaceCheckTimestamp = 0;
     return eErr;
 }
@@ -3496,14 +3507,13 @@ char** GDALGeoPackageRasterBand::GetMetadata(const char* pszDomain)
                 "WHERE zoom_level = %d",
                 poGDS->m_osRasterTable.c_str(),
                 poGDS->m_nZoomLevel);
-            SQLResult sResult;
-            if( SQLQuery( poGDS->IGetDB(), pszSQL, &sResult) == OGRERR_NONE &&
-                sResult.nRowCount == 1 )
+            auto sResult = SQLQuery(poGDS->IGetDB(), pszSQL);
+            if( sResult && sResult->RowCount() == 1 )
             {
-                const char* pszMinX = SQLResultGetValue(&sResult, 0, 0);
-                const char* pszMaxX = SQLResultGetValue(&sResult, 1, 0);
-                const char* pszMinY = SQLResultGetValue(&sResult, 2, 0);
-                const char* pszMaxY = SQLResultGetValue(&sResult, 3, 0);
+                const char* pszMinX = sResult->GetValue(0, 0);
+                const char* pszMaxX = sResult->GetValue(1, 0);
+                const char* pszMinY = sResult->GetValue(2, 0);
+                const char* pszMaxY = sResult->GetValue(3, 0);
                 if( pszMinX && pszMaxX && pszMinY && pszMaxY )
                 {
                     bOK = atoi(pszMinX) >= nColMin &&
@@ -3512,7 +3522,6 @@ char** GDALGeoPackageRasterBand::GetMetadata(const char* pszDomain)
                           atoi(pszMaxY) <= nRowMax;
                 }
             }
-            SQLResultFree(&sResult);
             sqlite3_free(pszSQL);
         }
 
@@ -3529,13 +3538,12 @@ char** GDALGeoPackageRasterBand::GetMetadata(const char* pszDomain)
                 poGDS->m_nZoomLevel,
                 nColMin, nColMax,
                 nRowMin, nRowMax);
-            SQLResult sResult;
+            auto sResult = SQLQuery(poGDS->IGetDB(), pszSQL);
             CPLDebug("GPKG", "%s", pszSQL);
-            if( SQLQuery( poGDS->IGetDB(), pszSQL, &sResult) == OGRERR_NONE &&
-                sResult.nRowCount == 1 )
+            if( sResult && sResult->RowCount() == 1 )
             {
-                const char* pszMin = SQLResultGetValue(&sResult, 0, 0);
-                const char* pszMax = SQLResultGetValue(&sResult, 1, 0);
+                const char* pszMin = sResult->GetValue(0, 0);
+                const char* pszMax = sResult->GetValue(1, 0);
                 if( pszMin )
                 {
                     GDALGPKGMBTilesLikeRasterBand::SetMetadataItem(
@@ -3549,7 +3557,6 @@ char** GDALGeoPackageRasterBand::GetMetadata(const char* pszDomain)
                         CPLSPrintf("%.14g", CPLAtof(pszMax)) );
                 }
             }
-            SQLResultFree(&sResult);
             sqlite3_free(pszSQL);
         }
     }

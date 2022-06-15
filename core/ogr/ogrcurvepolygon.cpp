@@ -100,25 +100,10 @@ OGRCurvePolygon& OGRCurvePolygon::operator=( const OGRCurvePolygon& other )
 /*                               clone()                                */
 /************************************************************************/
 
-OGRGeometry *OGRCurvePolygon::clone() const
+OGRCurvePolygon *OGRCurvePolygon::clone() const
 
 {
-    OGRCurvePolygon *poNewPolygon =
-        OGRGeometryFactory::createGeometry(getGeometryType())->
-            toCurvePolygon();
-    poNewPolygon->assignSpatialReference( getSpatialReference() );
-    poNewPolygon->flags = flags;
-
-    for( int i = 0; i < oCC.nCurveCount; i++ )
-    {
-        if( poNewPolygon->addRing( oCC.papoCurves[i] ) != OGRERR_NONE )
-        {
-            delete poNewPolygon;
-            return nullptr;
-        }
-    }
-
-    return poNewPolygon;
+    return new (std::nothrow) OGRCurvePolygon(*this);
 }
 
 /************************************************************************/
@@ -362,7 +347,7 @@ OGRErr  OGRCurvePolygon::removeRing(int iIndex, bool bDelete)
 OGRErr OGRCurvePolygon::addRing( OGRCurve * poNewRing )
 
 {
-    OGRCurve* poNewRingCloned = poNewRing->clone()->toCurve();
+    OGRCurve* poNewRingCloned = poNewRing->clone();
     OGRErr eErr = addRingDirectly(poNewRingCloned);
     if( eErr != OGRERR_NONE )
         delete poNewRingCloned;
@@ -377,8 +362,21 @@ int OGRCurvePolygon::checkRing( OGRCurve * poNewRing ) const
 {
     if( !poNewRing->IsEmpty() && !poNewRing->get_IsClosed() )
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "Non closed ring.");
-        return FALSE;
+        // This configuration option name must be the same as in OGRPolygon::checkRing()
+        const char* pszEnvVar = CPLGetConfigOption("OGR_GEOMETRY_ACCEPT_UNCLOSED_RING", nullptr);
+        if( pszEnvVar != nullptr && !CPLTestBool(pszEnvVar) )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, "Non closed ring detected.");
+            return FALSE;
+        }
+        else
+        {
+            CPLError(CE_Warning, CPLE_AppDefined, "Non closed ring detected.%s",
+                     pszEnvVar == nullptr ?
+                         " To avoid accepting it, set the "
+                         "OGR_GEOMETRY_ACCEPT_UNCLOSED_RING configuration "
+                         "option to NO" : "");
+        }
     }
 
     if( wkbFlatten(poNewRing->getGeometryType()) == wkbLineString )
@@ -427,6 +425,8 @@ OGRErr OGRCurvePolygon::addRingDirectlyInternal( OGRCurve* poNewRing,
     if( !checkRing(poNewRing) )
         return OGRERR_UNSUPPORTED_GEOMETRY_TYPE;
 
+    HomogenizeDimensionalityWith(poNewRing);
+
     return oCC.addCurveDirectly(this, poNewRing, bNeedRealloc);
 }
 
@@ -437,7 +437,7 @@ OGRErr OGRCurvePolygon::addRingDirectlyInternal( OGRCurve* poNewRing,
 /*      representation including the byte order, and type information.  */
 /************************************************************************/
 
-int OGRCurvePolygon::WkbSize() const
+size_t OGRCurvePolygon::WkbSize() const
 
 {
     return oCC.WkbSize();
@@ -462,14 +462,14 @@ OGRErr OGRCurvePolygon::addCurveDirectlyFromWkb( OGRGeometry* poSelf,
 /************************************************************************/
 
 OGRErr OGRCurvePolygon::importFromWkb( const unsigned char * pabyData,
-                                       int nSize,
+                                       size_t nSize,
                                        OGRwkbVariant eWkbVariant,
-                                       int& nBytesConsumedOut )
+                                       size_t& nBytesConsumedOut )
 
 {
-    nBytesConsumedOut = -1;
+    nBytesConsumedOut = 0;
     OGRwkbByteOrder eByteOrder;
-    int nDataOffset = 0;
+    size_t nDataOffset = 0;
     // coverity[tainted_data]
     OGRErr eErr = oCC.importPreambleFromWkb(this, pabyData, nSize, nDataOffset,
                                              eByteOrder, 9, eWkbVariant);
@@ -477,7 +477,7 @@ OGRErr OGRCurvePolygon::importFromWkb( const unsigned char * pabyData,
         return eErr;
 
     eErr = oCC.importBodyFromWkb(this, pabyData + nDataOffset, nSize,
-                                 TRUE,  // bAcceptCompoundCurve
+                                 true,  // bAcceptCompoundCurve
                                  addCurveDirectlyFromWkb,
                                  eWkbVariant,
                                  nBytesConsumedOut );

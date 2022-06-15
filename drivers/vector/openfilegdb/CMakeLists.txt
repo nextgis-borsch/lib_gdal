@@ -41,8 +41,9 @@ if(ENABLE_OPENFILEGDB)
         ogr_openfilegdb.h 
         filegdbtable.h 
         filegdbtable_priv.h 
-        ${CMAKE_SOURCE_DIR}/core/ogr/swq.h
         ${CMAKE_SOURCE_DIR}/drivers/vector/mem/ogr_mem.h
+        filegdb_fielddomain.h
+        filegdb_gdbtoogrfieldtype.h
     )
 
     set(LIB_CSOURCES

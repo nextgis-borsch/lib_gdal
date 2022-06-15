@@ -34,6 +34,7 @@
 #    pragma clang diagnostic push
 #    pragma clang diagnostic ignored "-Wunknown-pragmas"
 #    pragma clang diagnostic ignored "-Wdocumentation"
+#    pragma clang diagnostic ignored "-Wold-style-cast"
 #  endif
 #endif  // !DEBUG_VERBOSE
 
@@ -467,7 +468,7 @@ OGRErr OGRGeoJSONLayer::SyncToDisk()
 {
     TerminateAppendSession();
 
-    poDS_->FlushCache();
+    poDS_->FlushCache(false);
     return OGRERR_NONE;
 }
 

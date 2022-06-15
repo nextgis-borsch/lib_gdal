@@ -38,7 +38,7 @@
 #include <sqlncli.h>
 #endif
 #ifdef MSODBCSQL_VERSION
-#include <msodbcsql.h>
+#include "include_msodbcsql.h"
 #endif
 
 class OGRMSSQLSpatialDataSource;
@@ -125,28 +125,23 @@ public:
 
     bool            IsValidLatLon(double longitude, double latitude);
     bool            IsValidCircularZ(double z1, double z2);
-    bool            IsValidPolygonRingCount(OGRCurve* poGeom);
-    bool            IsValidPolygonRingClosed(OGRCurve* poGeom);
-    bool            IsValid(OGRPoint* poGeom);
-    bool            IsValid(OGRMultiPoint* poGeom);
-    bool            IsValid(OGRLineString* poGeom);
-    bool            IsValid(OGRCircularString* poGeom);
-    bool            IsValid(OGRSimpleCurve* poGeom);
-    bool            IsValid(OGRCompoundCurve* poGeom);
-    bool            IsValid(OGRLinearRing* poGeom);
-    bool            IsValid(OGRMultiLineString* poGeom);
-    bool            IsValid(OGRPolygon* poGeom);
-    bool            IsValid(OGRCurvePolygon* poGeom);
-    bool            IsValid(OGRMultiPolygon* poGeom);
-    bool            IsValid(OGRGeometryCollection* poGeom);
-    bool            IsValid(OGRGeometry* poGeom);
+    bool            IsValidPolygonRingCount(const OGRCurve* poGeom);
+    bool            IsValidPolygonRingClosed(const OGRCurve* poGeom);
+    bool            IsValid(const OGRPoint* poGeom);
+    bool            IsValid(const OGRMultiPoint* poGeom);
+    bool            IsValid(const OGRCircularString* poGeom);
+    bool            IsValid(const OGRSimpleCurve* poGeom);
+    bool            IsValid(const OGRCompoundCurve* poGeom);
+    bool            IsValid(const OGRMultiLineString* poGeom);
+    bool            IsValid(const OGRCurvePolygon* poGeom);
+    bool            IsValid(const OGRMultiPolygon* poGeom);
+    bool            IsValid(const OGRGeometryCollection* poGeom);
+    bool            IsValid(const OGRGeometry* poGeom);
     void            MakeValid(OGRPoint* poGeom);
     void            MakeValid(OGRMultiPoint* poGeom);
-    void            MakeValid(OGRLineString* poGeom);
     void            MakeValid(OGRCircularString* poGeom);
     void            MakeValid(OGRSimpleCurve* poGeom);
     void            MakeValid(OGRCompoundCurve* poGeom);
-    void            MakeValid(OGRLinearRing* poGeom);
     void            MakeValid(OGRMultiLineString* poGeom);
     void            MakeValid(OGRPolygon* poGeom);
     void            MakeValid(OGRCurvePolygon* poGeom);
@@ -297,13 +292,16 @@ class OGRMSSQLSpatialLayer CPL_NON_FINAL: public OGRLayer
     char               *pszFIDColumn = nullptr;
     int                nFIDColumnIndex = -1;
 
+    // UUID doesn't work for now in bulk copy mode
+    bool               m_bHasUUIDColumn = false;
+
     int                bIsIdentityFid = FALSE;
 
     int                nLayerStatus = MSSQLLAYERSTATUS_ORIGINAL;
 
     int                *panFieldOrdinals = nullptr;
 
-    CPLErr              BuildFeatureDefn( const char *pszLayerName,
+    void               BuildFeatureDefn( const char *pszLayerName,
                                           CPLODBCStatement *poStmt );
 
     virtual CPLODBCStatement *  GetStatement() { return poStmt; }
@@ -433,6 +431,7 @@ class OGRMSSQLSpatialTableLayer final: public OGRMSSQLSpatialLayer
     virtual const char* GetName() override;
 
     virtual OGRErr      SetAttributeFilter( const char * ) override;
+    virtual OGRFeature *GetNextFeature() override;
 
     virtual OGRErr      ISetFeature( OGRFeature *poFeature ) override;
     virtual OGRErr      DeleteFeature( GIntBig nFID ) override;

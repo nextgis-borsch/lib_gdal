@@ -122,8 +122,7 @@ OWConnection::OWConnection( const char* pszUserIn,
 
     ub4 eCred = OCI_CRED_RDBMS;
 
-    if( EQUAL(pszServer, "") &&
-        EQUAL(pszPassword, "") &&
+    if( EQUAL(pszPassword, "") &&
         EQUAL(pszUser, "") )
     {
         eCred = OCI_CRED_EXT;
@@ -239,6 +238,22 @@ OWConnection::OWConnection( const char* pszUserIn,
     bSuceeeded = true;
 
     // ------------------------------------------------------
+    //  If no user specified, get it from the session 
+    // ------------------------------------------------------
+    if (EQUAL(pszUser, "") )
+    {
+      OWStatement* poStmt = CreateStatement(
+            "select sys_context('userenv','session_user')\n"
+            "from dual\n" );
+
+      pszSessionUser = static_cast<char*>(CPLMalloc(OWNAME)); 
+      poStmt->Define(pszSessionUser);
+      CPL_IGNORE_RET_VAL(poStmt->Execute());
+      delete poStmt;
+      CPLDebug("OCI: ", "Implicit User: %s\n", pszSessionUser);
+    }
+
+    // ------------------------------------------------------
     //  Initialize/Describe types
     // ------------------------------------------------------
 
@@ -289,6 +304,7 @@ void OWConnection::QueryVersion()
 OWConnection::~OWConnection()
 {
     CPLFree( pszUser );
+    CPLFree( pszSessionUser );
     CPLFree( pszPassword );
     CPLFree( pszServer );
 
@@ -517,7 +533,7 @@ bool OWConnection::GetNextField( OCIParam* phTable,
                                  int* pnPrecision,
                                  signed short* pnScale )
 {
-    OCIParam* hParmDesc = nullptr;
+    OCIParam* hParamDesc = nullptr;
 
     sword nStatus = 0;
 
@@ -525,7 +541,7 @@ bool OWConnection::GetNextField( OCIParam* phTable,
         phTable,
         (ub4) OCI_DTYPE_PARAM,
         hError,
-        (dvoid**) &hParmDesc,   //Warning
+        (dvoid**) &hParamDesc,   //Warning
         (ub4) nIndex + 1 );
 
     if( nStatus != OCI_SUCCESS )
@@ -537,7 +553,7 @@ bool OWConnection::GetNextField( OCIParam* phTable,
     ub4 nNameLength = 0;
 
     CheckError( OCIAttrGet(
-        hParmDesc,
+        hParamDesc,
         (ub4) OCI_DTYPE_PARAM,
         (dvoid*) &pszFieldName,
         (ub4*) &nNameLength,
@@ -547,7 +563,7 @@ bool OWConnection::GetNextField( OCIParam* phTable,
     ub2 nOCIType = 0;
 
     CheckError( OCIAttrGet(
-        hParmDesc,
+        hParamDesc,
         (ub4) OCI_DTYPE_PARAM,
         (dvoid*) &nOCIType,
         (ub4*) nullptr,
@@ -557,7 +573,7 @@ bool OWConnection::GetNextField( OCIParam* phTable,
     ub2 nOCILen = 0;
 
     CheckError( OCIAttrGet(
-        hParmDesc,
+        hParamDesc,
         (ub4) OCI_DTYPE_PARAM,
         (dvoid*) &nOCILen,
         (ub4*) nullptr,
@@ -570,7 +586,7 @@ bool OWConnection::GetNextField( OCIParam* phTable,
     if( nOCIType == SQLT_NUM )
     {
         CheckError( OCIAttrGet(
-            hParmDesc,
+            hParamDesc,
             (ub4) OCI_DTYPE_PARAM,
             (dvoid*) &nOCIPrecision,
             (ub4*) nullptr,
@@ -578,7 +594,7 @@ bool OWConnection::GetNextField( OCIParam* phTable,
             hError ), hError );
 
         CheckError( OCIAttrGet(
-            hParmDesc,
+            hParamDesc,
             (ub4) OCI_DTYPE_PARAM,
             (dvoid*) &nOCIScale,
             (ub4*) nullptr,
@@ -1448,7 +1464,7 @@ unsigned long OWStatement::GetBlobLength( OCILobLocator* phLocator )
         return 0;
     }
 
-    return nSize;
+    return static_cast<unsigned long>(nSize);
 }
                                          
 unsigned long OWStatement::ReadBlob( OCILobLocator* phLocator,
@@ -1520,7 +1536,7 @@ unsigned long OWStatement::WriteBlob( OCILobLocator* phLocator,
         return (unsigned long) 0;
     }
 
-    return nAmont;
+    return static_cast<unsigned long>(nAmont);
 }
 
 char* OWStatement::ReadCLob( OCILobLocator* phLocator )
@@ -1840,7 +1856,7 @@ void OWUpperIfNoQuotes( char* pszText )
 
     for( size_t i = 0; i < nSize; i++ )
     {
-        pszText[i] = toupper( pszText[i] );
+        pszText[i] = static_cast<char>(toupper( pszText[i] ));
     }
 }
 

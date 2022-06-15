@@ -1955,7 +1955,7 @@ static OSMRetCode PBF_ProcessBlock(OSMContext* psCtxt)
         psCtxt->nBytesRead += nHeaderSize;
 
         memset(psCtxt->pabyBlobHeader + nHeaderSize, 0, EXTRA_BYTES);
-        const bool bRet = ReadBlobHeader(psCtxt->pabyBlobHeader, 
+        const bool bRet = ReadBlobHeader(psCtxt->pabyBlobHeader,
                               psCtxt->pabyBlobHeader + nHeaderSize,
                               &nBlobSize, &eType);
         if( !bRet || eType == BLOB_UNKNOWN )
@@ -1986,7 +1986,7 @@ static OSMRetCode PBF_ProcessBlock(OSMContext* psCtxt)
             }
             psCtxt->pabyBlob = pabyBlobNew;
         }
-        // Given how Protocol buffer work, we can merge sevaral buffers
+        // Given how Protocol buffer work, we can merge several buffers
         // by just appending them to the previous ones.
         if( VSIFReadL(psCtxt->pabyBlob + nBlobSizeAcc, 1,
                       nBlobSize, psCtxt->fp) != nBlobSize )
@@ -2107,16 +2107,7 @@ static const char* OSM_AddString(OSMContext* psCtxt, const char* pszStr)
 
 static GIntBig OSM_Atoi64( const char *pszString )
 {
-
-#if defined(__MSVCRT__) || (defined(WIN32) && defined(_MSC_VER))
-    const GIntBig iValue = (GIntBig)_atoi64( pszString );
-# elif HAVE_ATOLL
-    const GIntBig iValue = atoll( pszString );
-#else
-    const GIntBig iValue = atol( pszString );
-#endif
-
-    return iValue;
+    return atoll( pszString );
 }
 
 /************************************************************************/
@@ -2483,8 +2474,9 @@ static void XMLCALL OSM_XML_endElementCbk( void *pUserData,
 
     if( psCtxt->bInNode && strcmp(pszName, "node") == 0 )
     {
-        if( psCtxt->pasNodes[0].dfLon < -180 || psCtxt->pasNodes[0].dfLon > 180 ||
-            psCtxt->pasNodes[0].dfLat < -90 || psCtxt->pasNodes[0].dfLat > 90 )
+        // Written this way to deal with NaN
+        if( !(psCtxt->pasNodes[0].dfLon >= -180 && psCtxt->pasNodes[0].dfLon <= 180 &&
+              psCtxt->pasNodes[0].dfLat >= -90 && psCtxt->pasNodes[0].dfLat <= 90) )
         {
             CPLError(CE_Failure, CPLE_AppDefined,
                      "Invalid lon=%f lat=%f",

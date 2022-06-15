@@ -46,18 +46,18 @@
 class CPL_DLL GDALJP2Box
 {
 
-    VSILFILE   *fpVSIL;
+    VSILFILE   *fpVSIL = nullptr;
 
-    char        szBoxType[5];
+    char        szBoxType[5] {0, 0, 0, 0, 0};
 
-    GIntBig     nBoxOffset;
-    GIntBig     nBoxLength;
+    GIntBig     nBoxOffset = -1;
+    GIntBig     nBoxLength = 0;
 
-    GIntBig     nDataOffset;
+    GIntBig     nDataOffset = -1;
 
-    GByte       abyUUID[16];
+    GByte       abyUUID[16] {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-    GByte      *pabyData;
+    GByte      *pabyData = nullptr;
 
     CPL_DISALLOW_COPY_ASSIGN(GDALJP2Box)
 
@@ -151,7 +151,7 @@ public:
     double  adfGeoTransform[6];
     bool    bPixelIsPoint;
 
-    char   *pszProjection;
+    OGRSpatialReference m_oSRS{};
 
     int         nGCPCount;
     GDAL_GCP    *pasGCPList;
@@ -181,7 +181,7 @@ public:
                           int nWorldFileIndex = 3, int *pnIndexUsed = nullptr );
 
     // Write oriented.
-    void    SetProjection( const char *pszWKT );
+    void    SetSpatialRef( const OGRSpatialReference *poSRS );
     void    SetGeoTransform( double * );
     void    SetGCPs( int, const GDAL_GCP * );
     void    SetRPCMD( char** papszRPCMDIn );

@@ -18,7 +18,7 @@
 * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
-* Copyright 2014-2015 Esri
+* Copyright 2014-2021 Esri
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -36,25 +36,23 @@
 /******************************************************************************
 *
 * Project:  Meta Raster File Format Driver Implementation, RasterBand
-* Purpose:  Implementation of Pile of Tile Format
+* Purpose:  Implementation of MRF band
 *
-* Author:   Lucian Plesea, Lucian.Plesea@jpl.nasa.gov, lplesea@esri.com
+* Author:   Lucian Plesea, Lucian.Plesea jpl.nasa.gov, lplesea esri.com
 *
 ****************************************************************************/
 
 #include "marfa.h"
-#include <gdal_priv.h>
-#include <ogr_srs_api.h>
-#include <ogr_spatialref.h>
+#include "gdal_priv.h"
+#include "ogr_srs_api.h"
+#include "ogr_spatialref.h"
 
 #include <vector>
 #include <assert.h>
-#include "zlib.h"
-
-CPL_CVSID("$Id$")
-
-using std::vector;
-using std::string;
+#include <zlib.h>
+#if defined(ZSTD_SUPPORT)
+#include <zstd.h>
+#endif
 
 NAMESPACE_MRF_START
 
@@ -86,7 +84,6 @@ template <typename T> static void cpy_stride_out(void *dst, void *src, int c, in
 
 // Does every value in the buffer have the same value, using strict comparison
 template<typename T> inline int isAllVal(const T *b, size_t bytecount, double ndv)
-
 {
     T val = static_cast<T>(ndv);
     size_t count = bytecount / sizeof(T);
@@ -151,24 +148,86 @@ static void swab_buff(buf_mgr &src, const ILImage &img)
     }
 }
 
-/**
-*\brief Deflates a buffer, extrasize is the available size in the buffer past the input
-*  If the output fits past the data, it uses that area
-* otherwise it uses a temporary buffer and copies the data over the input on return, returning a pointer to it
+// Similar to compress2() but with flags to control zlib features
+// Returns true if it worked
+static int ZPack(const buf_mgr& src, buf_mgr& dst, int flags) {
+    z_stream stream;
+    int err;
+
+    memset(&stream, 0, sizeof(stream));
+    stream.next_in = (Bytef*)src.buffer;
+    stream.avail_in = (uInt)src.size;
+    stream.next_out = (Bytef*)dst.buffer;
+    stream.avail_out = (uInt)dst.size;
+
+    int level = flags & ZFLAG_LMASK;
+    if (level > 9) level = 9;
+    if (level < 1) level = 1;
+    int wb = MAX_WBITS;
+    // if gz flag is set, ignore raw request
+    if (flags & ZFLAG_GZ) wb += 16;
+    else if (flags & ZFLAG_RAW) wb = -wb;
+    int memlevel = 8; // Good compromise
+    int strategy = (flags & ZFLAG_SMASK) >> 6;
+    if (strategy > 4) strategy = 0;
+
+    err = deflateInit2(&stream, level, Z_DEFLATED, wb, memlevel, strategy);
+    if (err != Z_OK) return err;
+
+    err = deflate(&stream, Z_FINISH);
+    if (err != Z_STREAM_END) {
+        deflateEnd(&stream);
+        return false;
+    }
+    dst.size = stream.total_out;
+    err = deflateEnd(&stream);
+    return err == Z_OK;
+}
+
+// Similar to uncompress() from zlib, accepts the ZFLAG_RAW
+// Return true if it worked
+static int ZUnPack(const buf_mgr& src, buf_mgr& dst, int flags) {
+
+    z_stream stream;
+    int err;
+
+    memset(&stream, 0, sizeof(stream));
+    stream.next_in = (Bytef*)src.buffer;
+    stream.avail_in = (uInt)src.size;
+    stream.next_out = (Bytef*)dst.buffer;
+    stream.avail_out = (uInt)dst.size;
+
+    // 32 means autodetec gzip or zlib header, negative 15 is for raw
+    int wb = (ZFLAG_RAW & flags) ? -MAX_WBITS : 32 + MAX_WBITS;
+    err = inflateInit2(&stream, wb);
+    if (err != Z_OK) return false;
+
+    err = inflate(&stream, Z_FINISH);
+    if (err != Z_STREAM_END) {
+        inflateEnd(&stream);
+        return false;
+    }
+    dst.size = stream.total_out;
+    err = inflateEnd(&stream);
+    return err == Z_OK;
+}
+
+/*
+* Deflates a buffer, extrasize is the available size in the buffer past the input
+* If the output fits past the data, it uses that area, otherwise it uses a temporary buffer
+* and copies the data over the input on return, returning a pointer to it.
+* The output size is returned in src.size
+* Returns nullptr when compression failed
 */
 static void *DeflateBlock(buf_mgr &src, size_t extrasize, int flags) {
     // The one we might need to allocate
     void *dbuff = nullptr;
-    buf_mgr dst;
-    // The one we could use, after the packed data
-    dst.buffer = src.buffer + src.size;
-    dst.size = extrasize;
+    buf_mgr dst = { src.buffer + src.size, extrasize };
 
     // Allocate a temp buffer if there is not sufficient space,
     // We need to have a bit more than half the buffer available
     if (extrasize < (src.size + 64)) {
         dst.size = src.size + 64;
-
         dbuff = VSIMalloc(dst.size);
         dst.buffer = (char *)dbuff;
         if (!dst.buffer)
@@ -192,6 +251,99 @@ static void *DeflateBlock(buf_mgr &src, size_t extrasize, int flags) {
     return src.buffer;
 }
 
+#if defined(ZSTD_SUPPORT)
+
+CPL_NOSANITIZE_UNSIGNED_INT_OVERFLOW static void rankfilter(buf_mgr& src, size_t factor) {
+    // Arange bytes by rank
+    if (factor > 1) {
+        std::vector<char> tempb(src.size);
+        char* d = tempb.data();
+        for (size_t j = 0; j < factor; j++)
+            for (size_t i = j; i < src.size; i += factor)
+                *d++ = src.buffer[i];
+        memcpy(src.buffer, tempb.data(), src.size);
+    }
+    // byte delta
+    auto p = reinterpret_cast<GByte*>(src.buffer);
+    auto guard = p + src.size;
+    GByte b(0);
+    while (p < guard) {
+        GByte temp = *p;
+        *p -= b;
+        b = temp;
+        p++;
+    }
+}
+
+CPL_NOSANITIZE_UNSIGNED_INT_OVERFLOW static void derank(buf_mgr& src, size_t factor) {
+    // undo delta
+    auto p = reinterpret_cast<GByte*>(src.buffer);
+    auto guard = p + src.size;
+    GByte b(0);
+    while (p < guard) {
+        b += *p;
+        *p = b;
+        p++;
+    }
+    if (factor > 1) { // undo rank separation
+        std::vector<char> tempb(src.size);
+        char* d = tempb.data();
+        size_t chunk = src.size / factor;
+        for (size_t i = 0; i < chunk; i++)
+            for (size_t j = 0; j < factor; j++)
+                *d++ = src.buffer[chunk * j + i];
+        memcpy(src.buffer, tempb.data(), src.size);
+    }
+}
+
+/*
+* Compress a buffer using zstd, extrasize is the available size in the buffer past the input
+* If ranks > 0, apply the rank filter
+* If the output fits past the data, it uses that area, otherwise it uses a temporary buffer
+* and copies the data over the input on return, returning a pointer to it.
+* The output size is returned in src.size
+* Returns nullptr when compression failed
+*/
+static void* ZstdCompBlock(buf_mgr &src, size_t extrasize, int c_level, ZSTD_CCtx *cctx, size_t ranks)
+{
+    if (!cctx)
+        return nullptr;
+    if (ranks && (src.size % ranks) == 0)
+        rankfilter(src, ranks);
+
+    // might need a buffer for the zstd output
+    std::vector<char> dbuff;
+    void* dst = src.buffer + src.size;
+    size_t size = extrasize;
+    // Allocate a temp buffer if there is not sufficient space.
+    // Zstd bound is about (size * 1.004 + 64)
+    if (size < ZSTD_compressBound(src.size)) {
+        size = ZSTD_compressBound(src.size);
+        dbuff.resize(size);
+        dst = dbuff.data();
+    }
+
+    size_t val = ZSTD_compressCCtx(cctx, dst, size, src.buffer, src.size, c_level);
+    if (ZSTD_isError(val))
+        return nullptr;
+
+    // If we didn't need the buffer, packed data is already in the user buffer
+    if (dbuff.empty()) {
+        src.size = val;
+        return dst;
+    }
+
+    if (val > (src.size + extrasize)) { // Doesn't fit in user buffer
+        CPLError(CE_Failure, CPLE_AssertionFailed, "MRF: ZSTD compression buffer too small");
+        return nullptr; // Error
+    }
+
+    memcpy(src.buffer, dbuff.data(), val);
+    src.size = val;
+    return src.buffer;
+}
+#endif
+
 //
 // The deflate_flags are available in all bands even if the DEFLATE option
 // itself is not set.  This allows for PNG features to be controlled, as well
@@ -199,10 +351,12 @@ static void *DeflateBlock(buf_mgr &src, size_t extrasize, int flags) {
 //
 MRFRasterBand::MRFRasterBand( MRFDataset *parent_dataset,
                                       const ILImage &image, int band, int ov ) :
-    poDS(parent_dataset),
-    deflatep(GetOptlist().FetchBoolean("DEFLATE", FALSE)),
+    poMRFDS(parent_dataset),
+    dodeflate(GetOptlist().FetchBoolean("DEFLATE", FALSE)),
     // Bring the quality to 0 to 9
     deflate_flags(image.quality / 10),
+    dozstd(GetOptlist().FetchBoolean("ZSTD", FALSE)),
+    zstd_level(9),
     m_l(ov),
     img(image)
 {
@@ -222,89 +376,88 @@ MRFRasterBand::MRFRasterBand( MRFDataset *parent_dataset,
     else if( GetOptlist().FetchBoolean("RAWZ", FALSE) )
         deflate_flags |= ZFLAG_RAW;
     // And Pick up the ZLIB strategy, if any
-    const char *zstrategy = GetOptlist().FetchNameValueDef("Z_STRATEGY", nullptr);
-    if( zstrategy )
-    {
-        int zv = Z_DEFAULT_STRATEGY;
-        if (EQUAL(zstrategy, "Z_HUFFMAN_ONLY"))
-            zv = Z_HUFFMAN_ONLY;
-        else if (EQUAL(zstrategy, "Z_RLE"))
-            zv = Z_RLE;
-        else if (EQUAL(zstrategy, "Z_FILTERED"))
-            zv = Z_FILTERED;
-        else if (EQUAL(zstrategy, "Z_FIXED"))
-            zv = Z_FIXED;
-        deflate_flags |= (zv << 6);
+    const char *zstrategy = GetOptlist().FetchNameValueDef("Z_STRATEGY", "");
+    int zv = Z_DEFAULT_STRATEGY;
+    if (EQUAL(zstrategy, "Z_HUFFMAN_ONLY"))
+        zv = Z_HUFFMAN_ONLY;
+    else if (EQUAL(zstrategy, "Z_RLE"))
+        zv = Z_RLE;
+    else if (EQUAL(zstrategy, "Z_FILTERED"))
+        zv = Z_FILTERED;
+    else if (EQUAL(zstrategy, "Z_FIXED"))
+        zv = Z_FIXED;
+    deflate_flags |= (zv << 6);
+    if (image.quality < 23 && image.quality > 0)
+        zstd_level = image.quality;
+
+#if !defined(ZSTD_SUPPORT)
+    if (dodeflate) { // signal error condition to caller
+        CPLError(CE_Failure, CPLE_AssertionFailed, "MRF: ZSTD support is not available");
+        dodeflate = FALSE;
     }
+#endif
+        // Chose zstd over deflate if both are enabled and available
+    if (dozstd && dodeflate)
+        dodeflate = FALSE;
 }
 
 // Clean up the overviews if they exist
-MRFRasterBand::~MRFRasterBand()
-{
-    while( !overviews.empty() )
-    {
+MRFRasterBand::~MRFRasterBand() {
+    while (!overviews.empty()) {
         delete overviews.back();
         overviews.pop_back();
-    };
+    }
 }
 
 // Look for a string from the dataset options or from the environment
-const char * MRFRasterBand::GetOptionValue(const char *opt, const char *def) const
-{
-    const char *optValue = poDS->optlist.FetchNameValue(opt);
+const char * MRFRasterBand::GetOptionValue(const char *opt, const char *def) const {
+    const char *optValue = poMRFDS->optlist.FetchNameValue(opt);
     if (optValue) return optValue;
     return CPLGetConfigOption(opt, def);
 }
 
 // Utility function, returns a value from a vector corresponding to the band index
 // or the first entry
-static double getBandValue(std::vector<double> &v,int idx)
-{
-    if (static_cast<int>(v.size()) > idx)
-        return v[idx];
-    return v[0];
+static double getBandValue(std::vector<double> &v, int idx) {
+    return (static_cast<int>(v.size()) > idx) ? v[idx] : v[0];
 }
 
 // Maybe we should check against the type range?
 // It is not keeping track of how many values have been set,
 // so the application should set none or all the bands
 // This call is only valid during Create
-CPLErr  MRFRasterBand::SetNoDataValue(double val)
-{
-    if (poDS->bCrystalized) {
+CPLErr  MRFRasterBand::SetNoDataValue(double val) {
+    if (poMRFDS->bCrystalized) {
         CPLError(CE_Failure, CPLE_AssertionFailed, "MRF: NoData can be set only during file create");
         return CE_Failure;
     }
-    if (GInt32(poDS->vNoData.size()) < nBand)
-        poDS->vNoData.resize(nBand);
-    poDS->vNoData[nBand - 1] = val;
+    if (GInt32(poMRFDS->vNoData.size()) < nBand)
+        poMRFDS->vNoData.resize(nBand);
+    poMRFDS->vNoData[nBand - 1] = val;
     // We also need to set it for this band
     img.NoDataValue = val;
     img.hasNoData = true;
     return CE_None;
 }
 
-double MRFRasterBand::GetNoDataValue(int *pbSuccess)
-{
-    std::vector<double> &v=poDS->vNoData;
+double MRFRasterBand::GetNoDataValue(int *pbSuccess) {
+    std::vector<double> &v=poMRFDS->vNoData;
     if (v.empty())
         return GDALPamRasterBand::GetNoDataValue(pbSuccess);
     if (pbSuccess) *pbSuccess=TRUE;
     return getBandValue(v, nBand - 1);
 }
 
-double MRFRasterBand::GetMinimum(int *pbSuccess)
-{
-    std::vector<double> &v=poDS->vMin;
+double MRFRasterBand::GetMinimum(int *pbSuccess) {
+    std::vector<double> &v=poMRFDS->vMin;
     if (v.empty())
         return GDALPamRasterBand::GetMinimum(pbSuccess);
     if (pbSuccess) *pbSuccess=TRUE;
     return getBandValue(v, nBand - 1);
 }
 
-double MRFRasterBand::GetMaximum(int *pbSuccess)
-{
-    std::vector<double> &v=poDS->vMax;
+double MRFRasterBand::GetMaximum(int *pbSuccess) {
+    std::vector<double> &v=poMRFDS->vMax;
     if (v.empty())
         return GDALPamRasterBand::GetMaximum(pbSuccess);
     if (pbSuccess) *pbSuccess=TRUE;
@@ -312,8 +465,7 @@ double MRFRasterBand::GetMaximum(int *pbSuccess)
 }
 
 // Fill with typed ndv, count is always in bytes
-template<typename T> static CPLErr buff_fill(void *b, size_t count, const T ndv)
-{
+template<typename T> static CPLErr buff_fill(void *b, size_t count, const T ndv) {
     T *buffer = static_cast<T*>(b);
     count /= sizeof(T);
     while (count--)
@@ -325,12 +477,10 @@ template<typename T> static CPLErr buff_fill(void *b, size_t count, const T ndv)
 *\brief Fills a buffer with no data
 *
 */
-CPLErr MRFRasterBand::FillBlock(void *buffer)
-{
+CPLErr MRFRasterBand::FillBlock(void *buffer) {
     int success;
     double ndv = GetNoDataValue(&success);
     if (!success) ndv = 0.0;
-
     size_t bsb = blockSizeBytes();
 
     // use memset for speed for bytes, or if nodata is zeros
@@ -361,10 +511,10 @@ CPLErr MRFRasterBand::FillBlock(void *buffer)
 */
 
 CPLErr MRFRasterBand::FillBlock(int xblk, int yblk, void *buffer) {
-    vector<GDALRasterBlock *> blocks;
+    std::vector<GDALRasterBlock *> blocks;
 
-    for (int i = 0; i < poDS->nBands; i++) {
-        GDALRasterBand *b = poDS->GetRasterBand(i + 1);
+    for (int i = 0; i < poMRFDS->nBands; i++) {
+        GDALRasterBand *b = poMRFDS->GetRasterBand(i + 1);
         if (b->GetOverviewCount() && 0 != m_l)
             b = b->GetOverview(m_l - 1);
 
@@ -395,17 +545,16 @@ CPLErr MRFRasterBand::FillBlock(int xblk, int yblk, void *buffer) {
  */
 
 CPLErr MRFRasterBand::ReadInterleavedBlock(int xblk, int yblk, void *buffer) {
-    vector<GDALRasterBlock *> blocks;
+    std::vector<GDALRasterBlock *> blocks;
 
-    for (int i = 0; i < poDS->nBands; i++) {
-        GDALRasterBand *b = poDS->GetRasterBand(i+1);
+    for (int i = 0; i < poMRFDS->nBands; i++) {
+        GDALRasterBand *b = poMRFDS->GetRasterBand(i+1);
         if (b->GetOverviewCount() && 0 != m_l)
             b = b->GetOverview(m_l-1);
 
         void *ob = buffer;
         // Get the other band blocks, keep them around until later
-        if (b != this)
-        {
+        if (b != this) {
             GDALRasterBlock *poBlock = b->GetLockedBlockRef(xblk, yblk, 1);
             if( poBlock == nullptr )
                 break;
@@ -414,7 +563,7 @@ CPLErr MRFRasterBand::ReadInterleavedBlock(int xblk, int yblk, void *buffer) {
         }
 
 // Just the right mix of templates and macros make deinterleaving tidy
-#define CpySI(T) cpy_stride_in<T> (ob, reinterpret_cast<T *>(poDS->GetPBuffer()) + i,\
+#define CpySI(T) cpy_stride_in<T> (ob, reinterpret_cast<T *>(poMRFDS->GetPBuffer()) + i,\
     blockSizeBytes()/sizeof(T), img.pagesize.c)
 
         // Page is already in poDS->pbuffer, not empty
@@ -445,12 +594,11 @@ CPLErr MRFRasterBand::ReadInterleavedBlock(int xblk, int yblk, void *buffer) {
 * @param buffer buffer
 *
 */
-CPLErr MRFRasterBand::FetchBlock(int xblk, int yblk, void *buffer)
-{
-    assert(!poDS->source.empty());
+CPLErr MRFRasterBand::FetchBlock(int xblk, int yblk, void *buffer) {
+    assert(!poMRFDS->source.empty());
     CPLDebug("MRF_IB", "FetchBlock %d,%d,0,%d, level  %d\n", xblk, yblk, nBand, m_l);
 
-    if (poDS->clonedSource)  // This is a clone
+    if (poMRFDS->clonedSource)  // This is a clone
         return FetchClonedBlock(xblk, yblk, buffer);
 
     const GInt32 cstride = img.pagesize.c; // 1 if band separate
@@ -458,15 +606,15 @@ CPLErr MRFRasterBand::FetchBlock(int xblk, int yblk, void *buffer)
     GUIntBig infooffset = IdxOffset(req, img);
 
     GDALDataset *poSrcDS = nullptr;
-    if ( nullptr == (poSrcDS = poDS->GetSrcDS())) {
+    if ( nullptr == (poSrcDS = poMRFDS->GetSrcDS())) {
         CPLError( CE_Failure, CPLE_AppDefined,
-                  "MRF: Can't open source file %s", poDS->source.c_str());
+                  "MRF: Can't open source file %s", poMRFDS->source.c_str());
         return CE_Failure;
     }
 
     // Scale to base resolution
-    double scl = pow(poDS->scale, m_l);
-    if ( 0 == m_l )
+    double scl = pow(poMRFDS->scale, m_l);
+    if (0 == m_l)
         scl = 1; // To allow for precision issues
 
     // Prepare parameters for RasterIO, they might be different from a full page
@@ -478,19 +626,19 @@ CPLErr MRFRasterBand::FetchBlock(int xblk, int yblk, void *buffer)
 
     // Compare with the full size and clip to the right and bottom if needed
     int clip=0;
-    if (Xoff + readszx > poDS->full.size.x) {
+    if (Xoff + readszx > poMRFDS->full.size.x) {
         clip |= 1;
-        readszx = poDS->full.size.x - Xoff;
+        readszx = poMRFDS->full.size.x - Xoff;
     }
-    if (Yoff + readszy > poDS->full.size.y) {
+    if (Yoff + readszy > poMRFDS->full.size.y) {
         clip |= 1;
-        readszy = poDS->full.size.y - Yoff;
+        readszy = poMRFDS->full.size.y - Yoff;
     }
 
     // This is where the whole page fits
     void *ob = buffer;
     if (cstride != 1)
-        ob = poDS->GetPBuffer();
+        ob = poMRFDS->GetPBuffer();
 
     // Fill buffer with NoData if clipping
     if (clip)
@@ -500,23 +648,19 @@ CPLErr MRFRasterBand::FetchBlock(int xblk, int yblk, void *buffer)
     CPLErr ret = poSrcDS->RasterIO(GF_Read, Xoff, Yoff, readszx, readszy,
         ob, pcount(readszx, int(scl)), pcount(readszy, int(scl)),
         eDataType, cstride, (1 == cstride)? &nBand: nullptr,
-        vsz * cstride,  // pixel, line, band stride
-        vsz * cstride * img.pagesize.x,
+        vsz * cstride, vsz * cstride * img.pagesize.x,
         (cstride != 1) ? vsz : vsz * img.pagesize.x * img.pagesize.y
-#if GDAL_VERSION_MAJOR >= 2
-        ,nullptr
-#endif
-        );
+        , nullptr);
 
     if (ret != CE_None) return ret;
 
     // Might have the block in the pbuffer, mark it anyhow
-    poDS->tile = req;
+    poMRFDS->tile = req;
     buf_mgr filesrc;
     filesrc.buffer = (char *)ob;
     filesrc.size = static_cast<size_t>(img.pageSizeBytes);
 
-    if (poDS->bypass_cache) { // No local caching, just return the data
+    if (poMRFDS->bypass_cache) { // No local caching, just return the data
         if (1 == cstride)
             return CE_None;
         return ReadInterleavedBlock(xblk, yblk, buffer);
@@ -530,7 +674,7 @@ CPLErr MRFRasterBand::FetchBlock(int xblk, int yblk, void *buffer)
     // TODO: test band by band if data is interleaved
     if (isAllVal(eDataType, ob, img.pageSizeBytes, val)) {
         // Mark it empty and checked, ignore the possible write error
-        poDS->WriteTile((void *)1, infooffset, 0);
+        poMRFDS->WriteTile((void *)1, infooffset, 0);
         if (1 == cstride)
             return CE_None;
         return ReadInterleavedBlock(xblk, yblk, buffer);
@@ -539,30 +683,43 @@ CPLErr MRFRasterBand::FetchBlock(int xblk, int yblk, void *buffer)
     // Write the page in the local cache
 
     // Have to use a separate buffer for compression output.
-    void *outbuff = VSIMalloc(poDS->pbsize);
-
-    if (!outbuff) {
+    void *outbuff = VSIMalloc(poMRFDS->pbsize);
+    if (nullptr == outbuff) {
         CPLError(CE_Failure, CPLE_AppDefined,
             "Can't get buffer for writing page");
         // This is not really an error for a cache, the data is fine
         return CE_Failure;
     }
 
-    buf_mgr filedst={(char *)outbuff, poDS->pbsize};
+    buf_mgr filedst={static_cast<char *>(outbuff), poMRFDS->pbsize};
     Compress(filedst, filesrc);
 
     // Where the output is, in case we deflate
     void *usebuff = outbuff;
-    if (deflatep) {
-        usebuff = DeflateBlock( filedst, poDS->pbsize - filedst.size, deflate_flags);
+    if (dodeflate) {
+        usebuff = DeflateBlock( filedst, poMRFDS->pbsize - filedst.size, deflate_flags);
         if (!usebuff) {
             CPLError(CE_Failure,CPLE_AppDefined, "MRF: Deflate error");
             return CE_Failure;
         }
     }
 
+#if defined(ZSTD_SUPPORT)
+    else if (dozstd) {
+        size_t ranks = 0; // Assume no need for byte rank sort
+        if (img.comp == IL_NONE || img.comp == IL_ZSTD)
+            ranks = static_cast<size_t>(GDALGetDataTypeSizeBytes(img.dt)) * cstride;
+        usebuff = ZstdCompBlock(filedst, poMRFDS->pbsize - filedst.size,
+            zstd_level, poMRFDS->getzsc(), ranks);
+        if (!usebuff) {
+            CPLError(CE_Failure, CPLE_AppDefined, "MRF: ZSTD compression error");
+            return CE_Failure;
+        }
+    }
+#endif
+
     // Write and update the tile index
-    ret = poDS->WriteTile(usebuff, infooffset, filedst.size);
+    ret = poMRFDS->WriteTile(usebuff, infooffset, filedst.size);
     CPLFree(outbuff);
 
     // If we hit an error or if unpaking is not needed
@@ -587,16 +744,14 @@ CPLErr MRFRasterBand::FetchClonedBlock(int xblk, int yblk, void *buffer)
     CPLDebug("MRF_IB","FetchClonedBlock %d,%d,0,%d, level  %d\n", xblk, yblk, nBand, m_l);
 
     // Paranoid check
-    assert(poDS->clonedSource);
-
-    MRFDataset *poSrc = static_cast<MRFDataset *>(poDS->GetSrcDS());
-    if( nullptr == poSrc )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined, "MRF: Can't open source file %s", poDS->source.c_str());
+    assert(poMRFDS->clonedSource);
+    MRFDataset *poSrc = static_cast<MRFDataset *>(poMRFDS->GetSrcDS());
+    if( nullptr == poSrc ) {
+        CPLError( CE_Failure, CPLE_AppDefined, "MRF: Can't open source file %s", poMRFDS->source.c_str());
         return CE_Failure;
     }
 
-    if (poDS->bypass_cache || GF_Read == DataMode()) {
+    if (poMRFDS->bypass_cache || GF_Read == DataMode()) {
         // Can't store, so just fetch from source, which is an MRF with identical structure
         MRFRasterBand *b = static_cast<MRFRasterBand *>(poSrc->GetRasterBand(nBand));
         if (b->GetOverviewCount() && m_l)
@@ -606,12 +761,12 @@ CPLErr MRFRasterBand::FetchClonedBlock(int xblk, int yblk, void *buffer)
         return b->IReadBlock(xblk,yblk,buffer);
     }
 
-    ILSize req(xblk, yblk, 0, (nBand-1)/img.pagesize.c , m_l);
+    ILSize req(xblk, yblk, 0, (nBand-1)/img.pagesize.c, m_l);
     ILIdx tinfo;
 
     // Get the cloned source tile info
     // The cloned source index is after the current one
-    if (CE_None != poDS->ReadTileIdx(tinfo, req, img, poDS->idxSize)) {
+    if (CE_None != poMRFDS->ReadTileIdx(tinfo, req, img, poMRFDS->idxSize)) {
         CPLError(CE_Failure, CPLE_AppDefined, "MRF: Unable to read cloned index entry");
         return CE_Failure;
     }
@@ -621,7 +776,7 @@ CPLErr MRFRasterBand::FetchClonedBlock(int xblk, int yblk, void *buffer)
 
     // Does the source have this tile?
     if (tinfo.size == 0) { // Nope, mark it empty and return fill
-        err = poDS->WriteTile((void *)1, infooffset, 0);
+        err = poMRFDS->WriteTile((void *)1, infooffset, 0);
         if (CE_None != err)
             return err;
         return FillBlock(buffer);
@@ -630,20 +785,17 @@ CPLErr MRFRasterBand::FetchClonedBlock(int xblk, int yblk, void *buffer)
     VSILFILE *srcfd = poSrc->DataFP();
     if (nullptr == srcfd) {
         CPLError( CE_Failure, CPLE_AppDefined, "MRF: Can't open source data file %s",
-            poDS->source.c_str());
+            poMRFDS->source.c_str());
         return CE_Failure;
     }
 
     // Need to read the tile from the source
-    if( tinfo.size <= 0 || tinfo.size > INT_MAX )
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory, "Invalid tile size " CPL_FRMT_GIB,
-                 tinfo.size);
+    if (tinfo.size <= 0 || tinfo.size > INT_MAX) {
+        CPLError(CE_Failure, CPLE_OutOfMemory, "Invalid tile size " CPL_FRMT_GIB, tinfo.size);
         return CE_Failure;
     }
     char *buf = static_cast<char *>(VSIMalloc(static_cast<size_t>(tinfo.size)));
-    if( buf == nullptr )
-    {
+    if (buf == nullptr) {
         CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate " CPL_FRMT_GIB " bytes",
                  tinfo.size);
         return CE_Failure;
@@ -658,7 +810,7 @@ CPLErr MRFRasterBand::FetchClonedBlock(int xblk, int yblk, void *buffer)
     }
 
     // Write it then reissue the read
-    err = poDS->WriteTile(buf, infooffset, tinfo.size);
+    err = poMRFDS->WriteTile(buf, infooffset, tinfo.size);
     CPLFree(buf);
     if ( CE_None != err )
         return err;
@@ -675,43 +827,40 @@ CPLErr MRFRasterBand::FetchClonedBlock(int xblk, int yblk, void *buffer)
 *
 */
 
-CPLErr MRFRasterBand::IReadBlock(int xblk, int yblk, void *buffer)
-{
-    ILIdx tinfo;
+CPLErr MRFRasterBand::IReadBlock(int xblk, int yblk, void *buffer) {
     GInt32 cstride = img.pagesize.c;
+    ILIdx tinfo;
     ILSize req(xblk, yblk, 0, (nBand-1)/cstride, m_l);
     CPLDebug("MRF_IB", "IReadBlock %d,%d,0,%d, level %d, idxoffset " CPL_FRMT_GIB "\n",
         xblk, yblk, nBand-1, m_l, IdxOffset(req,img));
 
     // If this is a caching file and bypass is on, just do the fetch
-    if (poDS->bypass_cache && !poDS->source.empty())
+    if (poMRFDS->bypass_cache && !poMRFDS->source.empty())
         return FetchBlock(xblk, yblk, buffer);
 
     tinfo.size = 0; // Just in case it is missing
-    if (CE_None != poDS->ReadTileIdx(tinfo, req, img)) {
-        if (poDS->no_errors) {
-            return FillBlock(buffer);
-        }
-        else {
+    if (CE_None != poMRFDS->ReadTileIdx(tinfo, req, img)) {
+        if (!poMRFDS->no_errors) {
             CPLError(CE_Failure, CPLE_AppDefined,
                 "MRF: Unable to read index at offset " CPL_FRMT_GIB, IdxOffset(req, img));
             return CE_Failure;
         }
+        return FillBlock(buffer);
     }
 
     if (0 == tinfo.size) { // Could be missing or it could be caching
         // Offset != 0 means no data, Update mode is for local MRFs only
         // if caching index mode is RO don't try to fetch
         // Also, caching MRFs can't be opened in update mode
-        if ( 0 != tinfo.offset || GA_Update == poDS->eAccess
-            || poDS->source.empty() || IdxMode() == GF_Read )
+        if ( 0 != tinfo.offset || GA_Update == poMRFDS->eAccess
+            || poMRFDS->source.empty() || IdxMode() == GF_Read )
             return FillBlock(buffer);
 
         // caching MRF, need to fetch a block
         return FetchBlock(xblk, yblk, buffer);
     }
 
-    CPLDebug("MRF_IB","Tinfo offset " CPL_FRMT_GIB ", size  " CPL_FRMT_GIB "\n", tinfo.offset, tinfo.size);
+    CPLDebug("MRF_IB", "Tinfo offset " CPL_FRMT_GIB ", size " CPL_FRMT_GIB "\n", tinfo.offset, tinfo.size);
     // If we have a tile, read it
 
     // Should use a permanent buffer, like the pbuffer mechanism
@@ -727,16 +876,12 @@ CPLErr MRFRasterBand::IReadBlock(int xblk, int yblk, void *buffer)
     // at BitStuffer::read(unsigned char**, std::vector<unsigned int, std::allocator<unsigned int> >&) const (BitStuffer.cpp:153)
 
     // No stored tile should be larger than twice the raw size.
-    if (tinfo.size <= 0 || tinfo.size > poDS->pbsize * 2)
-    {
-        if (poDS->no_errors) {
-            return FillBlock(buffer);
-        }
-        else {
-            CPLError(CE_Failure, CPLE_OutOfMemory,
-                "Stored tile is too large: " CPL_FRMT_GIB, tinfo.size);
+    if (tinfo.size <= 0 || tinfo.size > poMRFDS->pbsize * 2) {
+        if (!poMRFDS->no_errors) {
+            CPLError(CE_Failure, CPLE_OutOfMemory, "Stored tile is too large: " CPL_FRMT_GIB, tinfo.size);
             return CE_Failure;
         }
+        return FillBlock(buffer);
     }
 
     VSILFILE *dfp = DataFP();
@@ -746,10 +891,8 @@ CPLErr MRFRasterBand::IReadBlock(int xblk, int yblk, void *buffer)
         return CE_Failure;
 
     void *data = VSIMalloc(static_cast<size_t>(tinfo.size + PADDING_BYTES));
-    if (data == nullptr)
-    {
-        CPLError(CE_Failure, CPLE_OutOfMemory,
-            "Could not allocate memory for tile size: " CPL_FRMT_GIB, tinfo.size);
+    if (data == nullptr) {
+        CPLError(CE_Failure, CPLE_OutOfMemory, "Could not allocate memory for tile size: " CPL_FRMT_GIB, tinfo.size);
         return CE_Failure;
     }
 
@@ -757,64 +900,98 @@ CPLErr MRFRasterBand::IReadBlock(int xblk, int yblk, void *buffer)
     VSIFSeekL(dfp, tinfo.offset, SEEK_SET);
     if (1 != VSIFReadL(data, static_cast<size_t>(tinfo.size), 1, dfp)) {
         CPLFree(data);
-        if (poDS->no_errors) {
+        if (poMRFDS->no_errors)
             return FillBlock(buffer);
-        }
-        else {
-            CPLError(CE_Failure, CPLE_AppDefined, "Unable to read data page, %d@%x",
-                int(tinfo.size), int(tinfo.offset));
-            return CE_Failure;
-        }
+        CPLError(CE_Failure, CPLE_AppDefined, "Unable to read data page, %d@%x",
+            static_cast<int>(tinfo.size), static_cast<int>(tinfo.offset));
+        return CE_Failure;
     }
 
     /* initialize padding bytes */
     memset(((char*)data) + static_cast<size_t>(tinfo.size), 0, PADDING_BYTES);
-
     buf_mgr src = {(char *)data, static_cast<size_t>(tinfo.size)};
     buf_mgr dst;
 
     // We got the data, do we need to decompress it before decoding?
-    if (deflatep) {
-        if( img.pageSizeBytes > INT_MAX - 1440 )
-        {
+    if (dodeflate) {
+        if (img.pageSizeBytes > INT_MAX - 1440) {
             CPLFree(data);
-            CPLError(CE_Failure, CPLE_AppDefined, "Page size too big at %d",
-                     img.pageSizeBytes);
+            CPLError(CE_Failure, CPLE_AppDefined, "Page size is too big at %d", img.pageSizeBytes);
             return CE_Failure;
         }
         dst.size = img.pageSizeBytes + 1440; // in case the packed page is a bit larger than the raw one
-        dst.buffer = (char *)VSIMalloc(dst.size);
-        if( dst.buffer == nullptr )
-        {
+        dst.buffer = static_cast<char*>(VSIMalloc(dst.size));
+        if (nullptr == dst.buffer) {
             CPLFree(data);
-            CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate %d bytes",
-                     static_cast<int>(dst.size));
+            CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate %d bytes", static_cast<int>(dst.size));
             return CE_Failure;
         }
 
-        int Zret = ZUnPack(src, dst, deflate_flags);
-        if (Zret) {
-            // Got it unpacked, update the pointers
+        if (ZUnPack(src, dst, deflate_flags)) { // Got it unpacked, update the pointers
             CPLFree(data);
             data = dst.buffer;
             tinfo.size = dst.size;
-        } else {
-            // assume the page was not gzipped, proceed
+        } else { // assume the page was not gzipped, warn only
             CPLFree(dst.buffer);
-            if (!poDS->no_errors)
+            if (!poMRFDS->no_errors)
                 CPLError(CE_Warning, CPLE_AppDefined, "Can't inflate page!");
         }
     }
 
-    src.buffer = (char *)data;
+#if defined(ZSTD_SUPPORT)
+    // undo ZSTD
+    else if (dozstd) {
+        auto ctx = poMRFDS->getzsd();
+        if (!ctx) {
+            CPLFree(data);
+            CPLError(CE_Failure, CPLE_AppDefined, "Can't acquire ZSTD context");
+            return CE_Failure;
+        }
+        if (img.pageSizeBytes > INT_MAX - 1440) {
+            CPLFree(data);
+            CPLError(CE_Failure, CPLE_AppDefined, "Page is too large at %d", img.pageSizeBytes);
+            return CE_Failure;
+        }
+        dst.size = img.pageSizeBytes + 1440; // Allow for a slight increase from previous compressions
+        dst.buffer = static_cast<char*>(VSIMalloc(dst.size));
+        if (nullptr == dst.buffer) {
+            CPLFree(data);
+            CPLError(CE_Failure, CPLE_OutOfMemory, "Cannot allocate %d bytes", static_cast<int>(dst.size));
+            return CE_Failure;
+        }
+
+        auto raw_size = ZSTD_decompressDCtx(ctx, dst.buffer, dst.size, src.buffer, src.size);
+        if (ZSTD_isError(raw_size)) { // assume page was not packed, warn only
+            CPLFree(dst.buffer);
+            if (!poMRFDS->no_errors)
+                CPLError(CE_Warning, CPLE_AppDefined, "Can't unpack ZSTD page!");
+        }
+        else {
+            CPLFree(data); // The compressed data
+            data = dst.buffer;
+            tinfo.size = raw_size;
+            // Might need to undo the rank sort
+            size_t ranks = 0;
+            if (img.comp == IL_NONE || img.comp == IL_ZSTD)
+                ranks = static_cast<size_t>(GDALGetDataTypeSizeBytes(img.dt)) * img.pagesize.c;
+            if (ranks) {
+                src.buffer = static_cast<char*>(data);
+                src.size = static_cast<size_t>(tinfo.size);
+                derank(src, ranks);
+            }
+        }
+    }
+#endif
+
+    src.buffer = static_cast<char *>(data);
     src.size = static_cast<size_t>(tinfo.size);
 
     // After unpacking, the size has to be pageSizeBytes
     // If pages are interleaved, use the dataset page buffer instead
-    dst.buffer = reinterpret_cast<char *>((1 == cstride) ? buffer : poDS->GetPBuffer());
+    dst.buffer = reinterpret_cast<char *>((1 == cstride) ? buffer : poMRFDS->GetPBuffer());
     dst.size = img.pageSizeBytes;
 
-    if (poDS->no_errors)
+    if (poMRFDS->no_errors)
         CPLPushErrorHandler(CPLQuietErrorHandler);
     CPLErr ret = Decompress(dst, src);
 
@@ -825,16 +1002,10 @@ CPLErr MRFRasterBand::IReadBlock(int xblk, int yblk, void *buffer)
         swab_buff(dst, img);
 
     CPLFree(data);
-
-    if (poDS->no_errors) {
+    if (poMRFDS->no_errors) {
         CPLPopErrorHandler();
-        if (ret != CE_None) {
-            // Set each page buffer to the correct no data value, then proceed
-            if (1 == cstride)
-                return FillBlock(buffer);
-            else
-                return FillBlock(xblk, yblk, buffer);
-        }
+        if (ret != CE_None) // Set each page buffer to the correct no data value, then proceed
+            return (1 == cstride) ? FillBlock(buffer) : FillBlock(xblk, yblk, buffer);
     }
 
     // If pages are separate or we had errors, we're done
@@ -856,7 +1027,6 @@ CPLErr MRFRasterBand::IReadBlock(int xblk, int yblk, void *buffer)
 */
 
 CPLErr MRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
-
 {
     GInt32 cstride = img.pagesize.c;
     ILSize req(xblk, yblk, 0, (nBand-1)/cstride, m_l);
@@ -866,28 +1036,26 @@ CPLErr MRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
         nBand, m_l, cstride);
 
     // Finish the Create call
-    if (!poDS->bCrystalized)
-        if (!poDS->Crystalize()) {
-            CPLError(CE_Failure, CPLE_AppDefined, "MRF: Error creating files");
-            return CE_Failure;
-        }
+    if (!poMRFDS->bCrystalized && !poMRFDS->Crystalize()) {
+        CPLError(CE_Failure, CPLE_AppDefined, "MRF: Error creating files");
+        return CE_Failure;
+    }
 
     if (1 == cstride) {     // Separate bands, we can write it as is
         // Empty page skip
-
         int success;
         double val = GetNoDataValue(&success);
         if (!success) val = 0.0;
         if (isAllVal(eDataType, buffer, img.pageSizeBytes, val))
-            return poDS->WriteTile(nullptr, infooffset, 0);
+            return poMRFDS->WriteTile(nullptr, infooffset, 0);
 
         // Use the pbuffer to hold the compressed page before writing it
-        poDS->tile = ILSize(); // Mark it corrupt
+        poMRFDS->tile = ILSize(); // Mark it corrupt
 
         buf_mgr src;
         src.buffer = (char *)buffer;
         src.size = static_cast<size_t>(img.pageSizeBytes);
-        buf_mgr dst = {(char *)poDS->GetPBuffer(), poDS->GetPBufferSize()};
+        buf_mgr dst = {(char *)poMRFDS->GetPBuffer(), poMRFDS->GetPBufferSize()};
 
         // Swab the source before encoding if we need to
         if (is_Endianess_Dependent(img.dt, img.comp) && (img.nbo != NET_ORDER))
@@ -897,24 +1065,38 @@ CPLErr MRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
         // the bytes in buffer field
         Compress(dst, src);
         void *usebuff = dst.buffer;
-        if (deflatep) {
-            usebuff = DeflateBlock(dst, poDS->pbsize - dst.size, deflate_flags);
+        if (dodeflate) {
+            usebuff = DeflateBlock(dst, poMRFDS->pbsize - dst.size, deflate_flags);
             if (!usebuff) {
                 CPLError(CE_Failure,CPLE_AppDefined, "MRF: Deflate error");
                 return CE_Failure;
             }
         }
-        return poDS->WriteTile(usebuff, infooffset , dst.size);
+
+# if defined(ZSTD_SUPPORT)
+        else if (dozstd) {
+            size_t ranks = 0; // Assume no need for byte rank sort
+            if (img.comp == IL_NONE || img.comp == IL_ZSTD)
+                ranks = static_cast<size_t>(GDALGetDataTypeSizeBytes(img.dt));
+            usebuff = ZstdCompBlock(dst, poMRFDS->pbsize - dst.size,
+                zstd_level, poMRFDS->getzsc(), ranks);
+            if (!usebuff) {
+                CPLError(CE_Failure, CPLE_AppDefined, "MRF: Zstd Compression error");
+                return CE_Failure;
+            }
+        }
+#endif
+        return poMRFDS->WriteTile(usebuff, infooffset , dst.size);
     }
 
     // Multiple bands per page, use a temporary to assemble the page
     // Temporary is large because we use it to hold both the uncompressed and the compressed
-    poDS->tile=req; poDS->bdirty=0;
+    poMRFDS->tile=req; poMRFDS->bdirty=0;
 
     // Keep track of what bands are empty
     GUIntBig empties=0;
 
-    void *tbuffer = VSIMalloc(img.pageSizeBytes + poDS->pbsize);
+    void *tbuffer = VSIMalloc(img.pageSizeBytes + poMRFDS->pbsize);
 
     if (!tbuffer) {
         CPLError(CE_Failure,CPLE_AppDefined, "MRF: Can't allocate write buffer");
@@ -922,17 +1104,16 @@ CPLErr MRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
     }
 
     // Get the other bands from the block cache
-    for (int iBand=0; iBand < poDS->nBands; iBand++ )
-    {
+    for (int iBand=0; iBand < poMRFDS->nBands; iBand++ ) {
         char *pabyThisImage = nullptr;
         GDALRasterBlock *poBlock = nullptr;
 
-        if (iBand == nBand-1)
-        {
+        if (iBand == nBand-1) {
             pabyThisImage = reinterpret_cast<char *>(buffer);
-            poDS->bdirty |= bandbit();
-        } else {
-            GDALRasterBand *band = poDS->GetRasterBand(iBand +1);
+            poMRFDS->bdirty |= bandbit();
+        }
+        else {
+            GDALRasterBand *band = poMRFDS->GetRasterBand(iBand +1);
             // Pick the right overview
             if (m_l) band = band->GetOverview(m_l -1);
             poBlock = (reinterpret_cast<MRFRasterBand *>(band))->TryGetLockedBlockRef(xblk, yblk);
@@ -940,7 +1121,7 @@ CPLErr MRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
             // This is where the image data is for this band
 
             pabyThisImage = reinterpret_cast<char*>(poBlock->GetDataRef());
-            poDS->bdirty |= bandbit(iBand);
+            poMRFDS->bdirty |= bandbit(iBand);
         }
 
         // Keep track of empty bands, but encode them anyhow, in case some are not empty
@@ -989,13 +1170,12 @@ CPLErr MRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
 
     if (GIntBig(empties) == AllBandMask()) {
         CPLFree(tbuffer);
-        return poDS->WriteTile(nullptr, infooffset, 0);
+        return poMRFDS->WriteTile(nullptr, infooffset, 0);
     }
 
-    if (poDS->bdirty != AllBandMask())
-        CPLError(CE_Warning, CPLE_AppDefined,
-        "MRF: IWrite, band dirty mask is " CPL_FRMT_GIB " instead of " CPL_FRMT_GIB,
-        poDS->bdirty, AllBandMask());
+    if (poMRFDS->bdirty != AllBandMask())
+        CPLError(CE_Warning, CPLE_AppDefined, "MRF: IWrite, band dirty mask is " CPL_FRMT_GIB
+            " instead of " CPL_FRMT_GIB, poMRFDS->bdirty, AllBandMask());
 
     buf_mgr src;
     src.buffer = (char *)tbuffer;
@@ -1004,37 +1184,54 @@ CPLErr MRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
     // Use the space after pagesizebytes for compressed output, it is of pbsize
     char *outbuff = (char *)tbuffer + img.pageSizeBytes;
 
-    buf_mgr dst = {outbuff, poDS->pbsize};
+    buf_mgr dst = {outbuff, poMRFDS->pbsize};
     CPLErr ret;
 
     ret = Compress(dst, src);
     if (ret != CE_None) {
         // Compress failed, write it as an empty tile
         CPLFree(tbuffer);
-        poDS->WriteTile(nullptr, infooffset, 0);
+        poMRFDS->WriteTile(nullptr, infooffset, 0);
         return CE_None; // Should report the error, but it triggers partial band attempts
     }
 
     // Where the output is, in case we deflate
     void *usebuff = outbuff;
-    if (deflatep) {
+    if (dodeflate) {
         // Move the packed part at the start of tbuffer, to make more space available
         memcpy(tbuffer, outbuff, dst.size);
-        dst.buffer = (char *)tbuffer;
-        usebuff = DeflateBlock(dst, img.pageSizeBytes + poDS->pbsize - dst.size, deflate_flags);
-        if (!usebuff) {
+        dst.buffer = static_cast<char*>(tbuffer);
+        usebuff = DeflateBlock(dst,
+            static_cast<size_t>(img.pageSizeBytes) + poMRFDS->pbsize - dst.size, deflate_flags);
+        if (!usebuff)
             CPLError(CE_Failure,CPLE_AppDefined, "MRF: Deflate error");
-            CPLFree(tbuffer);
-            poDS->WriteTile(nullptr, infooffset, 0);
-            poDS->bdirty = 0;
-            return CE_Failure;
-        }
     }
 
-    ret = poDS->WriteTile(usebuff, infooffset, dst.size);
+#if defined(ZSTD_SUPPORT)
+    else if (dozstd) {
+        memcpy(tbuffer, outbuff, dst.size);
+        dst.buffer = static_cast<char*>(tbuffer);
+        size_t ranks = 0; // Assume no need for byte rank sort
+        if (img.comp == IL_NONE || img.comp == IL_ZSTD)
+            ranks = static_cast<size_t>(GDALGetDataTypeSizeBytes(img.dt)) * cstride;
+        usebuff = ZstdCompBlock(dst, static_cast<size_t>(img.pageSizeBytes) + poMRFDS->pbsize - dst.size,
+                zstd_level, poMRFDS->getzsc(), ranks);
+        if (!usebuff)
+            CPLError(CE_Failure, CPLE_AppDefined, "MRF: ZStd compression error");
+    }
+#endif
+
+    if (!usebuff) { // Error was signaled
+        CPLFree(tbuffer);
+        poMRFDS->WriteTile(nullptr, infooffset, 0);
+        poMRFDS->bdirty = 0;
+        return CE_Failure;
+    }
+
+    ret = poMRFDS->WriteTile(usebuff, infooffset, dst.size);
     CPLFree(tbuffer);
 
-    poDS->bdirty = 0;
+    poMRFDS->bdirty = 0;
     return ret;
 }
 
@@ -1045,7 +1242,7 @@ CPLErr MRFRasterBand::IWriteBlock(int xblk, int yblk, void *buffer)
 bool MRFRasterBand::TestBlock(int xblk, int yblk)
 {
     // When bypassing the cache, assume all blocks are valid
-    if (poDS->bypass_cache && !poDS->source.empty())
+    if (poMRFDS->bypass_cache && !poMRFDS->source.empty())
         return true;
 
     // Blocks outside of image have no data by default
@@ -1056,37 +1253,31 @@ bool MRFRasterBand::TestBlock(int xblk, int yblk)
     GInt32 cstride = img.pagesize.c;
     ILSize req(xblk, yblk, 0, (nBand - 1) / cstride, m_l);
 
-    
-    if (CE_None != poDS->ReadTileIdx(tinfo, req, img))
+    if (CE_None != poMRFDS->ReadTileIdx(tinfo, req, img))
         // Got an error reading the tile index
-        return !poDS->no_errors;
+        return !poMRFDS->no_errors;
 
     // Got an index, if the size is readable, the block does exist
-    if (0 < tinfo.size && tinfo.size < poDS->pbsize *2)
+    if (0 < tinfo.size && tinfo.size < poMRFDS->pbsize *2)
         return true;
 
     // We are caching, but the tile has not been checked, so it could exist
-    return (!poDS->source.empty() && 0 == tinfo.offset);
+    return (!poMRFDS->source.empty() && 0 == tinfo.offset);
 }
 
-int MRFRasterBand::GetOverviewCount()
-{
+int MRFRasterBand::GetOverviewCount() {
     // First try internal overviews
     int nInternalOverviewCount = static_cast<int>(overviews.size());
-    if( nInternalOverviewCount > 0 )
+    if (nInternalOverviewCount > 0)
         return nInternalOverviewCount;
-    // Fallback to PAM external overviews
     return GDALPamRasterBand::GetOverviewCount();
 }
 
-GDALRasterBand* MRFRasterBand::GetOverview(int n)
-{
+GDALRasterBand* MRFRasterBand::GetOverview(int n) {
     // First try internal overviews
-    if( n >= 0 && n < (int)overviews.size() )
+    if (n >= 0 && n < (int)overviews.size())
         return overviews[n];
-    // Fallback to PAM external overviews
     return GDALPamRasterBand::GetOverview(n);
 }
 
 NAMESPACE_MRF_END
-

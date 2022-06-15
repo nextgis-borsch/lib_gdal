@@ -31,10 +31,6 @@
 #ifndef OGR_FGDB_H_INCLUDED
 #define OGR_FGDB_H_INCLUDED
 
-#ifdef DEBUG_BOOL
-#define DO_NOT_USE_DEBUG_BOOL
-#endif
-
 #include <vector>
 #include <set>
 #include "ogrsf_frmts.h"
@@ -107,6 +103,8 @@ class FGdbDataSource;
 class FGdbLayer final: public FGdbBaseLayer
 {
   friend class FGdbDataSource;
+
+  bool                m_bWorkaroundCrashOnCDFWithBinaryField = false;
 
   int                 m_bBulkLoadAllowed;
   int                 m_bBulkLoadInProgress;
@@ -220,6 +218,8 @@ public:
 
   virtual const char* GetMetadataItem(const char* pszName, const char* pszDomain) override;
 
+  virtual OGRErr      Rename(const char* pszNewName) override;
+
 protected:
 
   bool GDBToOGRFields(CPLXMLNode* psFields);
@@ -276,18 +276,20 @@ protected:
 /************************************************************************/
 
 class FGdbDatabaseConnection;
+class OGRFileGDBGroup;
 
 class FGdbDataSource final: public OGRDataSource
 {
   CPLString             m_osFSName;
   CPLString             m_osPublicName;
   std::set<OGRLayer*>   m_oSetSelectLayers;
+  std::shared_ptr<GDALGroup>     m_poRootGroup{};
 
   int        FixIndexes();
   int        bPerLayerCopyingForTransaction;
 
 public:
-  FGdbDataSource(FGdbDriver* poDriver, FGdbDatabaseConnection* pConnection);
+  FGdbDataSource(bool bUseDriverMutex, FGdbDatabaseConnection* pConnection);
   virtual ~FGdbDataSource();
 
   int         Open(const char* pszFSName, int bUpdate,
@@ -311,6 +313,20 @@ public:
 
   int TestCapability( const char * ) override;
 
+  const OGRFieldDomain* GetFieldDomain(const std::string& name) const override;
+  std::vector<std::string> GetFieldDomainNames(CSLConstList papszOptions = nullptr) const override;
+
+  bool        AddFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain,
+                             std::string& failureReason) override;
+
+  bool        DeleteFieldDomain(const std::string& name,
+                                std::string& failureReason) override;
+
+  bool        UpdateFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain,
+                                std::string& failureReason) override;
+
+  std::shared_ptr<GDALGroup> GetRootGroup() const override { return m_poRootGroup; }
+
   Geodatabase* GetGDB() { return m_pGeodatabase; }
   bool         GetUpdate() { return m_bUpdate; }
   FGdbDatabaseConnection* GetConnection() { return m_pConnection; }
@@ -333,15 +349,17 @@ public:
   */
 protected:
   bool LoadLayers(const std::wstring & parent);
-  bool OpenFGDBTables(const std::wstring &type,
+  bool OpenFGDBTables(OGRFileGDBGroup* group,
+                      const std::wstring &type,
                       const std::vector<std::wstring> &layers);
 
-  FGdbDriver* m_poDriver;
+  bool m_bUseDriverMutex = true;
   FGdbDatabaseConnection* m_pConnection;
-  std::vector <FGdbLayer*> m_layers;
+  std::vector <OGRLayer*> m_layers;
   Geodatabase* m_pGeodatabase;
   bool m_bUpdate;
   GDALDriver* m_poOpenFileGDBDrv;
+  std::unique_ptr<GDALDataset> m_poOpenFileGDBDS;
 };
 
 /************************************************************************/
@@ -372,28 +390,26 @@ public:
     void         CloseGeodatabase();
 };
 
-class FGdbDriver final: public OGRSFDriver, public IOGRTransactionBehaviour
+
+class FGdbTransactionManager final: public IOGRTransactionBehaviour
 {
-  std::map<CPLString, FGdbDatabaseConnection*> oMapConnections;
-  CPLMutex* hMutex;
-
 public:
-  FGdbDriver();
-  virtual ~FGdbDriver();
 
-  virtual const char *GetName() override;
-  virtual OGRDataSource *Open( const char *, int ) override;
-  virtual int TestCapability( const char * ) override;
-  virtual OGRDataSource *CreateDataSource( const char *pszName, char ** = nullptr) override;
-  virtual OGRErr DeleteDataSource( const char *pszDataSource ) override;
-
-  /* From IOGRTransactionBehaviour */
   virtual OGRErr StartTransaction(OGRDataSource*& poDSInOut, int& bOutHasReopenedDS) override;
   virtual OGRErr CommitTransaction(OGRDataSource*& poDSInOut, int& bOutHasReopenedDS) override;
   virtual OGRErr RollbackTransaction(OGRDataSource*& poDSInOut, int& bOutHasReopenedDS) override;
+};
 
-  void Release(const char* pszName);
-  CPLMutex* GetMutex() { return hMutex; }
+class FGdbDriver final: public GDALDriver
+{
+public:
+
+  static void Release(const char* pszName);
+
+  static FGdbTransactionManager* GetTransactionManager();
+
+  static CPLMutex* hMutex;
+  static FGdbTransactionManager* m_poTransactionManager;
 };
 
 CPL_C_START

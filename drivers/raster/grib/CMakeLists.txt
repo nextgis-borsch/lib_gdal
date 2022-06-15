@@ -61,7 +61,6 @@ if(ENABLE_GRIB)
         degrib/degrib/degrib2.cpp
         degrib/degrib/inventory.cpp
         degrib/degrib/metaname.cpp
-        degrib/degrib/myerror.c
         degrib/degrib/grib1tab.cpp
         degrib/degrib/myutil.c
         degrib/degrib/metaparse.cpp
@@ -72,6 +71,7 @@ if(ENABLE_GRIB)
         degrib/degrib/scan.c
         degrib/degrib/tendian.cpp
         degrib/degrib/hazard.c
+        degrib/degrib/myerror.cpp
     )
 
     set(LIB_CSOURCES ${LIB_CSOURCES}

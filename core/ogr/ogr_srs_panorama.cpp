@@ -8,7 +8,6 @@
  ******************************************************************************
  * Copyright (c) 2005, Andrey Kiselev <dron@ak4719.spb.edu>
  * Copyright (c) 2008-2012, Even Rouault <even dot rouault at spatialys.com>
- * Copyright (c) 2020-2021, Dmitry Baryshnikov <polimax@mail.ru>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -76,8 +75,6 @@ constexpr long PAN_PROJ_CEA    = 28L;  // Cylindrical Equal Area (Lambert)
 constexpr long PAN_PROJ_IMWP   = 29L;  // International Map of the World Polyconic
 constexpr long PAN_PROJ_SPHERE = 33L;  // Speher
 constexpr long PAN_PROJ_MILLER = 34L;  // Miller
-constexpr long PAN_PROJ_PSEUDO_MERCATOR = 35L; // Popular Visualisation Pseudo Mercator
-
 /************************************************************************/
 /*  "Panorama" datum codes.                                             */
 /************************************************************************/
@@ -85,9 +82,9 @@ constexpr long PAN_PROJ_PSEUDO_MERCATOR = 35L; // Popular Visualisation Pseudo M
 constexpr long PAN_DATUM_NONE      = -1L;
 constexpr long PAN_DATUM_PULKOVO42 = 1L;  // Pulkovo 1942
 constexpr long PAN_DATUM_RECTANGULAR = 6L; // WGS84
-constexpr long PAN_DATUM_WGS84     = 8L;  // WGS84
+constexpr long PAN_DATUM_WGS84 = 8L;  // WGS84
 constexpr long PAN_DATUM_PULKOVO95 = 9L;  // Pulokovo 1995
-constexpr long PAN_DATUM_GSK2011   = 10L; // GSK2011
+constexpr long PAN_DATUM_GSK2011 = 10L; // GSK2011
 
 /************************************************************************/
 /*  "Panorama" ellipsoid codes.                                         */
@@ -122,7 +119,7 @@ constexpr int aoDatums[] =
     0,
     0,
     6200,   // Pulkovo, 1995
-	1159 	// GSK 2011
+    1159 	// GSK 2011
 };
 
 constexpr int NUMBER_OF_DATUMS = static_cast<int>(CPL_ARRAYSIZE(aoDatums));
@@ -133,54 +130,27 @@ constexpr int NUMBER_OF_DATUMS = static_cast<int>(CPL_ARRAYSIZE(aoDatums));
 
 constexpr int aoEllips[] =
 {
-    0,      // 0. Undefined
-    7024,   // 1. Krassovsky, 1940
-    7043,   // 2. WGS, 1972
-    7022,   // 3. International, 1924 (Hayford, 1909)
-    7034,   // 4. Clarke, 1880
-    7008,   // 5. Clarke, 1866 (NAD1927)
-    7015,   // 6. Everest, 1830
-    7004,   // 7. Bessel, 1841
-    7001,   // 8. Airy, 1830
-    7030,   // 9. WGS, 1984 (GPS)
-    7054,   // 10. PZ-90.02 // http://epsg.io/7054-ellipsoid
-    7019,   // 11. GRS, 1980 (NAD1983)
-    0,      // 12. IERS 1996 (6378136.49 298.25645)
-    7022,   // 13. International, 1924 (Hayford, 1909) XXX?
-    7036,   // 14. South American, 1969
-    7021,   // 15. Indonesian, 1974
-    7020,   // 16. Helmert 1906
-    0,      // 17. FIXME: Fisher 1960 - https://epsg.io/37002
-    0,      // 18. FIXME: Fisher 1968 - https://epsg.io/37003
-    0,      // 19. FIXME: Haff 1960 - (6378270.0 297.0)
-    7042,   // 20. Everest, 1830
-    7003,   // 21. Australian National, 1965
-    1024,   // 22. CGCS2000 http://epsg.io/1024-ellipsoid
-    7002,   // 23. Airy Modified 1849 http://epsg.io/7002-ellipsoid
-    7005,   // 24. Bessel Modified
-    7046,   // 25. Bessel Namibia
-    7046,   // 26. Bessel Namibia (GLM)
-    7013,   // 27. Clarke 1880 (Arc)
-    7014,   // 28. Clarke 1880 (SGA 1922)
-    7042,   // 29. Everest (1830 Definition)
-    7018,   // 30. Everest 1830 Modified
-    7056,   // 31. Everest 1830 (RSO 1969)
-    7045,   // 32. Everest 1830 (1975 Definition)
-    7025,   // 33. NWL 9D
-    7027,   // 34. Plessis 1817
-    7028,   // 35. Struve 1860
-    7029,   // 36. War Office
-    7031,   // 37. GEM 10C
-    7032,   // 38. OSU86F
-    7033,   // 39. OSU91A
-    7036,   // 40. GRS 1967
-    7041,   // 41. Average Terrestrial System 1977
-    7049,   // 42. IAG 1975
-    7050,   // 43. GRS 1967 Modified
-    7051,   // 44. Danish 1876
-    7048,   // 45. GRS 1980 Authalic Sphere
-    1025,   // 46. GSK-2011
-    7054    // 47. PZ-90
+    0,
+    7024,   // Krassovsky, 1940
+    7043,   // WGS, 1972
+    7022,   // International, 1924 (Hayford, 1909)
+    7034,   // Clarke, 1880
+    7008,   // Clarke, 1866 (NAD1927)
+    7015,   // Everest, 1830
+    7004,   // Bessel, 1841
+    7001,   // Airy, 1830
+    7030,   // WGS, 1984 (GPS)
+    0,      // FIXME: PZ90.02
+    7019,   // GRS, 1980 (NAD1983)
+    7022,   // International, 1924 (Hayford, 1909) XXX?
+    7036,   // South American, 1969
+    7021,   // Indonesian, 1974
+    7020,   // Helmert 1906
+    0,      // FIXME: Fisher 1960
+    0,      // FIXME: Fisher 1968
+    0,      // FIXME: Haff 1960
+    7042,   // Everest, 1830
+    7003   // Australian National, 1965
 };
 
 constexpr int NUMBER_OF_ELLIPSOIDS = static_cast<int>(CPL_ARRAYSIZE(aoEllips));
@@ -191,34 +161,34 @@ constexpr int NUMBER_OF_ELLIPSOIDS = static_cast<int>(CPL_ARRAYSIZE(aoEllips));
 
 constexpr int aoVCS[] =
 {
-    0,      //0, 255, -1 - Undefined
-    8357,   //1 Baltic 1957 height
-    5711,   //2 AHD height
-    5195,   //3 Trieste height
-    5710,   //4 Ostend height - zero normal
-    5710,   //5 Ostend height - null point de shosse
-    0,      //6 Channel height (GB)
-    5732,   //7 Belfast height 
-    5731,   //8 Malin Head height
-    0,      //9 Dublib bay height
-    5716,   //10 Piraeus height
-    5733,   //11 DNN height
-    8089,   //12 ISH2004 height
-    5782,   //13 Alicante height
-    0,      //14 Canary islands
-    5214,   //15 Genoa height
-    5709,   //16 NAP height
-    5776,   //17 NN54 height
-    0,      //18 North Norway
-    5780,   //19 Cascais height
-    5717,   //20 N60 height
-    5613,   //21 RH2000 height
-    0,      //22 France, Marseilles height
-    5775,   //23 Antalya height
-    5702,   //24 NGVD29 height (ftUS)
-    5705,   //25 Baltic 1977 height
-    0,      //26 Pacific Ocean (Ohotsk sea level)
-    5714    //27 MSL height
+    0,
+    8357,   //1
+    5711,   //2
+    0,      //3
+    5710,   //4
+    5710,   //5
+    0,      //6
+    0,      //7
+    0,      //8
+    0,      //9
+    5716,   //10
+    5733,   //11
+    0,      //12
+    0,      //13
+    0,      //14
+    0,      //15
+    5709,   //16
+    5776,   //17
+    0,      //18
+    0,      //19
+    5717,   //20
+    5613,   //21
+    0,      //22
+    5775,   //23
+    5702,   //24
+    5705,   //25
+    0,      //26
+    5714    //27
 };
 
 constexpr int NUMBER_OF_VERTICALCS = static_cast<int>(CPL_ARRAYSIZE(aoVCS));
@@ -259,101 +229,63 @@ OGRErr OSRImportFromPanorama( OGRSpatialReferenceH hSRS,
  *
  * @param iProjSys Input projection system code, used in GIS "Panorama".
  *
- *      <h4>Supported Projections</h4>
- * \code{.unparsed}
- *      1:  Gauss-Kruger (Transverse Mercator)
- *      2:  Lambert Conformal Conic 2SP
- *      5:  Stereographic
- *      6:  Azimuthal Equidistant (Postel)
- *      8:  Mercator
- *      10: Polyconic
- *      13: Polar Stereographic
- *      15: Gnomonic
- *      17: Universal Transverse Mercator (UTM)
- *      18: Wagner I (Kavraisky VI)
- *      19: Mollweide
- *      20: Equidistant Conic
- *      24: Lambert Azimuthal Equal Area
- *      27: Equirectangular
- *      28: Cylindrical Equal Area (Lambert)
- *      29: International Map of the World Polyconic
- * \endcode
+ * Supported Projections are:
+ * <ul>
+ * <li>1:  Gauss-Kruger (Transverse Mercator)</li>
+ * <li>2:  Lambert Conformal Conic 2SP</li>
+ * <li>5:  Stereographic</li>
+ * <li>6:  Azimuthal Equidistant (Postel)</li>
+ * <li>8:  Mercator</li>
+ * <li>10: Polyconic</li>
+ * <li>13: Polar Stereographic</li>
+ * <li>15: Gnomonic</li>
+ * <li>17: Universal Transverse Mercator (UTM)</li>
+ * <li>18: Wagner I (Kavraisky VI)</li>
+ * <li>19: Mollweide</li>
+ * <li>20: Equidistant Conic</li>
+ * <li>24: Lambert Azimuthal Equal Area</li>
+ * <li>27: Equirectangular</li>
+ * <li>28: Cylindrical Equal Area (Lambert)</li>
+ * <li>29: International Map of the World Polyconic</li>
+ * </ul>
  *
  * @param iDatum Input coordinate system.
  *
- *      <h4>Supported Datums</h4>
- * \code{.unparsed}
- *       1: Pulkovo, 1942
- *       2: WGS, 1984
- *       3: OSGB 1936 (British National Grid)
- *       9: Pulkovo, 1995
- * \endcode
+ * Supported Datums are:
+ * <ul>
+ * <li>1: Pulkovo, 1942</li>
+ * <li>2: WGS, 1984</li>
+ * <li>3: OSGB 1936 (British National Grid)</li>
+ * <li>9: Pulkovo, 1995</li>
+ * </ul>
  *
  * @param iEllips Input spheroid.
  *
- *      <h4>Supported Spheroids</h4>
- * \code{.unparsed}
- *       1: Krassovsky, 1940
- *       2: WGS, 1972
- *       3: International, 1924 (Hayford, 1909)
- *       4: Clarke, 1880
- *       5: Clarke, 1866 (NAD1927)
- *       6: Everest, 1830
- *       7: Bessel, 1841
- *       8: Airy, 1830
- *       9: WGS, 1984 (GPS)
- *      10: PZ-90.02
- *      11: GRS, 1980 (NAD1983)
- *      12: IERS 1996 (6378136.49 298.25645)
- *      13: International, 1924 (Hayford, 1909)
- *      14: South American, 1969
- *      15: Indonesian, 1974
- *      16: Helmert 1906
- *      17: Fisher 1960
- *      18: Fisher 1968
- *      19. Haff 1960 - (6378270.0 297.0)
- *      20: Everest, 1830
- *      21: Australian National, 1965
- *      22: CGCS2000 
- *      23: Airy Modified 1849
- *      24: Bessel Modified
- *      25: Bessel Namibia
- *      26: Bessel Namibia (GLM)
- *      27: Clarke 1880 (Arc)
- *      28: Clarke 1880 (SGA 1922)
- *      29: Everest (1830 Definition)
- *      30: Everest 1830 Modified
- *      31: Everest 1830 (RSO 1969)
- *      32: Everest 1830 (1975 Definition)
- *      33: NWL 9D
- *      34: Plessis 1817
- *      35: Struve 1860
- *      36: War Office
- *      37: GEM 10C
- *      38: OSU86F
- *      39: OSU91A
- *      40: GRS 1967
- *      41: Average Terrestrial System 1977
- *      42: IAG 1975
- *      43: GRS 1967 Modified
- *      44: Danish 1876
- *      45: GRS 1980 Authalic Sphere
- *      46: GSK-2011
- *      47: PZ-90
- * \endcode
+ * Supported Spheroids are:
+ * <ul>
+ * <li>1: Krassovsky, 1940</li>
+ * <li>2: WGS, 1972</li>
+ * <li>3: International, 1924 (Hayford, 1909)</li>
+ * <li>4: Clarke, 1880</li>
+ * <li>5: Clarke, 1866 (NAD1927)</li>
+ * <li>6: Everest, 1830</li>
+ * <li>7: Bessel, 1841</li>
+ * <li>8: Airy, 1830</li>
+ * <li>9: WGS, 1984 (GPS)</li>
+ * </ul>
  *
  * @param padfPrjParams Array of 8 coordinate system parameters:
  *
- * \code{.unparsed}
- *      [0]  Latitude of the first standard parallel (radians)
- *      [1]  Latitude of the second standard parallel (radians)
- *      [2]  Latitude of center of projection (radians)
- *      [3]  Longitude of center of projection (radians)
- *      [4]  Scaling factor
- *      [5]  False Easting
- *      [6]  False Northing
- *      [7]  Zone number
- * \endcode
+ * <ul>
+ * <li>[0]  Latitude of the first standard parallel (radians)</li>
+ * <li>[1]  Latitude of the second standard parallel (radians)</li>
+ * <li>[2]  Latitude of center of projection (radians)</li>
+ * <li>[3]  Longitude of center of projection (radians)</li>
+ * <li>[4]  Scaling factor</li>
+ * <li>[5]  False Easting</li>
+ * <li>[6]  False Northing</li>
+ * <li>[7]  Zone number</li>
+ * </ul>
  *
  * Particular projection uses different parameters, unused ones may be set to
  * zero. If NULL supplied instead of array pointer default values will be used
@@ -530,9 +462,6 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
                 padfPrjParams[6], padfPrjParams[7]);
             break;
 
-        case PAN_PROJ_PSEUDO_MERCATOR:
-            return importFromEPSG( 3857 );
-
         default:
             CPLDebug( "OSR_Panorama", "Unsupported projection: %ld", iProjSys );
             SetLocalCS( CPLString().Printf("\"Panorama\" projection number %ld",
@@ -546,7 +475,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
     if( !IsLocal() )
     {
-        if( iEllips == PAN_ELLIPSOID_GSK2011 || iDatum == PAN_DATUM_GSK2011 )
+        if (iEllips == PAN_ELLIPSOID_GSK2011 || iDatum == PAN_DATUM_GSK2011)
         {
             OGRSpatialReference oGCS;
             oGCS.importFromEPSG( 7683 );
@@ -554,10 +483,10 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
         }
         else if( iEllips == PAN_ELLIPSOID_PZ90 )
         {
-			OGRSpatialReference oGCS;
-			oGCS.importFromEPSG( 7679 );
-			CopyGeogCSFrom(&oGCS);
-        }        
+            OGRSpatialReference oGCS;
+            oGCS.importFromEPSG(7679);
+            CopyGeogCSFrom(&oGCS);
+        }
         else if (iDatum == PAN_DATUM_PULKOVO95)
         {
             OGRSpatialReference oGCS;
@@ -596,12 +525,12 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
             CPLFree( pszName );
         }
-		else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum])
-		{
-			OGRSpatialReference oGCS;
-			oGCS.importFromEPSG(aoDatums[iDatum]);
-			CopyGeogCSFrom(&oGCS);
-		}
+        else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum])
+        {
+            OGRSpatialReference oGCS;
+            oGCS.importFromEPSG(aoDatums[iDatum]);
+            CopyGeogCSFrom(&oGCS);
+        }
         else
         {
             CPLError( CE_Warning, CPLE_AppDefined,
@@ -629,29 +558,23 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
  *
  * @param iVCS Input vertical coordinate system ID.
  *
- * <h4>Supported VCS</h4>
- * \code{.unparsed}
- *   1: Baltic 1977 height (EPSG:5705)
- *   2: AHD height (EPSG:5711)
- *   4: Ostend height (EPSG:5710)
- *   5: Ostend height (EPSG:5710)
- *   7: Belfast height (EPSG: 5732)
- *   8: Malin Head height (EPSG: 5731)
- *  10: Piraeus height (EPSG:5716)
- *  11: DNN height (EPSG:5733)
- *  12: ISH2004 height (EPSG:8089)
- *  13: Alicante height (EPSG:5782)
- *  15: Genoa height (EPSG:5214)
- *  16: NAP height (EPSG:5709)
- *  17: NN54 height (EPSG:5776)
- *  19: Cascais height (EPSG:5780)
- *  20: N60 height (EPSG:5717)
- *  21: RH2000 height (EPSG:5613)
- *  23: Antalya height (EPSG:5775)
- *  24: NGVD29 height (ftUS) (EPSG:5702)
- *  25: Baltic 1977 height (EPSG:5705)
- *  27: MSL height (EPSG:5714)
- * \endcode   
+ * Supported VCS are:
+ * <ul>
+ * <li>1: Baltic 1977 height (EPSG:5705)</li>
+ * <li>2: AHD height (EPSG:5711)</li>
+ * <li>4: Ostend height (EPSG:5710)</li>
+ * <li>5: Ostend height (EPSG:5710)</li>
+ * <li>10: Piraeus height (EPSG:5716)</li>
+ * <li>11: DNN height (EPSG:5733)</li>
+ * <li>16: NAP height (EPSG:5709)</li>
+ * <li>17: NN54 height (EPSG:5776)</li>
+ * <li>20: N60 height (EPSG:5717)</li>
+ * <li>21: RH2000 height (EPSG:5613)</li>
+ * <li>23: Antalya height (EPSG:5775)</li>
+ * <li>24: NGVD29 height (ftUS) (EPSG:5702)</li>
+ * <li>25: Baltic 1977 height (EPSG:5705)</li>
+ * <li>27: MSL height (EPSG:5714)</li>
+ * </ul>
  */
 OGRErr OGRSpatialReference::importVertCSFromPanorama(int iVCS)
 {
@@ -664,7 +587,7 @@ OGRErr OGRSpatialReference::importVertCSFromPanorama(int iVCS)
 
     if(nEPSG == 0 )
     {
-        CPLError(CE_Warning, CPLE_NotSupported, 
+        CPLError(CE_Warning, CPLE_NotSupported,
                  "Vertical coordinate system (Panorama index %d) not supported", iVCS);
         return OGRERR_UNSUPPORTED_SRS;
     }
@@ -674,7 +597,7 @@ OGRErr OGRSpatialReference::importVertCSFromPanorama(int iVCS)
     OGRErr eImportFromEPSGErr = sr.importFromEPSG(nEPSG);
     if(eImportFromEPSGErr != OGRERR_NONE)
     {
-        CPLError(CE_Warning, CPLE_None, 
+        CPLError(CE_Warning, CPLE_None,
                  "Vertical coordinate system (Panorama index %d, EPSG %d) "
                  "import from EPSG error", iVCS, nEPSG);
         return OGRERR_UNSUPPORTED_SRS;
@@ -682,17 +605,17 @@ OGRErr OGRSpatialReference::importVertCSFromPanorama(int iVCS)
 
     if(sr.IsVertical() != 1)
     {
-        CPLError(CE_Warning, CPLE_None, 
+        CPLError(CE_Warning, CPLE_None,
                  "Coordinate system (Panorama index %d, EPSG %d) "
                  "is not Vertical", iVCS, nEPSG);
         return OGRERR_UNSUPPORTED_SRS;
     }
 
-    OGRErr eSetVertCSErr = SetVertCS(sr.GetAttrValue("VERT_CS"), 
+    OGRErr eSetVertCSErr = SetVertCS(sr.GetAttrValue("VERT_CS"),
                                      sr.GetAttrValue("VERT_DATUM"));
     if(eSetVertCSErr != OGRERR_NONE)
     {
-        CPLError(CE_Warning, CPLE_None, 
+        CPLError(CE_Warning, CPLE_None,
                 "Vertical coordinate system (Panorama index %d, EPSG %d) "
                 "set error", iVCS, nEPSG);
         return eSetVertCSErr;
@@ -811,10 +734,10 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     {
         *piProjSys = PAN_PROJ_NONE;
     }
-	else if (IsGeographic() || IsGeocentric())
-	{
+    else if (IsGeographic() || IsGeocentric())
+    {
         *piProjSys = PAN_PROJ_SPHERE;
-	}
+    }
     else if( pszProjection == nullptr )
     {
 #ifdef DEBUG

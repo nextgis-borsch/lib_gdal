@@ -37,7 +37,7 @@ class NGWWrapperRasterBand : public GDALProxyRasterBand
     GDALRasterBand *poBaseBand;
 
 protected:
-    virtual GDALRasterBand *RefUnderlyingRasterBand() override { return poBaseBand; }
+    virtual GDALRasterBand *RefUnderlyingRasterBand() const override { return poBaseBand; }
 
 public:
     explicit NGWWrapperRasterBand( GDALRasterBand* poBaseBandIn ) :
@@ -805,9 +805,9 @@ CPLErr OGRNGWDataset::SetMetadataItem( const char *pszName,
 /*
  * FlushCache()
  */
-void OGRNGWDataset::FlushCache()
+void OGRNGWDataset::FlushCache(bool bAtClosing)
 {
-    GDALDataset::FlushCache();
+    GDALDataset::FlushCache(bAtClosing);
     FlushMetadata( GetMetadata("NGW") );
 }
 

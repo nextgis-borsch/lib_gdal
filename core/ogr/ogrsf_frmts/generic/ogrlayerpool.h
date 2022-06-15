@@ -43,7 +43,7 @@ class OGRLayerPool;
 /*                      OGRAbstractProxiedLayer                         */
 /************************************************************************/
 
-class OGRAbstractProxiedLayer : public OGRLayer
+class CPL_DLL OGRAbstractProxiedLayer : public OGRLayer
 {
         CPL_DISALLOW_COPY_ASSIGN(OGRAbstractProxiedLayer)
 
@@ -66,7 +66,7 @@ class OGRAbstractProxiedLayer : public OGRLayer
 /*                             OGRLayerPool                             */
 /************************************************************************/
 
-class OGRLayerPool
+class CPL_DLL OGRLayerPool
 {
         CPL_DISALLOW_COPY_ASSIGN(OGRLayerPool)
 
@@ -165,6 +165,8 @@ class OGRProxiedLayer : public OGRAbstractProxiedLayer
     virtual const char *GetGeometryColumn() override;
 
     virtual OGRErr      SetIgnoredFields( const char **papszFields ) override;
+
+    virtual OGRErr      Rename(const char* pszNewName) override;
 };
 
 #endif /* #ifndef DOXYGEN_SKIP */

@@ -33,6 +33,7 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <new>
 
 #include "cpl_conv.h"
 #include "cpl_error.h"
@@ -96,6 +97,16 @@ OGRMultiPoint& OGRMultiPoint::operator=( const OGRMultiPoint& other )
 }
 
 /************************************************************************/
+/*                               clone()                                */
+/************************************************************************/
+
+OGRMultiPoint *OGRMultiPoint::clone() const
+
+{
+    return new (std::nothrow) OGRMultiPoint(*this);
+}
+
+/************************************************************************/
 /*                          getGeometryType()                           */
 /************************************************************************/
 
@@ -151,25 +162,26 @@ OGRMultiPoint::isCompatibleSubType( OGRwkbGeometryType eGeomType ) const
 
 std::string OGRMultiPoint::exportToWkt(const OGRWktOptions& opts, OGRErr *err) const
 {
-    std::string wkt = getGeometryName() + wktTypeString(opts.variant);
-    if( IsEmpty() )
-        wkt += "EMPTY";
-    else
+    try
     {
+        std::string wkt = getGeometryName();
+        wkt += wktTypeString(opts.variant);
+
         bool first(true);
-        wkt += "(";
         // OGRMultiPoint has a begin()/end().
         for(const OGRPoint *poPoint: this)
         {
             if( poPoint->IsEmpty() )
                 continue;
 
-            if( !first )
-                wkt += ",";
+            if( first )
+                wkt += '(';
+            else
+                wkt += ',';
             first = false;
 
             if( opts.variant == wkbVariantIso )
-                wkt += "(";
+                wkt += '(';
 
             wkt += OGRMakeWktCoordinateM(poPoint->getX(), poPoint->getY(),
                     poPoint->getZ(), poPoint->getM(), poPoint->Is3D(),
@@ -177,14 +189,24 @@ std::string OGRMultiPoint::exportToWkt(const OGRWktOptions& opts, OGRErr *err) c
                     opts);
 
             if( opts.variant == wkbVariantIso )
-                wkt += ")";
+                wkt += ')';
         }
-        wkt += ")";
-    }
 
-    if (err)
-        *err = OGRERR_NONE;
-    return wkt;
+        if (err)
+            *err = OGRERR_NONE;
+        if (first)
+            wkt += "EMPTY";
+        else
+            wkt += ')';
+        return wkt;
+    }
+    catch( const std::bad_alloc& e )
+    {
+        CPLError(CE_Failure, CPLE_OutOfMemory, "%s", e.what());
+        if (err)
+            *err = OGRERR_FAILURE;
+        return std::string();
+    }
 }
 
 /************************************************************************/
@@ -209,7 +231,6 @@ OGRErr OGRMultiPoint::importFromWkt( const char ** ppszInput )
 
     char szToken[OGR_WKT_TOKEN_MAX] = {};
     const char *pszInput = *ppszInput;
-    eErr = OGRERR_NONE;
 
     const char* pszPreScan = OGRWktReadToken( pszInput, szToken );
     OGRWktReadToken( pszPreScan, szToken );
@@ -221,13 +242,8 @@ OGRErr OGRMultiPoint::importFromWkt( const char ** ppszInput )
         return importFromWkt_Bracketed( ppszInput, bHasM, bHasZ );
     }
 
-    if( bHasZ || bHasM )
-    {
-        return OGRERR_CORRUPT_DATA;
-    }
-
 /* -------------------------------------------------------------------- */
-/*      Read the point list which should consist of exactly one point.  */
+/*      Read the point list.                                            */
 /* -------------------------------------------------------------------- */
     OGRRawPoint *paoPoints = nullptr;
     double *padfZ = nullptr;
@@ -260,7 +276,7 @@ OGRErr OGRMultiPoint::importFromWkt( const char ** ppszInput )
 /* -------------------------------------------------------------------- */
 /*      Transform raw points into point objects.                        */
 /* -------------------------------------------------------------------- */
-    for( int iGeom = 0; iGeom < nPointCount && eErr == OGRERR_NONE; iGeom++ )
+    for( int iGeom = 0; iGeom < nPointCount; iGeom++ )
     {
         OGRPoint *poPoint =
             new OGRPoint(paoPoints[iGeom].x, paoPoints[iGeom].y);
@@ -293,9 +309,6 @@ OGRErr OGRMultiPoint::importFromWkt( const char ** ppszInput )
     CPLFree( paoPoints );
     CPLFree( padfZ );
     CPLFree( padfM );
-
-    if( eErr != OGRERR_NONE )
-        return eErr;
 
     *ppszInput = pszInput;
 

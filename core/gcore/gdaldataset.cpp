@@ -123,6 +123,8 @@ class GDALDataset::Private
 
     GDALDataset* poParentDataset = nullptr;
 
+    bool m_bOverviewsEnabled = true;
+
     Private() = default;
 };
 
@@ -222,9 +224,9 @@ GIntBig GDALGetResponsiblePIDForCurrentThread()
 /**
  * \class GDALDataset "gdal_priv.h"
  *
- * A dataset encapsulating one or more raster bands.  Details are
- * further discussed in the <a href="gdal_datamodel.html#GDALDataset">GDAL
- * Data Model</a>.
+ * A dataset encapsulating one or more raster bands.  Details are further
+ * discussed in the <a href="https://gdal.org/user/raster_data_model.html">GDAL
+ * Raster Data Model</a>.
  *
  * Use GDALOpen() or GDALOpenShared() to create a GDALDataset for a named file,
  * or GDALDriver::Create() or GDALDriver::CreateCopy() to create a new
@@ -284,7 +286,19 @@ GDALDataset::~GDALDataset()
     }
 
     if( bSuppressOnClose )
-        VSIUnlink(GetDescription());
+    {
+        if( poDriver == nullptr ||
+            // Someone issuing Create("foo.tif") on a
+            // memory driver doesn't expect files with those names to be deleted
+            // on a file system...
+            // This is somewhat messy. Ideally there should be a way for the
+            // driver to overload the default behavior
+            (!EQUAL(poDriver->GetDescription(), "MEM") &&
+             !EQUAL(poDriver->GetDescription(), "Memory")) )
+        {
+            VSIUnlink(GetDescription());
+        }
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Remove dataset from the "open" dataset list.                    */
@@ -342,6 +356,7 @@ GDALDataset::~GDALDataset()
     {
         if( papoBands[i] != nullptr )
             delete papoBands[i];
+        papoBands[i] = nullptr;
     }
 
     CPLFree(papoBands);
@@ -413,9 +428,11 @@ void GDALDataset::AddToDatasetOpenList()
  * by FlushCache() is written in the file.
  *
  * This method is the same as the C function GDALFlushCache().
+ *
+ * @param bAtClosing Whether this is called from a GDALDataset destructor
  */
 
-void GDALDataset::FlushCache()
+void GDALDataset::FlushCache(bool bAtClosing)
 
 {
     // This sometimes happens if a dataset is destroyed before completely
@@ -426,7 +443,7 @@ void GDALDataset::FlushCache()
         for( int i = 0; i < nBands; ++i )
         {
             if( papoBands[i] != nullptr )
-                papoBands[i]->FlushCache();
+                papoBands[i]->FlushCache(bAtClosing);
         }
     }
 
@@ -462,7 +479,7 @@ void CPL_STDCALL GDALFlushCache( GDALDatasetH hDS )
 {
     VALIDATE_POINTER0(hDS, "GDALFlushCache");
 
-    GDALDataset::FromHandle(hDS)->FlushCache();
+    GDALDataset::FromHandle(hDS)->FlushCache(false);
 }
 
 /************************************************************************/
@@ -477,13 +494,13 @@ void CPL_STDCALL GDALFlushCache( GDALDatasetH hDS )
 /************************************************************************/
 
 //! @cond Doxygen_Suppress
-void GDALDataset::BlockBasedFlushCache()
+void GDALDataset::BlockBasedFlushCache(bool bAtClosing)
 
 {
     GDALRasterBand *poBand1 = GetRasterBand(1);
-    if( poBand1 == nullptr )
+    if( poBand1 == nullptr || (bSuppressOnClose && bAtClosing) )
     {
-        GDALDataset::FlushCache();
+        GDALDataset::FlushCache(bAtClosing);
         return;
     }
 
@@ -502,7 +519,7 @@ void GDALDataset::BlockBasedFlushCache()
         poBand->GetBlockSize(&nThisBlockXSize, &nThisBlockYSize);
         if( nThisBlockXSize != nBlockXSize && nThisBlockYSize != nBlockYSize )
         {
-            GDALDataset::FlushCache();
+            GDALDataset::FlushCache(bAtClosing);
             return;
         }
     }
@@ -895,7 +912,9 @@ const char *GDALDataset::_GetProjectionRef() { return (""); }
  *
  * Same as the C function GDALGetSpatialRef().
  *
- * When a projection definition is not available, null is returned
+ * When a projection definition is not available, null is returned. If used on
+ * a dataset where there are GCPs and not a geotransform, this method returns
+ * null. Use GetGCPSpatialRef() instead.
  *
  * @since GDAL 3.0
  *
@@ -1486,6 +1505,36 @@ void GDALDataset::MarkAsShared()
 }
 
 /************************************************************************/
+/*                            MarkAsShared()                            */
+/************************************************************************/
+
+/** Set that the dataset must be deleted on close. */
+void  GDALDataset::MarkSuppressOnClose()
+{
+    bSuppressOnClose = true;
+}
+
+/************************************************************************/
+/*                        CleanupPostFileClosing()                      */
+/************************************************************************/
+
+/** This method should be called by driver implementations in their destructor,
+ * after having closed all files, but before having freed resources that
+ * are needed for their GetFileList() implementation.
+ * This is used to implement MarkSuppressOnClose behavior.
+ */
+void GDALDataset::CleanupPostFileClosing()
+{
+    if( bSuppressOnClose )
+    {
+        char** papszFileList = GetFileList();
+        for( int i = 0; papszFileList && papszFileList[i]; ++i )
+            VSIUnlink(papszFileList[i]);
+        CSLDestroy(papszFileList);
+    }
+}
+
+/************************************************************************/
 /*                            GetGCPCount()                             */
 /************************************************************************/
 
@@ -1583,7 +1632,9 @@ const char *GDALDataset::_GetGCPProjection() { return ""; }
  *
  * Same as the C function GDALGetGCPSpatialRef().
  *
- * When a SRS is not available, null is returned
+ * When a SRS is not available, null is returned. If used on
+ * a dataset where there is a geotransform, and not GCPs, this method returns
+ * null. Use GetSpatialRef() instead.
  *
  * @since GDAL 3.0
  *
@@ -2060,7 +2111,7 @@ CPLErr GDALDataset::IRasterIO( GDALRWFlag eRWFlag,
          psExtraArg->eResampleAlg == GRIORA_Lanczos) &&
         !(nXSize == nBufXSize && nYSize == nBufYSize) && nBandCount > 1 )
     {
-        if( nBufXSize < nXSize && nBufYSize < nYSize )
+        if( nBufXSize < nXSize && nBufYSize < nYSize && AreOverviewsEnabled() )
         {
             int bTried = FALSE;
             const CPLErr eErr =
@@ -2450,6 +2501,14 @@ CPLErr GDALDataset::RasterIO( GDALRWFlag eRWFlag,
     if( psExtraArg == nullptr )
     {
         INIT_RASTERIO_EXTRA_ARG(sExtraArg);
+
+        // 4 below inits are not strictly needed but make Coverity Scan
+        // happy
+        sExtraArg.dfXOff = nXOff;
+        sExtraArg.dfYOff = nYOff;
+        sExtraArg.dfXSize = nXSize;
+        sExtraArg.dfYSize = nYSize;
+
         psExtraArg = &sExtraArg;
     }
     else if( psExtraArg->nVersion != RASTERIO_EXTRA_ARG_CURRENT_VERSION )
@@ -2560,7 +2619,7 @@ CPLErr GDALDataset::RasterIO( GDALRWFlag eRWFlag,
 /* -------------------------------------------------------------------- */
 /*      Call the format specific function.                              */
 /* -------------------------------------------------------------------- */
-    else if( eErr == CE_None )
+    else
     {
         eErr = IRasterIO(eRWFlag, nXOff, nYOff, nXSize, nYSize, pData,
                          nBufXSize, nBufYSize, eBufType, nBandCount, panBandMap,
@@ -2843,12 +2902,11 @@ GDALDatasetAdviseRead( GDALDatasetH hDS,
 }
 
 /************************************************************************/
-/*                         AntiRecursionStruct                          */
+/*                         GDALAntiRecursionStruct                      */
 /************************************************************************/
 
-namespace {
 // Prevent infinite recursion.
-struct AntiRecursionStruct
+struct GDALAntiRecursionStruct
 {
     struct DatasetContext
     {
@@ -2876,19 +2934,19 @@ struct AntiRecursionStruct
 
     std::set<DatasetContext, DatasetContextCompare> aosDatasetNamesWithFlags{};
     int nRecLevel = 0;
+    std::map<std::string, int> m_oMapDepth{};
 };
-} // namespace
 
 #ifdef WIN32
 // Currently thread_local and C++ objects don't work well with DLL on Windows
 static void FreeAntiRecursion( void* pData )
 {
-    delete static_cast<AntiRecursionStruct*>(pData);
+    delete static_cast<GDALAntiRecursionStruct*>(pData);
 }
 
-static AntiRecursionStruct& GetAntiRecursion()
+static GDALAntiRecursionStruct& GetAntiRecursion()
 {
-    static AntiRecursionStruct dummy;
+    static GDALAntiRecursionStruct dummy;
     int bMemoryErrorOccurred = false;
     void* pData = CPLGetTLSEx(CTLS_GDALOPEN_ANTIRECURSION, &bMemoryErrorOccurred);
     if( bMemoryErrorOccurred )
@@ -2897,7 +2955,7 @@ static AntiRecursionStruct& GetAntiRecursion()
     }
     if( pData == nullptr)
     {
-        auto pAntiRecursion = new AntiRecursionStruct();
+        auto pAntiRecursion = new GDALAntiRecursionStruct();
         CPLSetTLSWithFreeFuncEx( CTLS_GDALOPEN_ANTIRECURSION,
                                  pAntiRecursion,
                                  FreeAntiRecursion, &bMemoryErrorOccurred );
@@ -2908,15 +2966,40 @@ static AntiRecursionStruct& GetAntiRecursion()
         }
         return *pAntiRecursion;
     }
-    return *static_cast<AntiRecursionStruct*>(pData);
+    return *static_cast<GDALAntiRecursionStruct*>(pData);
 }
 #else
-static thread_local AntiRecursionStruct g_tls_antiRecursion;
-static AntiRecursionStruct& GetAntiRecursion()
+static thread_local GDALAntiRecursionStruct g_tls_antiRecursion;
+static GDALAntiRecursionStruct& GetAntiRecursion()
 {
     return g_tls_antiRecursion;
 }
 #endif
+
+//! @cond Doxygen_Suppress
+GDALAntiRecursionGuard::GDALAntiRecursionGuard(const std::string& osIdentifier):
+    m_psAntiRecursionStruct(&GetAntiRecursion()),
+    m_osIdentifier(osIdentifier),
+    m_nDepth(++ m_psAntiRecursionStruct->m_oMapDepth[m_osIdentifier])
+{
+    CPLAssert(!osIdentifier.empty());
+}
+
+GDALAntiRecursionGuard::GDALAntiRecursionGuard(const GDALAntiRecursionGuard& other, const std::string& osIdentifier):
+    m_psAntiRecursionStruct(other.m_psAntiRecursionStruct),
+    m_osIdentifier(osIdentifier.empty() ? osIdentifier : other.m_osIdentifier + osIdentifier),
+    m_nDepth(m_osIdentifier.empty() ? 0 : ++ m_psAntiRecursionStruct->m_oMapDepth[m_osIdentifier])
+{
+}
+
+GDALAntiRecursionGuard::~GDALAntiRecursionGuard()
+{
+    if( !m_osIdentifier.empty() )
+    {
+        -- m_psAntiRecursionStruct->m_oMapDepth[m_osIdentifier];
+    }
+}
+//! @endcond
 
 /************************************************************************/
 /*                            GetFileList()                             */
@@ -2946,6 +3029,13 @@ char **GDALDataset::GetFileList()
     CPLString osMainFilename = GetDescription();
     VSIStatBufL sStat;
 
+    GDALAntiRecursionStruct& sAntiRecursion = GetAntiRecursion();
+    const GDALAntiRecursionStruct::DatasetContext datasetCtxt(
+        osMainFilename, 0, 0);
+    auto& aosDatasetList = sAntiRecursion.aosDatasetNamesWithFlags;
+    if( aosDatasetList.find(datasetCtxt) != aosDatasetList.end() )
+        return nullptr;
+
 /* -------------------------------------------------------------------- */
 /*      Is the main filename even a real filesystem object?             */
 /* -------------------------------------------------------------------- */
@@ -2960,7 +3050,6 @@ char **GDALDataset::GetFileList()
     if( bMainFileReal )
         papszList = CSLAddString(papszList, osMainFilename);
 
-    AntiRecursionStruct& sAntiRecursion = GetAntiRecursion();
     if( sAntiRecursion.nRecLevel == 100 )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -2974,9 +3063,11 @@ char **GDALDataset::GetFileList()
 /* -------------------------------------------------------------------- */
     if(oOvManager.IsInitialized() && oOvManager.poODS != nullptr)
     {
+        auto iter = aosDatasetList.insert(datasetCtxt).first;
         char **papszOvrList = oOvManager.poODS->GetFileList();
         papszList = CSLInsertStrings(papszList, -1, papszOvrList);
         CSLDestroy(papszOvrList);
+        aosDatasetList.erase(iter);
     }
 
 /* -------------------------------------------------------------------- */
@@ -2984,6 +3075,7 @@ char **GDALDataset::GetFileList()
 /* -------------------------------------------------------------------- */
     if( oOvManager.HaveMaskFile() )
     {
+        auto iter = aosDatasetList.insert(datasetCtxt).first;
         char **papszMskList = oOvManager.poMaskDS->GetFileList();
         char **papszIter = papszMskList;
         while( papszIter && *papszIter )
@@ -2993,6 +3085,7 @@ char **GDALDataset::GetFileList()
             ++papszIter;
         }
         CSLDestroy(papszMskList);
+        aosDatasetList.erase(iter);
     }
 
     --sAntiRecursion.nRecLevel;
@@ -3047,7 +3140,7 @@ char ** CPL_STDCALL GDALGetFileList( GDALDatasetH hDS )
  *                 specified.
  * @return CE_None on success or CE_Failure on an error.
  *
- * @see http://trac.osgeo.org/gdal/wiki/rfc15_nodatabitmask
+ * @see https://gdal.org/development/rfc/rfc15_nodatabitmask.html
  * @see GDALRasterBand::CreateMaskBand()
  *
  */
@@ -3194,9 +3287,15 @@ GDALOpen( const char * pszFilename, GDALAccess eAccess )
  * @param nOpenFlags a combination of GDAL_OF_ flags that may be combined
  * through logical or operator.
  * <ul>
- * <li>Driver kind: GDAL_OF_RASTER for raster drivers, GDAL_OF_VECTOR for vector
- *     drivers, GDAL_OF_GNM for Geographic Network Model drivers.
- *     If none of the value is specified, all kinds are implied.</li>
+ * <li>Driver kind:
+ *   <ul>
+ *     <li>GDAL_OF_RASTER for raster drivers,</li>
+ *     <li>GDAL_OF_MULTIDIM_RASTER for multidimensional raster drivers,</li>
+ *     <li>GDAL_OF_VECTOR for vector drivers,</li>
+ *     <li>GDAL_OF_GNM for Geographic Network Model drivers.</li>
+ *    </ul>
+ *    GDAL_OF_RASTER and GDAL_OF_MULTIDIM_RASTER are generally mutually exclusive.
+ *    If none of the value is specified, GDAL_OF_RASTER | GDAL_OF_VECTOR | GDAL_OF_GNM is implied.</li>
  * <li>Access mode: GDAL_OF_READONLY (exclusive)or GDAL_OF_UPDATE.</li>
  * <li>Shared mode: GDAL_OF_SHARED. If set, it allows the sharing of GDALDataset
  * handles for a dataset with other callers that have set GDAL_OF_SHARED.
@@ -3300,7 +3399,7 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
                            const_cast<char **>(papszSiblingFiles));
     oOpenInfo.papszAllowedDrivers = papszAllowedDrivers;
 
-    AntiRecursionStruct& sAntiRecursion = GetAntiRecursion();
+    GDALAntiRecursionStruct& sAntiRecursion = GetAntiRecursion();
     if( sAntiRecursion.nRecLevel == 100 )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
@@ -3308,7 +3407,7 @@ GDALDatasetH CPL_STDCALL GDALOpenEx( const char *pszFilename,
         return nullptr;
     }
 
-    auto dsCtxt = AntiRecursionStruct::DatasetContext(
+    auto dsCtxt = GDALAntiRecursionStruct::DatasetContext(
         std::string(pszFilename), nOpenFlags, CSLCount(papszAllowedDrivers));
     if( sAntiRecursion.aosDatasetNamesWithFlags.find(dsCtxt) !=
                 sAntiRecursion.aosDatasetNamesWithFlags.end() )
@@ -3805,7 +3904,7 @@ int CPL_STDCALL GDALDumpOpenDatasets( FILE *fp )
  * should be deallocated by the application at that point.
  *
  * Additional information on asynchronous IO in GDAL may be found at:
- *   http://trac.osgeo.org/gdal/wiki/rfc24_progressive_data_support
+ *   https://gdal.org/development/rfc/rfc24_progressive_data_support.html
  *
  * This method is the same as the C GDALBeginAsyncReader() function.
  *
@@ -3896,7 +3995,7 @@ GDALAsyncReader *GDALDataset::BeginAsyncReader(
  * should be deallocated by the application at that point.
  *
  * Additional information on asynchronous IO in GDAL may be found at:
- *   http://trac.osgeo.org/gdal/wiki/rfc24_progressive_data_support
+ *   https://gdal.org/development/rfc/rfc24_progressive_data_support.html
  *
  * This method is the same as the C++ GDALDataset::BeginAsyncReader() method.
  *
@@ -4390,6 +4489,34 @@ OGRLayerH GDALDatasetGetLayerByName( GDALDatasetH hDS, const char *pszName )
 }
 
 /************************************************************************/
+/*                        GDALDatasetIsLayerPrivate()                   */
+/************************************************************************/
+
+/**
+ \brief Returns true if the layer at the specified index is deemed a private or
+ system table, or an internal detail only.
+
+ This function is the same as the C++ method GDALDataset::IsLayerPrivate()
+
+ @since GDAL 3.4
+
+ @param hDS the dataset handle.
+ @param iLayer a layer number between 0 and GetLayerCount()-1.
+
+ @return true if the layer is a private or system table.
+*/
+
+int GDALDatasetIsLayerPrivate( GDALDatasetH hDS, int iLayer )
+
+{
+    VALIDATE_POINTER1(hDS, "GDALDatasetIsLayerPrivate", false);
+
+    const bool res = GDALDataset::FromHandle(hDS)->IsLayerPrivate(iLayer);
+
+    return res ? 1 : 0;
+}
+
+/************************************************************************/
 /*                        GDALDatasetDeleteLayer()                      */
 /************************************************************************/
 
@@ -4707,9 +4834,9 @@ OGRLayerH GDALDatasetExecuteSQL( GDALDatasetH hDS,
 
 /**
  \brief Abort any SQL statement running in the data store.
- 
+
  This function can be safely called from any thread (pending that the dataset object is still alive). Driver implementations will make sure that it can be called in a thread-safe way.
- 
+
  This might not be implemented by all drivers. At time of writing, only SQLite, GPKG and PG drivers implement it
 
  This method is the same as the C++ method GDALDataset::AbortSQL()
@@ -6225,6 +6352,24 @@ GDALDataset::ExecuteSQL( const char *pszStatement,
             CSLDestroy(papszTokens);
             return nullptr;
         }
+        else if( nTokens == 6 && EQUAL(papszTokens[3], "RENAME") &&
+                 EQUAL(papszTokens[4], "TO") )
+        {
+            const char* pszSrcTableName = papszTokens[2];
+            const char* pszDstTableName = papszTokens[5];
+            auto poSrcLayer = GetLayerByName(pszSrcTableName);
+            if( poSrcLayer )
+            {
+                CPL_IGNORE_RET_VAL( poSrcLayer->Rename( pszDstTableName ) );
+            }
+            else
+            {
+                CPLError(CE_Failure, CPLE_AppDefined,
+                         "Invalid layer name");
+            }
+            CSLDestroy(papszTokens);
+            return nullptr;
+        }
         else if( nTokens >= 4 && EQUAL(papszTokens[3], "RENAME") )
         {
             ProcessSQLAlterTableRenameColumn(pszStatement);
@@ -6330,7 +6475,7 @@ GDALDataset::ExecuteSQL( const char *pszStatement,
 */
 
 OGRErr GDALDataset::AbortSQL(  )
-{  
+{
   CPLError(CE_Failure, CPLE_NotSupported, "AbortSQL is not supported for this driver.");
   return OGRERR_UNSUPPORTED_OPERATION;
 }
@@ -6822,6 +6967,26 @@ int GDALDataset::GetLayerCount() { return 0; }
 */
 
 OGRLayer *GDALDataset::GetLayer(CPL_UNUSED int iLayer) { return nullptr; }
+
+/************************************************************************/
+/*                                IsLayerPrivate()                      */
+/************************************************************************/
+
+/**
+ \fn GDALDataset::IsLayerPrivate(int)
+ \brief Returns true if the layer at the specified index is deemed a private or
+ system table, or an internal detail only.
+
+ This method is the same as the C function GDALDatasetIsLayerPrivate().
+
+ @param iLayer a layer number between 0 and GetLayerCount()-1.
+
+ @return true if the layer is a private or system table.
+
+ @since GDAL 3.4
+*/
+
+bool GDALDataset::IsLayerPrivate(CPL_UNUSED int iLayer) const { return false; }
 
 /************************************************************************/
 /*                           ResetReading()                             */
@@ -8218,7 +8383,7 @@ GDALRasterBand* GDALDataset::Bands::operator[](size_t iBand)
  \brief Return the root GDALGroup of this dataset.
 
  Only valid for multidimensional datasets.
- 
+
  This is the same as the C function GDALDatasetGetRootGroup().
 
  @since GDAL 3.1
@@ -8267,6 +8432,9 @@ bool GDALDataset::GetRawBinaryLayout(RawBinaryLayout& sLayout)
 
 void GDALDataset::ClearStatistics()
 {
+    auto poRootGroup = GetRootGroup();
+    if( poRootGroup )
+        poRootGroup->ClearStatistics();
 }
 
 /************************************************************************/
@@ -8286,3 +8454,356 @@ void GDALDatasetClearStatistics(GDALDatasetH hDS)
     VALIDATE_POINTER0(hDS, __func__);
     GDALDataset::FromHandle(hDS)->ClearStatistics();
 }
+
+
+/************************************************************************/
+/*                        GetFieldDomainNames()                         */
+/************************************************************************/
+
+/** Returns a list of the names of all field domains stored in the dataset.
+ *
+ * @note The default implementation assumes that drivers fully populate m_oMapFieldDomains
+ * when opening a dataset. If this assumption is incorrect then
+ * a specialized implementation of GetFieldDomainNames() must be implemented.
+ *
+ * @param papszOptions Driver specific options determining how attributes
+ * should be retrieved. Pass nullptr for default behavior.
+ *
+ * @return list of field domain names
+ * @since GDAL 3.5
+ */
+std::vector<std::string> GDALDataset::GetFieldDomainNames(CPL_UNUSED CSLConstList papszOptions) const{
+
+    std::vector<std::string> names;
+    names.reserve( m_oMapFieldDomains.size() );
+    for(const auto& it : m_oMapFieldDomains ) {
+        names.emplace_back( it.first );
+    }
+    return names;
+}
+
+
+/************************************************************************/
+/*                      GDALDatasetGetFieldDomainNames()                */
+/************************************************************************/
+
+/** Returns a list of the names of all field domains stored in the dataset.
+ *
+ * This is the same as the C++ method GDALDataset::GetFieldDomainNames().
+ *
+ * @param hDS Dataset handle.
+ * @param papszOptions Driver specific options determining how attributes
+ * should be retrieved. Pass nullptr for default behavior.
+ *
+ * @return list of field domain names, to be freed with CSLDestroy()
+ * @since GDAL 3.5
+ */
+char ** GDALDatasetGetFieldDomainNames( GDALDatasetH hDS,CSLConstList papszOptions )
+{
+    VALIDATE_POINTER1(hDS, __func__, nullptr);
+    auto names = GDALDataset::FromHandle(hDS)->GetFieldDomainNames(papszOptions);
+    CPLStringList res;
+    for( const auto& name: names )
+    {
+        res.AddString(name.c_str());
+    }
+    return res.StealList();
+}
+
+
+/************************************************************************/
+/*                        GetFieldDomain()                              */
+/************************************************************************/
+
+/** Get a field domain from its name.
+ *
+ * @return the field domain, or nullptr if not found.
+ * @since GDAL 3.3
+ */
+const OGRFieldDomain* GDALDataset::GetFieldDomain(const std::string& name) const
+{
+    const auto iter = m_oMapFieldDomains.find(name);
+    if( iter == m_oMapFieldDomains.end() )
+        return nullptr;
+    return iter->second.get();
+}
+
+/************************************************************************/
+/*                      GDALDatasetGetFieldDomain()                     */
+/************************************************************************/
+
+/** Get a field domain from its name.
+ *
+ * This is the same as the C++ method GDALDataset::GetFieldDomain().
+ *
+ * @param hDS Dataset handle.
+ * @param pszName Name of field domain.
+ * @return the field domain (ownership remains to the dataset), or nullptr if not found.
+ * @since GDAL 3.3
+ */
+OGRFieldDomainH GDALDatasetGetFieldDomain(GDALDatasetH hDS,
+                                          const char* pszName)
+{
+    VALIDATE_POINTER1(hDS, __func__, nullptr);
+    VALIDATE_POINTER1(pszName, __func__, nullptr);
+    return OGRFieldDomain::ToHandle(
+        const_cast<OGRFieldDomain*>(
+            GDALDataset::FromHandle(hDS)->GetFieldDomain(pszName)));
+}
+
+/************************************************************************/
+/*                         AddFieldDomain()                             */
+/************************************************************************/
+
+/** Add a field domain to the dataset.
+ *
+ * Only a few drivers will support this operation, and some of them might only
+ * support it only for some types of field domains.
+ * At the time of writing (GDAL 3.3), only the Memory and GeoPackage drivers
+ * support this operation. A dataset having at least some support for this
+ * operation should report the ODsCAddFieldDomain dataset capability.
+ *
+ * Anticipated failures will not be emitted through the CPLError()
+ * infrastructure, but will be reported in the failureReason output parameter.
+ *
+ * @note Drivers should make sure to update m_oMapFieldDomains in order for the
+ * default implementation of GetFieldDomainNames() to work correctly, or alternatively
+ * a specialized implementation of GetFieldDomainNames() should be implemented.
+ *
+ * @param domain The domain definition.
+ * @param failureReason      Output parameter. Will contain an error message if
+ *                           an error occurs.
+ * @return true in case of success.
+ * @since GDAL 3.3
+ */
+bool GDALDataset::AddFieldDomain(CPL_UNUSED std::unique_ptr<OGRFieldDomain>&& domain,
+                                 std::string& failureReason)
+{
+    failureReason = "AddFieldDomain not supported by this driver";
+    return false;
+}
+
+/************************************************************************/
+/*                     GDALDatasetAddFieldDomain()                      */
+/************************************************************************/
+
+/** Add a field domain to the dataset.
+ *
+ * Only a few drivers will support this operation, and some of them might only
+ * support it only for some types of field domains.
+ * At the time of writing (GDAL 3.3), only the Memory and GeoPackage drivers
+ * support this operation. A dataset having at least some support for this
+ * operation should report the ODsCAddFieldDomain dataset capability.
+ *
+ * Anticipated failures will not be emitted through the CPLError()
+ * infrastructure, but will be reported in the ppszFailureReason output parameter.
+ *
+ * @param hDS                Dataset handle.
+ * @param hFieldDomain       The domain definition. Contrary to the C++ version,
+ *                           the passed object is copied.
+ * @param ppszFailureReason  Output parameter. Will contain an error message if
+ *                           an error occurs (*ppszFailureReason to be freed
+ *                           with CPLFree). May be NULL.
+ * @return true in case of success.
+ * @since GDAL 3.3
+ */
+bool GDALDatasetAddFieldDomain(GDALDatasetH hDS,
+                               OGRFieldDomainH hFieldDomain,
+                               char** ppszFailureReason)
+{
+    VALIDATE_POINTER1(hDS, __func__, false);
+    VALIDATE_POINTER1(hFieldDomain, __func__, false);
+    auto poDomain = std::unique_ptr<OGRFieldDomain>(
+                 OGRFieldDomain::FromHandle(hFieldDomain)->Clone());
+    if( poDomain == nullptr )
+        return false;
+    std::string failureReason;
+    const bool bRet =
+        GDALDataset::FromHandle(hDS)->AddFieldDomain(
+             std::move(poDomain), failureReason);
+    if( ppszFailureReason )
+    {
+        *ppszFailureReason = failureReason.empty() ?
+                                nullptr : CPLStrdup(failureReason.c_str());
+    }
+    return bRet;
+}
+
+
+/************************************************************************/
+/*                        DeleteFieldDomain()                           */
+/************************************************************************/
+
+/** Removes a field domain from the dataset.
+ *
+ * Only a few drivers will support this operation.
+ *
+ * At the time of writing (GDAL 3.5), only the Memory and GeoPackage drivers
+ * support this operation. A dataset having at least some support for this
+ * operation should report the ODsCDeleteFieldDomain dataset capability.
+ *
+ * Anticipated failures will not be emitted through the CPLError()
+ * infrastructure, but will be reported in the failureReason output parameter.
+ *
+ * @note Drivers should make sure to update m_oMapFieldDomains in order for the
+ * default implementation of GetFieldDomainNames() to work correctly, or alternatively
+ * a specialized implementation of GetFieldDomainNames() should be implemented.
+ *
+ * @param name The domain name.
+ * @param failureReason      Output parameter. Will contain an error message if
+ *                           an error occurs.
+ * @return true in case of success.
+ * @since GDAL 3.5
+ */
+bool GDALDataset::DeleteFieldDomain(CPL_UNUSED const std::string& name,
+                                    std::string& failureReason)
+{
+    failureReason = "DeleteFieldDomain not supported by this driver";
+    return false;
+}
+
+/************************************************************************/
+/*                  GDALDatasetDeleteFieldDomain()                      */
+/************************************************************************/
+
+/** Removes a field domain from the dataset.
+ *
+ * Only a few drivers will support this operation.
+ *
+ * At the time of writing (GDAL 3.5), only the Memory and GeoPackage drivers
+ * support this operation. A dataset having at least some support for this
+ * operation should report the ODsCDeleteFieldDomain dataset capability.
+ *
+ * Anticipated failures will not be emitted through the CPLError()
+ * infrastructure, but will be reported in the ppszFailureReason output parameter.
+ *
+ * @param hDS                Dataset handle.
+ * @param pszName            The domain name.
+ * @param ppszFailureReason  Output parameter. Will contain an error message if
+ *                           an error occurs (*ppszFailureReason to be freed
+ *                           with CPLFree). May be NULL.
+ * @return true in case of success.
+ * @since GDAL 3.3
+ */
+bool GDALDatasetDeleteFieldDomain(GDALDatasetH hDS,
+                                  const char* pszName,
+                                  char** ppszFailureReason)
+{
+    VALIDATE_POINTER1(hDS, __func__, false);
+    VALIDATE_POINTER1(pszName, __func__, false);
+    std::string failureReason;
+    const bool bRet =
+        GDALDataset::FromHandle(hDS)->DeleteFieldDomain(
+             pszName, failureReason);
+    if( ppszFailureReason )
+    {
+        *ppszFailureReason = failureReason.empty() ?
+                                nullptr : CPLStrdup(failureReason.c_str());
+    }
+    return bRet;
+}
+
+
+/************************************************************************/
+/*                       UpdateFieldDomain()                            */
+/************************************************************************/
+
+
+/** Updates an existing field domain by replacing its definition.
+ *
+ * The existing field domain with matching name will be replaced.
+ *
+ * Only a few drivers will support this operation, and some of them might only
+ * support it only for some types of field domains.
+ * At the time of writing (GDAL 3.5), only the Memory driver
+ * supports this operation. A dataset having at least some support for this
+ * operation should report the ODsCUpdateFieldDomain dataset capability.
+ *
+ * Anticipated failures will not be emitted through the CPLError()
+ * infrastructure, but will be reported in the failureReason output parameter.
+ *
+ * @param domain The domain definition.
+ * @param failureReason      Output parameter. Will contain an error message if
+ *                           an error occurs.
+ * @return true in case of success.
+ * @since GDAL 3.5
+ */
+bool GDALDataset::UpdateFieldDomain(CPL_UNUSED std::unique_ptr<OGRFieldDomain> &&domain, std::string &failureReason)
+{
+    failureReason = "UpdateFieldDomain not supported by this driver";
+    return false;
+}
+
+
+/************************************************************************/
+/*                  GDALDatasetUpdateFieldDomain()                      */
+/************************************************************************/
+
+/** Updates an existing field domain by replacing its definition.
+ *
+ * The existing field domain with matching name will be replaced.
+ *
+ * Only a few drivers will support this operation, and some of them might only
+ * support it only for some types of field domains.
+ * At the time of writing (GDAL 3.5), only the Memory driver
+ * supports this operation. A dataset having at least some support for this
+ * operation should report the ODsCUpdateFieldDomain dataset capability.
+ *
+ * Anticipated failures will not be emitted through the CPLError()
+ * infrastructure, but will be reported in the failureReason output parameter.
+ *
+ * @param hDS                Dataset handle.
+ * @param hFieldDomain       The domain definition. Contrary to the C++ version,
+ *                           the passed object is copied.
+ * @param ppszFailureReason  Output parameter. Will contain an error message if
+ *                           an error occurs (*ppszFailureReason to be freed
+ *                           with CPLFree). May be NULL.
+ * @return true in case of success.
+ * @since GDAL 3.5
+ */
+bool GDALDatasetUpdateFieldDomain(GDALDatasetH hDS,
+                                  OGRFieldDomainH hFieldDomain,
+                                  char** ppszFailureReason)
+{
+    VALIDATE_POINTER1(hDS, __func__, false);
+    VALIDATE_POINTER1(hFieldDomain, __func__, false);
+    auto poDomain = std::unique_ptr<OGRFieldDomain>(
+                 OGRFieldDomain::FromHandle(hFieldDomain)->Clone());
+    if( poDomain == nullptr )
+        return false;
+    std::string failureReason;
+    const bool bRet =
+        GDALDataset::FromHandle(hDS)->UpdateFieldDomain(
+             std::move(poDomain), failureReason);
+    if( ppszFailureReason )
+    {
+        *ppszFailureReason = failureReason.empty() ?
+                                nullptr : CPLStrdup(failureReason.c_str());
+    }
+    return bRet;
+}
+
+//! @cond Doxygen_Suppress
+
+/************************************************************************/
+/*                       SetEnableOverviews()                           */
+/************************************************************************/
+
+void GDALDataset::SetEnableOverviews(bool bEnable)
+{
+    if( m_poPrivate )
+    {
+        m_poPrivate->m_bOverviewsEnabled = bEnable;
+    }
+}
+
+/************************************************************************/
+/*                      AreOverviewsEnabled()                           */
+/************************************************************************/
+
+bool GDALDataset::AreOverviewsEnabled() const
+{
+    return m_poPrivate ? m_poPrivate->m_bOverviewsEnabled : true;
+}
+
+//! @endcond

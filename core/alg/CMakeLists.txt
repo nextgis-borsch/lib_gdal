@@ -30,6 +30,7 @@ set(TARGET_NAME alg)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/marching_squares)
 include_directories(${CMAKE_SOURCE_DIR}/core/ogr/ogrsf_frmts)
+include_directories(${CMAKE_SOURCE_DIR}/core/frmts/mem)
 include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/vrt)
 
 set(LIB_HHEADERS
@@ -48,6 +49,11 @@ set(LIB_HHEADERS_PRIV
     gvgcpfit.h
     thinplatespline.h
     armadillo_headers.h
+    gdallinearsystem.h
+    gdalgeoloc.h
+    gdalgeoloc_carray_accessor.h
+    gdalgeoloc_dataset_accessor.h
+    gdalgeolocquadtree.h
 )
 
 set(LIB_CSOURCES
@@ -86,6 +92,7 @@ set(LIB_CSOURCES
     gdalapplyverticalshiftgrid.cpp
     gdallinearsystem.cpp
     viewshed.cpp
+    gdalgeolocquadtree.cpp
 )
 
 find_anyproject(QHULL DEFAULT OFF)

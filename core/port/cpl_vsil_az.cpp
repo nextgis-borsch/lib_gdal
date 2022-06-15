@@ -6,7 +6,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2017-2018, Even Rouault <even.rouault at spatialys.com>
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, including without limitation
@@ -44,6 +44,8 @@
 
 CPL_CVSID("$Id$")
 
+// #define DEBUG_VERBOSE 1
+
 #ifndef HAVE_CURL
 
 void VSIInstallAzureFileHandler( void )
@@ -58,6 +60,8 @@ void VSIInstallAzureFileHandler( void )
 
 #define ENABLE_DEBUG 0
 
+#define unchecked_curl_easy_setopt(handle,opt,param) CPL_IGNORE_RET_VAL(curl_easy_setopt(handle,opt,param))
+
 namespace cpl {
 
 const char GDAL_MARKER_FOR_DIR[] = ".gdal_marker_for_dir";
@@ -66,13 +70,12 @@ const char GDAL_MARKER_FOR_DIR[] = ".gdal_marker_for_dir";
 /*                             VSIDIRAz                                 */
 /************************************************************************/
 
-struct VSIDIRAz: public VSIDIR
+struct VSIDIRAz: public VSIDIRWithMissingDirSynthesis
 {
     CPLString osRootPath{};
     int nRecurseDepth = 0;
 
     CPLString osNextMarker{};
-    std::vector<std::unique_ptr<VSIDIREntry>> aoEntries{};
     int nPos = 0;
 
     CPLString osBucket{};
@@ -81,6 +84,8 @@ struct VSIDIRAz: public VSIDIR
     std::unique_ptr<IVSIS3LikeHandleHelper> poHandleHelper{};
     int nMaxFiles = 0;
     bool bCacheEntries = true;
+    bool m_bSynthetizeMissingDirectories = false;
+    std::string m_osFilterPrefix{};
 
     explicit VSIDIRAz(IVSIS3LikeFSHandler *poFSIn): poFS(poFSIn) {}
 
@@ -127,6 +132,16 @@ bool VSIDIRAz::AnalyseAzureFileList(
     if( psEnumerationResults )
     {
         CPLString osPrefix = CPLGetXMLValue(psEnumerationResults, "Prefix", "");
+        if( osPrefix.empty() )
+        {
+            // in the case of an empty bucket
+            bNonEmpty = true;
+        }
+        else if( osPrefix.endsWith(m_osFilterPrefix) )
+        {
+            osPrefix.resize(osPrefix.size() - m_osFilterPrefix.size());
+        }
+
         CPLXMLNode* psBlobs = CPLGetXMLNode(psEnumerationResults, "Blobs");
         if( psBlobs == nullptr )
         {
@@ -200,10 +215,25 @@ bool VSIDIRAz::AnalyseAzureFileList(
                 }
                 else if( pszKey && strlen(pszKey) > osPrefix.size() )
                 {
+                    const std::string osKeySuffix = pszKey + osPrefix.size();
+                    if( m_bSynthetizeMissingDirectories)
+                    {
+                        const auto nLastSlashPos = osKeySuffix.rfind('/');
+                        if( nLastSlashPos != std::string::npos &&
+                            (m_aosSubpathsStack.empty() ||
+                             osKeySuffix.compare(0, nLastSlashPos, m_aosSubpathsStack.back()) != 0) )
+                        {
+                            const bool bAddEntryForThisSubdir =
+                                nLastSlashPos != osKeySuffix.size() - 1;
+                            SynthetizeMissingDirectories(osKeySuffix.substr(0, nLastSlashPos),
+                                                         bAddEntryForThisSubdir);
+                        }
+                    }
+
                     aoEntries.push_back(
                         std::unique_ptr<VSIDIREntry>(new VSIDIREntry()));
                     auto& entry = aoEntries.back();
-                    entry->pszName = CPLStrdup(pszKey + osPrefix.size());
+                    entry->pszName = CPLStrdup(osKeySuffix.c_str());
                     entry->nSize = static_cast<GUIntBig>(
                         CPLAtoGIntBig(CPLGetXMLValue(psIter, "Properties.Content-Length", "0")));
                     entry->bSizeKnown = true;
@@ -250,6 +280,7 @@ bool VSIDIRAz::AnalyseAzureFileList(
                         prop.bIsDirectory = false;
                         prop.mTime = static_cast<time_t>(entry->nMTime);
                         prop.ETag = ETag;
+                        prop.nMode = entry->nMode;
 
                         CPLString osCachedFilename =
                             osBaseURL + "/" + CPLAWSURLEncode(osPrefix, false) +
@@ -297,6 +328,7 @@ bool VSIDIRAz::AnalyseAzureFileList(
                             prop.bHasComputedFileSize = true;
                             prop.fileSize = 0;
                             prop.mTime = 0;
+                            prop.nMode = entry->nMode;
 
                             CPLString osCachedFilename =
                                 osBaseURL + "/" + CPLAWSURLEncode(osPrefix, false) +
@@ -360,7 +392,9 @@ bool VSIDIRAz::IssueListDir()
         if( nRecurseDepth == 0 )
             poHandleHelper->AddQueryParameter("delimiter", "/");
         if( !osObjectKey.empty() )
-            poHandleHelper->AddQueryParameter("prefix", osObjectKey + "/");
+            poHandleHelper->AddQueryParameter("prefix", osObjectKey + "/" + m_osFilterPrefix);
+        else if( !m_osFilterPrefix.empty() )
+            poHandleHelper->AddQueryParameter("prefix", m_osFilterPrefix);
     }
 
     struct curl_slist* headers =
@@ -368,7 +402,7 @@ bool VSIDIRAz::IssueListDir()
 
     headers = VSICurlMergeHeaders(headers,
                             poHandleHelper->GetCurlHeaders("GET", headers));
-    curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
+    unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
 
     CurlRequestHelper requestHelper;
     const long response_code =
@@ -431,6 +465,9 @@ class VSIAzureFSHandler final : public IVSIS3LikeFSHandler
 {
     CPL_DISALLOW_COPY_ASSIGN(VSIAzureFSHandler)
 
+    int CreateContainer( const std::string& osDirname );
+    int DeleteContainer( const std::string& osDirname );
+
   protected:
     VSICurlHandle* CreateFileHandle( const char* pszFilename ) override;
     CPLString GetURLFromFilename( const CPLString& osFilename ) override;
@@ -450,6 +487,8 @@ class VSIAzureFSHandler final : public IVSIS3LikeFSHandler
 
     void ClearCache() override;
 
+    bool IsAllowedHeaderForObjectCreation( const char* pszHeaderName ) override { return STARTS_WITH(pszHeaderName, "x-ms-"); }
+
   public:
     VSIAzureFSHandler() = default;
     ~VSIAzureFSHandler() override = default;
@@ -459,13 +498,22 @@ class VSIAzureFSHandler final : public IVSIS3LikeFSHandler
 
     VSIVirtualHandle *Open( const char *pszFilename,
                             const char *pszAccess,
-                            bool bSetError ) override;
+                            bool bSetError,
+                            CSLConstList papszOptions ) override;
 
     int Unlink( const char *pszFilename ) override;
     int Mkdir( const char *, long  ) override;
     int Rmdir( const char * ) override;
     int Stat( const char *pszFilename, VSIStatBufL *pStatBuf,
               int nFlags ) override;
+
+    char** GetFileMetadata( const char * pszFilename, const char* pszDomain,
+                            CSLConstList papszOptions ) override;
+
+    bool   SetFileMetadata( const char * pszFilename,
+                            CSLConstList papszMetadata,
+                            const char* pszDomain,
+                            CSLConstList papszOptions ) override;
 
     const char* GetOptions() override;
 
@@ -486,7 +534,8 @@ class VSIAzureFSHandler final : public IVSIS3LikeFSHandler
                        size_t nBufferSize,
                        IVSIS3LikeHandleHelper *poS3HandleHelper,
                        int nMaxRetry,
-                       double dfRetryDelay);
+                       double dfRetryDelay,
+                       CSLConstList papszOptions);
     bool PutBlockList(const CPLString& osFilename,
                       const std::vector<CPLString>& aosBlockIds,
                       IVSIS3LikeHandleHelper *poS3HandleHelper,
@@ -501,7 +550,8 @@ class VSIAzureFSHandler final : public IVSIS3LikeFSHandler
                                 const std::string& /* osFilename */ ,
                                 IVSIS3LikeHandleHelper *,
                                 int /* nMaxRetry */,
-                                double /* dfRetryDelay */) override { return "dummy"; }
+                                double /* dfRetryDelay */,
+                                CSLConstList /* papszOptions */) override { return "dummy"; }
 
     CPLString UploadPart(const CPLString& osFilename,
                          int nPartNumber,
@@ -511,10 +561,11 @@ class VSIAzureFSHandler final : public IVSIS3LikeFSHandler
                          size_t nBufferSize,
                          IVSIS3LikeHandleHelper *poS3HandleHelper,
                          int nMaxRetry,
-                         double dfRetryDelay) override
+                         double dfRetryDelay,
+                         CSLConstList papszOptions) override
     {
         return PutBlock(osFilename, nPartNumber, pabyBuffer, nBufferSize,
-                        poS3HandleHelper, nMaxRetry, dfRetryDelay);
+                        poS3HandleHelper, nMaxRetry, dfRetryDelay, papszOptions);
     }
 
     bool CompleteMultipart(const CPLString& osFilename,
@@ -534,6 +585,8 @@ class VSIAzureFSHandler final : public IVSIS3LikeFSHandler
                         IVSIS3LikeHandleHelper * /*poS3HandleHelper */,
                         int /* nMaxRetry */,
                         double /* dfRetryDelay */) override { return true; }
+
+    std::string GetStreamingFilename(const std::string& osFilename) const override;
 };
 
 /************************************************************************/
@@ -581,12 +634,391 @@ int VSIAzureFSHandler::Stat( const char *pszFilename, VSIStatBufL *pStatBuf,
     if( !STARTS_WITH_CI(pszFilename, GetFSPrefix()) )
         return -1;
 
+    if( (nFlags & VSI_STAT_CACHE_ONLY) != 0 )
+        return VSICurlFilesystemHandlerBase::Stat(pszFilename, pStatBuf, nFlags);
+
     CPLString osFilename(pszFilename);
+
+    if( (osFilename.find('/', GetFSPrefix().size()) == std::string::npos ||
+         osFilename.find('/', GetFSPrefix().size()) == osFilename.size() - 1) &&
+        CPLGetConfigOption("AZURE_SAS", nullptr) != nullptr )
+    {
+        // On "/vsiaz/container", a HEAD or GET request fails to authenticate
+        // when SAS is used, so use directory listing instead.
+        char** papszRet = ReadDirInternal( osFilename, 100, nullptr );
+        int nRet = papszRet ? 0 : -1;
+        if( nRet == 0 )
+        {
+            pStatBuf->st_mtime = 0;
+            pStatBuf->st_size = 0;
+            pStatBuf->st_mode = S_IFDIR;
+
+            FileProp cachedFileProp;
+            GetCachedFileProp(GetURLFromFilename(osFilename), cachedFileProp);
+            cachedFileProp.eExists = EXIST_YES;
+            cachedFileProp.bIsDirectory = true;
+            cachedFileProp.bHasComputedFileSize = true;
+            SetCachedFileProp(GetURLFromFilename(osFilename), cachedFileProp);
+        }
+        CSLDestroy(papszRet);
+        return nRet;
+    }
+
     if( osFilename.find('/', GetFSPrefix().size()) == std::string::npos )
+    {
         osFilename += "/";
-    return VSICurlFilesystemHandler::Stat(osFilename, pStatBuf, nFlags);
+    }
+
+    if( osFilename.size() > GetFSPrefix().size() )
+    {
+        // Special case for container
+        CPLString osFilenameWithoutEndSlash(osFilename);
+        if( osFilenameWithoutEndSlash.back() == '/' )
+            osFilenameWithoutEndSlash.resize( osFilenameWithoutEndSlash.size() - 1 );
+        if( osFilenameWithoutEndSlash.find('/', GetFSPrefix().size()) == std::string::npos )
+        {
+            char** papszFileList = ReadDir(GetFSPrefix());
+            const int nIdx = CSLFindString(papszFileList, osFilenameWithoutEndSlash.substr(GetFSPrefix().size()).c_str());
+            CSLDestroy(papszFileList);
+            if( nIdx >= 0 )
+            {
+                pStatBuf->st_mtime = 0;
+                pStatBuf->st_size = 0;
+                pStatBuf->st_mode = S_IFDIR;
+                return 0;
+            }
+        }
+    }
+
+    return VSICurlFilesystemHandlerBase::Stat(osFilename, pStatBuf, nFlags);
 }
 
+
+/************************************************************************/
+/*                          GetFileMetadata()                           */
+/************************************************************************/
+
+char** VSIAzureFSHandler::GetFileMetadata( const char* pszFilename,
+                                        const char* pszDomain,
+                                        CSLConstList papszOptions )
+{
+    if( !STARTS_WITH_CI(pszFilename, GetFSPrefix()) )
+        return nullptr;
+
+    if( pszDomain == nullptr ||
+        (!EQUAL(pszDomain, "TAGS") && !EQUAL(pszDomain, "METADATA")) )
+    {
+        return VSICurlFilesystemHandlerBase::GetFileMetadata(
+                    pszFilename, pszDomain, papszOptions);
+    }
+
+    auto poHandleHelper = std::unique_ptr<IVSIS3LikeHandleHelper>(
+        CreateHandleHelper(pszFilename + GetFSPrefix().size(), false));
+    if( poHandleHelper == nullptr )
+    {
+        return nullptr;
+    }
+
+    NetworkStatisticsFileSystem oContextFS(GetFSPrefix());
+    NetworkStatisticsAction oContextAction("GetFileMetadata");
+
+    bool bRetry;
+    // coverity[tainted_data]
+    double dfRetryDelay = CPLAtof(CPLGetConfigOption("GDAL_HTTP_RETRY_DELAY",
+                                CPLSPrintf("%f", CPL_HTTP_RETRY_DELAY)));
+    const int nMaxRetry = atoi(CPLGetConfigOption("GDAL_HTTP_MAX_RETRY",
+                                   CPLSPrintf("%d",CPL_HTTP_MAX_RETRY)));
+    int nRetryCount = 0;
+    bool bError = true;
+
+    CPLStringList aosMetadata;
+    do
+    {
+        bRetry = false;
+        CURL* hCurlHandle = curl_easy_init();
+        if( EQUAL(pszDomain, "METADATA") )
+            poHandleHelper->AddQueryParameter("comp", "metadata");
+        else
+            poHandleHelper->AddQueryParameter("comp", "tags");
+
+        struct curl_slist* headers =
+            VSICurlSetOptions(hCurlHandle, poHandleHelper->GetURL(), nullptr);
+
+        headers = VSICurlMergeHeaders(headers,
+                                poHandleHelper->GetCurlHeaders("GET", headers));
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
+
+        CurlRequestHelper requestHelper;
+        const long response_code =
+            requestHelper.perform(hCurlHandle, headers, this, poHandleHelper.get());
+
+        NetworkStatisticsLogger::LogGET(requestHelper.sWriteFuncData.nSize);
+
+        if( response_code != 200 || requestHelper.sWriteFuncHeaderData.pBuffer == nullptr )
+        {
+            // Look if we should attempt a retry
+            const double dfNewRetryDelay = CPLHTTPGetNewRetryDelay(
+                static_cast<int>(response_code), dfRetryDelay,
+                requestHelper.sWriteFuncHeaderData.pBuffer, requestHelper.szCurlErrBuf);
+            if( dfNewRetryDelay > 0 &&
+                nRetryCount < nMaxRetry )
+            {
+                CPLError(CE_Warning, CPLE_AppDefined,
+                            "HTTP error code: %d - %s. "
+                            "Retrying again in %.1f secs",
+                            static_cast<int>(response_code),
+                            poHandleHelper->GetURL().c_str(),
+                            dfRetryDelay);
+                CPLSleep(dfRetryDelay);
+                dfRetryDelay = dfNewRetryDelay;
+                nRetryCount++;
+                bRetry = true;
+            }
+            else
+            {
+                CPLDebug(GetDebugKey(), "GetFileMetadata failed on %s: %s",
+                         pszFilename,
+                         requestHelper.sWriteFuncData.pBuffer
+                         ? requestHelper.sWriteFuncData.pBuffer
+                         : "(null)");
+            }
+        }
+        else
+        {
+            if( EQUAL(pszDomain, "METADATA") )
+            {
+                char** papszHeaders = CSLTokenizeString2(requestHelper.sWriteFuncHeaderData.pBuffer, "\r\n", 0);
+                for( int i = 0; papszHeaders[i]; ++i )
+                {
+                    char* pszKey = nullptr;
+                    const char* pszValue = CPLParseNameValue(papszHeaders[i], &pszKey);
+                    // Content-Length is returned as 0
+                    if( pszKey && pszValue && !EQUAL(pszKey, "Content-Length") )
+                    {
+                        aosMetadata.SetNameValue(pszKey, pszValue);
+                    }
+                    CPLFree(pszKey);
+                }
+                CSLDestroy(papszHeaders);
+            }
+            else
+            {
+                CPLXMLNode* psXML = CPLParseXMLString(requestHelper.sWriteFuncData.pBuffer);
+                if( psXML )
+                {
+                    CPLXMLNode* psTagSet =
+                        CPLGetXMLNode(psXML, "=Tags.TagSet");
+                    if( psTagSet )
+                    {
+                        for( CPLXMLNode* psIter = psTagSet->psChild;
+                                            psIter; psIter = psIter->psNext )
+                        {
+                            if( psIter->eType == CXT_Element &&
+                                strcmp(psIter->pszValue, "Tag") == 0 )
+                            {
+                                CPLString osKey = CPLGetXMLValue(psIter, "Key", "");
+                                CPLString osValue = CPLGetXMLValue(psIter, "Value", "");
+                                aosMetadata.SetNameValue(osKey, osValue);
+                            }
+                        }
+                    }
+                    CPLDestroyXMLNode(psXML);
+                }
+            }
+            bError = false;
+        }
+
+        curl_easy_cleanup(hCurlHandle);
+    }
+    while( bRetry );
+    return bError ? nullptr : CSLDuplicate(aosMetadata.List());
+}
+
+/************************************************************************/
+/*                          SetFileMetadata()                           */
+/************************************************************************/
+
+bool VSIAzureFSHandler::SetFileMetadata( const char * pszFilename,
+                                        CSLConstList papszMetadata,
+                                        const char* pszDomain,
+                                        CSLConstList /* papszOptions */ )
+{
+    if( !STARTS_WITH_CI(pszFilename, GetFSPrefix()) )
+        return false;
+
+    if( pszDomain == nullptr ||
+        !(EQUAL(pszDomain, "PROPERTIES") || EQUAL(pszDomain, "METADATA") || EQUAL(pszDomain, "TAGS")) )
+    {
+        CPLError(CE_Failure, CPLE_NotSupported,
+                 "Only PROPERTIES, METADATA and TAGS domain are supported");
+        return false;
+    }
+
+    auto poHandleHelper = std::unique_ptr<IVSIS3LikeHandleHelper>(
+        CreateHandleHelper(pszFilename + GetFSPrefix().size(), false));
+    if( poHandleHelper == nullptr )
+    {
+        return false;
+    }
+
+    NetworkStatisticsFileSystem oContextFS(GetFSPrefix());
+    NetworkStatisticsAction oContextAction("SetFileMetadata");
+
+    bool bRetry;
+    // coverity[tainted_data]
+    double dfRetryDelay = CPLAtof(CPLGetConfigOption("GDAL_HTTP_RETRY_DELAY",
+                                CPLSPrintf("%f", CPL_HTTP_RETRY_DELAY)));
+    const int nMaxRetry = atoi(CPLGetConfigOption("GDAL_HTTP_MAX_RETRY",
+                                   CPLSPrintf("%d",CPL_HTTP_MAX_RETRY)));
+    int nRetryCount = 0;
+
+    bool bRet = false;
+
+    // Compose XML content for TAGS
+    CPLString osXML;
+    if( EQUAL(pszDomain, "TAGS") )
+    {
+        CPLXMLNode* psXML = CPLCreateXMLNode(nullptr, CXT_Element, "?xml");
+        CPLAddXMLAttributeAndValue(psXML, "version", "1.0");
+        CPLAddXMLAttributeAndValue(psXML, "encoding", "UTF-8");
+        CPLXMLNode* psTags = CPLCreateXMLNode(nullptr, CXT_Element, "Tags");
+        psXML->psNext = psTags;
+        CPLXMLNode* psTagSet = CPLCreateXMLNode(psTags, CXT_Element, "TagSet");
+        for( int i = 0; papszMetadata && papszMetadata[i]; ++i )
+        {
+            char* pszKey = nullptr;
+            const char* pszValue = CPLParseNameValue(papszMetadata[i], &pszKey);
+            if( pszKey && pszValue )
+            {
+                CPLXMLNode* psTag =
+                    CPLCreateXMLNode(psTagSet, CXT_Element, "Tag");
+                CPLCreateXMLElementAndValue(psTag, "Key", pszKey);
+                CPLCreateXMLElementAndValue(psTag, "Value", pszValue);
+            }
+            CPLFree(pszKey);
+        }
+
+        char* pszXML = CPLSerializeXMLTree(psXML);
+        osXML = pszXML;
+        CPLFree(pszXML);
+        CPLDestroyXMLNode(psXML);
+    }
+
+    do
+    {
+        bRetry = false;
+        CURL* hCurlHandle = curl_easy_init();
+
+        if( EQUAL(pszDomain, "PROPERTIES") )
+            poHandleHelper->AddQueryParameter("comp", "properties");
+        else if( EQUAL(pszDomain, "METADATA") )
+            poHandleHelper->AddQueryParameter("comp", "metadata");
+        else
+            poHandleHelper->AddQueryParameter("comp", "tags");
+
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_CUSTOMREQUEST, "PUT");
+        if( !osXML.empty() )
+        {
+            unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_POSTFIELDS, osXML.c_str() );
+        }
+
+        struct curl_slist* headers = static_cast<struct curl_slist*>(
+            CPLHTTPSetOptions(hCurlHandle,
+                              poHandleHelper->GetURL().c_str(),
+                              nullptr));
+
+        CPLStringList aosList;
+        if( EQUAL(pszDomain, "PROPERTIES") || EQUAL(pszDomain, "METADATA") )
+        {
+            for( CSLConstList papszIter = papszMetadata; papszIter && *papszIter; ++papszIter )
+            {
+                char* pszKey = nullptr;
+                const char* pszValue = CPLParseNameValue(*papszIter, &pszKey);
+                if( pszKey && pszValue )
+                {
+                    char* pszHeader = CPLStrdup(CPLSPrintf("%s: %s", pszKey, pszValue));
+                    aosList.AddStringDirectly(pszHeader);
+                    headers = curl_slist_append(headers, pszHeader);
+                }
+                CPLFree(pszKey);
+            }
+        }
+
+        CPLString osContentLength;
+        osContentLength.Printf("Content-Length: %d",
+                                static_cast<int>(osXML.size()));
+        headers = curl_slist_append(headers, osContentLength.c_str());
+        if( !osXML.empty() )
+        {
+            headers = curl_slist_append(headers, "Content-Type: application/xml; charset=UTF-8");
+            headers = VSICurlMergeHeaders(headers,
+                            poHandleHelper->GetCurlHeaders("PUT", headers,
+                                                            osXML.c_str(),
+                                                            osXML.size()));
+        }
+        else
+        {
+            headers = VSICurlMergeHeaders(headers,
+                                    poHandleHelper->GetCurlHeaders("PUT", headers));
+        }
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
+
+        NetworkStatisticsLogger::LogPUT(osXML.size());
+
+        CurlRequestHelper requestHelper;
+        const long response_code =
+            requestHelper.perform(hCurlHandle, headers, this, poHandleHelper.get());
+
+        if( response_code != 200 && response_code != 204 )
+        {
+            // Look if we should attempt a retry
+            const double dfNewRetryDelay = CPLHTTPGetNewRetryDelay(
+                static_cast<int>(response_code), dfRetryDelay,
+                requestHelper.sWriteFuncHeaderData.pBuffer, requestHelper.szCurlErrBuf);
+            if( dfNewRetryDelay > 0 &&
+                nRetryCount < nMaxRetry )
+            {
+                CPLError(CE_Warning, CPLE_AppDefined,
+                            "HTTP error code: %d - %s. "
+                            "Retrying again in %.1f secs",
+                            static_cast<int>(response_code),
+                            poHandleHelper->GetURL().c_str(),
+                            dfRetryDelay);
+                CPLSleep(dfRetryDelay);
+                dfRetryDelay = dfNewRetryDelay;
+                nRetryCount++;
+                bRetry = true;
+            }
+            else
+            {
+                CPLDebug(GetDebugKey(), "SetFileMetadata on %s failed: %s",
+                         pszFilename,
+                         requestHelper.sWriteFuncData.pBuffer
+                         ? requestHelper.sWriteFuncData.pBuffer
+                         : "(null)");
+            }
+        }
+        else
+        {
+            bRet = true;
+        }
+
+        curl_easy_cleanup(hCurlHandle);
+    }
+    while( bRetry );
+    return bRet;
+}
+
+/************************************************************************/
+/*                      GetStreamingFilename()                          */
+/************************************************************************/
+
+std::string VSIAzureFSHandler::GetStreamingFilename(const std::string& osFilename) const
+{
+    if( STARTS_WITH(osFilename.c_str(), GetFSPrefix().c_str()) )
+        return "/vsiaz_streaming/" + osFilename.substr(GetFSPrefix().size());
+    return osFilename;
+}
 
 /************************************************************************/
 /*                          VSIAzureWriteHandle                         */
@@ -597,6 +1029,7 @@ class VSIAzureWriteHandle final : public VSIAppendWriteHandle
     CPL_DISALLOW_COPY_ASSIGN(VSIAzureWriteHandle)
 
     std::unique_ptr<VSIAzureBlobHandleHelper> m_poHandleHelper{};
+    CPLStringList                             m_aosOptions{};
 
     bool                Send(bool bIsLastBlock) override;
     bool                SendInternal(bool bInitOnly, bool bIsLastBlock);
@@ -606,7 +1039,8 @@ class VSIAzureWriteHandle final : public VSIAppendWriteHandle
     public:
         VSIAzureWriteHandle( VSIAzureFSHandler* poFS,
                           const char* pszFilename,
-                          VSIAzureBlobHandleHelper* poHandleHelper );
+                          VSIAzureBlobHandleHelper* poHandleHelper,
+                          CSLConstList papszOptions );
         virtual ~VSIAzureWriteHandle();
 };
 
@@ -639,9 +1073,11 @@ int GetAzureBufferSize()
 
 VSIAzureWriteHandle::VSIAzureWriteHandle( VSIAzureFSHandler* poFS,
                                     const char* pszFilename,
-                                    VSIAzureBlobHandleHelper* poHandleHelper) :
+                                    VSIAzureBlobHandleHelper* poHandleHelper,
+                                    CSLConstList papszOptions) :
         VSIAppendWriteHandle(poFS, poFS->GetFSPrefix(), pszFilename, GetAzureBufferSize()),
-        m_poHandleHelper(poHandleHelper)
+        m_poHandleHelper(poHandleHelper),
+        m_aosOptions(papszOptions)
 {
 }
 
@@ -724,20 +1160,23 @@ bool VSIAzureWriteHandle::SendInternal(bool bInitOnly, bool bIsLastBlock)
             m_poHandleHelper->AddQueryParameter("comp", "appendblock");
         }
 
-        curl_easy_setopt(hCurlHandle, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(hCurlHandle, CURLOPT_READFUNCTION, ReadCallBackBuffer);
-        curl_easy_setopt(hCurlHandle, CURLOPT_READDATA,
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_UPLOAD, 1L);
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_READFUNCTION, ReadCallBackBuffer);
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_READDATA,
                          static_cast<VSIAppendWriteHandle*>(this));
 
         struct curl_slist* headers = static_cast<struct curl_slist*>(
             CPLHTTPSetOptions(hCurlHandle,
                               m_poHandleHelper->GetURL().c_str(),
                               nullptr));
+        headers = VSICurlSetCreationHeadersFromOptions(headers,
+                                                       m_aosOptions.List(),
+                                                       m_osFilename.c_str());
 
         CPLString osContentLength; // leave it in this scope
         if( bSingleBlock )
         {
-            curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE, m_nBufferOff);
+            unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE, m_nBufferOff);
             if( m_nBufferOff )
                 headers = curl_slist_append(headers, "Expect: 100-continue");
             osContentLength.Printf("Content-Length: %d", m_nBufferOff);
@@ -746,21 +1185,25 @@ bool VSIAzureWriteHandle::SendInternal(bool bInitOnly, bool bIsLastBlock)
         }
         else if( bInitOnly )
         {
-            curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE, 0);
+            unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE, 0);
             headers = curl_slist_append(headers, "Content-Length: 0");
             headers = curl_slist_append(headers, "x-ms-blob-type: AppendBlob");
         }
         else
         {
-            curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE, m_nBufferOff);
+            unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE, m_nBufferOff);
             osContentLength.Printf("Content-Length: %d", m_nBufferOff);
             headers = curl_slist_append(headers, osContentLength.c_str());
             headers = curl_slist_append(headers, "x-ms-blob-type: AppendBlob");
+            CPLString osAppendPos;
+            vsi_l_offset nStartOffset = m_nCurOffset - m_nBufferOff;
+            osAppendPos.Printf("x-ms-blob-condition-appendpos: " CPL_FRMT_GUIB, nStartOffset);
+            headers = curl_slist_append(headers, osAppendPos.c_str());
         }
 
         headers = VSICurlMergeHeaders(headers,
                         m_poHandleHelper->GetCurlHeaders("PUT", headers));
-        curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
 
         CurlRequestHelper requestHelper;
         const long response_code =
@@ -846,7 +1289,8 @@ void VSIAzureFSHandler::ClearCache()
 
 VSIVirtualHandle* VSIAzureFSHandler::Open( const char *pszFilename,
                                         const char *pszAccess,
-                                        bool bSetError)
+                                        bool bSetError,
+                                        CSLConstList papszOptions )
 {
     if( !STARTS_WITH_CI(pszFilename, GetFSPrefix()) )
         return nullptr;
@@ -868,7 +1312,7 @@ VSIVirtualHandle* VSIAzureFSHandler::Open( const char *pszFilename,
                                             GetFSPrefix().c_str());
         if( poHandleHelper == nullptr )
             return nullptr;
-        auto poHandle = new VSIAzureWriteHandle(this, pszFilename, poHandleHelper);
+        auto poHandle = new VSIAzureWriteHandle(this, pszFilename, poHandleHelper, papszOptions);
         if( strchr(pszAccess, '+') != nullptr)
         {
             return VSICreateUploadOnCloseFile(poHandle);
@@ -877,7 +1321,7 @@ VSIVirtualHandle* VSIAzureFSHandler::Open( const char *pszFilename,
     }
 
     return
-        VSICurlFilesystemHandler::Open(pszFilename, pszAccess, bSetError);
+        VSICurlFilesystemHandlerBase::Open(pszFilename, pszAccess, bSetError, papszOptions);
 }
 
 /************************************************************************/
@@ -967,6 +1411,12 @@ int VSIAzureFSHandler::MkdirInternal( const char *pszDirname, long /* nMode */, 
 
     CPLString osDirnameWithoutEndSlash(osDirname);
     osDirnameWithoutEndSlash.resize( osDirnameWithoutEndSlash.size() - 1 );
+    if( osDirnameWithoutEndSlash.size() > GetFSPrefix().size() &&
+        osDirnameWithoutEndSlash.find('/', GetFSPrefix().size()) == std::string::npos )
+    {
+        return CreateContainer(osDirnameWithoutEndSlash);
+    }
+
     InvalidateCachedData( GetURLFromFilename(osDirname) );
     InvalidateCachedData( GetURLFromFilename(osDirnameWithoutEndSlash) );
     InvalidateDirContent( CPLGetDirname(osDirnameWithoutEndSlash) );
@@ -988,6 +1438,99 @@ int VSIAzureFSHandler::MkdirInternal( const char *pszDirname, long /* nMode */, 
 int VSIAzureFSHandler::Mkdir( const char * pszDirname, long nMode )
 {
     return MkdirInternal(pszDirname, nMode, true);
+}
+
+/************************************************************************/
+/*                        CreateContainer()                             */
+/************************************************************************/
+
+int VSIAzureFSHandler::CreateContainer( const std::string& osDirname )
+{
+    CPLString osDirnameWithoutPrefix = osDirname.substr(GetFSPrefix().size());
+    auto poS3HandleHelper =
+        std::unique_ptr<IVSIS3LikeHandleHelper>(
+            CreateHandleHelper(osDirnameWithoutPrefix, false));
+    if( poS3HandleHelper == nullptr )
+    {
+        return -1;
+    }
+
+    int nRet = 0;
+
+    bool bRetry;
+
+    const int nMaxRetry = atoi(CPLGetConfigOption("GDAL_HTTP_MAX_RETRY",
+                                   CPLSPrintf("%d",CPL_HTTP_MAX_RETRY)));
+    // coverity[tainted_data]
+    double dfRetryDelay = CPLAtof(CPLGetConfigOption("GDAL_HTTP_RETRY_DELAY",
+                                CPLSPrintf("%f", CPL_HTTP_RETRY_DELAY)));
+    int nRetryCount = 0;
+
+    do
+    {
+        poS3HandleHelper->AddQueryParameter("restype", "container");
+
+        bRetry = false;
+        CURL* hCurlHandle = curl_easy_init();
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_CUSTOMREQUEST, "PUT");
+
+        struct curl_slist* headers = static_cast<struct curl_slist*>(
+            CPLHTTPSetOptions(hCurlHandle,
+                              poS3HandleHelper->GetURL().c_str(),
+                              nullptr));
+        headers = curl_slist_append(headers, "Content-Length: 0");
+        headers = VSICurlMergeHeaders(headers,
+                        poS3HandleHelper->GetCurlHeaders("PUT", headers));
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
+
+        CurlRequestHelper requestHelper;
+        const long response_code =
+            requestHelper.perform(hCurlHandle, headers, this, poS3HandleHelper.get());
+
+        NetworkStatisticsLogger::LogPUT(0);
+
+        if( response_code != 201)
+        {
+            // Look if we should attempt a retry
+            const double dfNewRetryDelay = CPLHTTPGetNewRetryDelay(
+                static_cast<int>(response_code), dfRetryDelay,
+                requestHelper.sWriteFuncHeaderData.pBuffer, requestHelper.szCurlErrBuf);
+            if( dfNewRetryDelay > 0 &&
+                nRetryCount < nMaxRetry )
+            {
+                CPLError(CE_Warning, CPLE_AppDefined,
+                            "HTTP error code: %d - %s. "
+                            "Retrying again in %.1f secs",
+                            static_cast<int>(response_code),
+                            poS3HandleHelper->GetURL().c_str(),
+                            dfRetryDelay);
+                CPLSleep(dfRetryDelay);
+                dfRetryDelay = dfNewRetryDelay;
+                nRetryCount++;
+                bRetry = true;
+            }
+            else
+            {
+                CPLDebug(GetDebugKey(), "%s",
+                         requestHelper.sWriteFuncData.pBuffer
+                         ? requestHelper.sWriteFuncData.pBuffer
+                         : "(null)");
+                CPLError(CE_Failure, CPLE_AppDefined, "Creation of container %s failed",
+                         osDirname.c_str());
+                nRet = -1;
+            }
+        }
+        else
+        {
+            InvalidateCachedData(poS3HandleHelper->GetURLNoKVP().c_str());
+            InvalidateDirContent( GetFSPrefix().c_str() );
+        }
+
+        curl_easy_cleanup(hCurlHandle);
+    }
+    while( bRetry );
+
+    return nRet;
 }
 
 /************************************************************************/
@@ -1035,6 +1578,12 @@ int VSIAzureFSHandler::Rmdir( const char * pszDirname )
 
     CPLString osDirnameWithoutEndSlash(osDirname);
     osDirnameWithoutEndSlash.resize( osDirnameWithoutEndSlash.size() - 1 );
+    if( osDirnameWithoutEndSlash.size() > GetFSPrefix().size() &&
+        osDirnameWithoutEndSlash.find('/', GetFSPrefix().size()) == std::string::npos )
+    {
+        return DeleteContainer(osDirnameWithoutEndSlash);
+    }
+
     InvalidateCachedData( GetURLFromFilename(osDirname) );
     InvalidateCachedData( GetURLFromFilename(osDirnameWithoutEndSlash) );
     InvalidateRecursive( CPLGetDirname(osDirnameWithoutEndSlash) );
@@ -1053,6 +1602,99 @@ int VSIAzureFSHandler::Rmdir( const char * pszDirname )
     if( VSIStatL(osDirname, &sStat) != 0 )
         return 0;
     return -1;
+}
+
+/************************************************************************/
+/*                        DeleteContainer()                             */
+/************************************************************************/
+
+int VSIAzureFSHandler::DeleteContainer( const std::string& osDirname )
+{
+    CPLString osDirnameWithoutPrefix = osDirname.substr(GetFSPrefix().size());
+    auto poS3HandleHelper =
+        std::unique_ptr<IVSIS3LikeHandleHelper>(
+            CreateHandleHelper(osDirnameWithoutPrefix, false));
+    if( poS3HandleHelper == nullptr )
+    {
+        return -1;
+    }
+
+    int nRet = 0;
+
+    bool bRetry;
+
+    const int nMaxRetry = atoi(CPLGetConfigOption("GDAL_HTTP_MAX_RETRY",
+                                   CPLSPrintf("%d",CPL_HTTP_MAX_RETRY)));
+    // coverity[tainted_data]
+    double dfRetryDelay = CPLAtof(CPLGetConfigOption("GDAL_HTTP_RETRY_DELAY",
+                                CPLSPrintf("%f", CPL_HTTP_RETRY_DELAY)));
+    int nRetryCount = 0;
+
+    do
+    {
+        poS3HandleHelper->AddQueryParameter("restype", "container");
+
+        bRetry = false;
+        CURL* hCurlHandle = curl_easy_init();
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_CUSTOMREQUEST, "DELETE");
+
+        struct curl_slist* headers = static_cast<struct curl_slist*>(
+            CPLHTTPSetOptions(hCurlHandle,
+                              poS3HandleHelper->GetURL().c_str(),
+                              nullptr));
+        headers = curl_slist_append(headers, "Content-Length: 0");
+        headers = VSICurlMergeHeaders(headers,
+                        poS3HandleHelper->GetCurlHeaders("DELETE", headers));
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
+
+        CurlRequestHelper requestHelper;
+        const long response_code =
+            requestHelper.perform(hCurlHandle, headers, this, poS3HandleHelper.get());
+
+        NetworkStatisticsLogger::LogPUT(0);
+
+        if( response_code != 202)
+        {
+            // Look if we should attempt a retry
+            const double dfNewRetryDelay = CPLHTTPGetNewRetryDelay(
+                static_cast<int>(response_code), dfRetryDelay,
+                requestHelper.sWriteFuncHeaderData.pBuffer, requestHelper.szCurlErrBuf);
+            if( dfNewRetryDelay > 0 &&
+                nRetryCount < nMaxRetry )
+            {
+                CPLError(CE_Warning, CPLE_AppDefined,
+                            "HTTP error code: %d - %s. "
+                            "Retrying again in %.1f secs",
+                            static_cast<int>(response_code),
+                            poS3HandleHelper->GetURL().c_str(),
+                            dfRetryDelay);
+                CPLSleep(dfRetryDelay);
+                dfRetryDelay = dfNewRetryDelay;
+                nRetryCount++;
+                bRetry = true;
+            }
+            else
+            {
+                CPLDebug(GetDebugKey(), "%s",
+                         requestHelper.sWriteFuncData.pBuffer
+                         ? requestHelper.sWriteFuncData.pBuffer
+                         : "(null)");
+                CPLError(CE_Failure, CPLE_AppDefined, "Deletion of container %s failed",
+                         osDirname.c_str());
+                nRet = -1;
+            }
+        }
+        else
+        {
+            InvalidateCachedData(poS3HandleHelper->GetURLNoKVP().c_str());
+            InvalidateDirContent( GetFSPrefix().c_str() );
+        }
+
+        curl_easy_cleanup(hCurlHandle);
+    }
+    while( bRetry );
+
+    return nRet;
 }
 
 /************************************************************************/
@@ -1101,17 +1743,18 @@ int VSIAzureFSHandler::CopyObject( const char *oldpath, const char *newpath,
     {
         bRetry = false;
         CURL* hCurlHandle = curl_easy_init();
-        curl_easy_setopt(hCurlHandle, CURLOPT_CUSTOMREQUEST, "PUT");
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_CUSTOMREQUEST, "PUT");
 
         struct curl_slist* headers = static_cast<struct curl_slist*>(
             CPLHTTPSetOptions(hCurlHandle,
                               poS3HandleHelper->GetURL().c_str(),
                               nullptr));
         headers = curl_slist_append(headers, osSourceHeader.c_str());
+        headers = VSICurlSetContentTypeFromExt(headers, newpath);
         headers = curl_slist_append(headers, "Content-Length: 0");
         headers = VSICurlMergeHeaders(headers,
                         poS3HandleHelper->GetCurlHeaders("PUT", headers));
-        curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_HTTPHEADER, headers);
 
         CurlRequestHelper requestHelper;
         const long response_code =
@@ -1178,7 +1821,8 @@ CPLString VSIAzureFSHandler::PutBlock(const CPLString& osFilename,
                                     size_t nBufferSize,
                                     IVSIS3LikeHandleHelper *poS3HandleHelper,
                                     int nMaxRetry,
-                                    double dfRetryDelay)
+                                    double dfRetryDelay,
+                                    CSLConstList papszOptions)
 {
     NetworkStatisticsFileSystem oContextFS(GetFSPrefix());
     NetworkStatisticsFile oContextFile(osFilename);
@@ -1202,20 +1846,23 @@ CPLString VSIAzureFSHandler::PutBlock(const CPLString& osFilename,
         poS3HandleHelper->AddQueryParameter("blockid", osBlockId);
 
         CURL* hCurlHandle = curl_easy_init();
-        curl_easy_setopt(hCurlHandle, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(hCurlHandle, CURLOPT_READFUNCTION,
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_UPLOAD, 1L);
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_READFUNCTION,
                          PutData::ReadCallBackBuffer);
         PutData putData;
         putData.pabyData = static_cast<const GByte*>(pabyBuffer);
         putData.nOff = 0;
         putData.nTotalSize = nBufferSize;
-        curl_easy_setopt(hCurlHandle, CURLOPT_READDATA, &putData);
-        curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE, nBufferSize);
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_READDATA, &putData);
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE, nBufferSize);
 
         struct curl_slist* headers = static_cast<struct curl_slist*>(
             CPLHTTPSetOptions(hCurlHandle,
                             poS3HandleHelper->GetURL().c_str(),
                             nullptr));
+        headers = VSICurlSetCreationHeadersFromOptions(headers,
+                                                       papszOptions,
+                                                       osFilename.c_str());
         headers = curl_slist_append(headers, osContentLength.c_str());
         headers = VSICurlMergeHeaders(headers,
                         poS3HandleHelper->GetCurlHeaders("PUT", headers,
@@ -1323,13 +1970,13 @@ bool VSIAzureFSHandler::PutBlockList(const CPLString& osFilename,
         putData.nTotalSize = osXML.size();
 
         CURL* hCurlHandle = curl_easy_init();
-        curl_easy_setopt(hCurlHandle, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(hCurlHandle, CURLOPT_READFUNCTION,
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_UPLOAD, 1L);
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_READFUNCTION,
                          PutData::ReadCallBackBuffer);
-        curl_easy_setopt(hCurlHandle, CURLOPT_READDATA, &putData);
-        curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE,
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_READDATA, &putData);
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_INFILESIZE,
                         static_cast<int>(osXML.size()));
-        curl_easy_setopt(hCurlHandle, CURLOPT_CUSTOMREQUEST, "PUT");
+        unchecked_curl_easy_setopt(hCurlHandle, CURLOPT_CUSTOMREQUEST, "PUT");
 
         struct curl_slist* headers = static_cast<struct curl_slist*>(
             CPLHTTPSetOptions(hCurlHandle,
@@ -1451,10 +2098,12 @@ const char* VSIAzureFSHandler::GetOptions()
         "description='Storage account. To use with AZURE_STORAGE_ACCESS_KEY'/>"
     "  <Option name='AZURE_STORAGE_ACCESS_KEY' type='string' "
         "description='Secret key'/>"
+    "  <Option name='AZURE_NO_SIGN_REQUEST' type='boolean' "
+        "description='Whether to disable signing of requests' default='NO'/>"
     "  <Option name='VSIAZ_CHUNK_SIZE' type='int' "
         "description='Size in MB for chunks of files that are uploaded' "
         "default='4' min='1' max='4'/>" +
-        VSICurlFilesystemHandler::GetOptionsStatic() +
+        VSICurlFilesystemHandlerBase::GetOptionsStatic() +
         "</Options>");
     return osOptions.c_str();
 }
@@ -1534,6 +2183,9 @@ VSIDIR* VSIAzureFSHandler::OpenDir( const char *pszPath,
     dir->nMaxFiles = atoi(CSLFetchNameValueDef(papszOptions, "MAXFILES", "0"));
     dir->bCacheEntries = CPLTestBool(
         CSLFetchNameValueDef(papszOptions, "CACHE_ENTRIES", "YES"));
+    dir->m_osFilterPrefix = CSLFetchNameValueDef(papszOptions, "PREFIX", "");
+    dir->m_bSynthetizeMissingDirectories = CPLTestBool(
+        CSLFetchNameValueDef(papszOptions, "SYNTHETIZE_MISSING_DIRECTORIES", "NO"));
     if( !dir->IssueListDir() )
     {
         delete dir;
@@ -1553,6 +2205,7 @@ VSIAzureHandle::VSIAzureHandle( VSIAzureFSHandler* poFSIn,
         VSICurlHandle(poFSIn, pszFilename, poHandleHelper->GetURLNoKVP()),
         m_poHandleHelper(poHandleHelper)
 {
+    m_osQueryString = poHandleHelper->GetSASQueryString();
 }
 
 /************************************************************************/
@@ -1599,13 +2252,15 @@ bool VSIAzureHandle::IsDirectoryFromExists( const char* /*pszVerb*/,
 /*                      VSIInstallAzureFileHandler()                    */
 /************************************************************************/
 
-/**
- * \brief Install /vsiaz/ Microsoft Azure Blob file system handler
- * (requires libcurl)
- *
- * @see <a href="gdal_virtual_file_systems.html#gdal_virtual_file_systems_vsiaz">/vsiaz/ documentation</a>
- *
- * @since GDAL 2.3
+/*!
+ \brief Install /vsiaz/ Microsoft Azure Blob file system handler
+ (requires libcurl)
+
+ \verbatim embed:rst
+ See :ref:`/vsiaz/ documentation <vsiaz>`
+ \endverbatim
+
+ @since GDAL 2.3
  */
 
 void VSIInstallAzureFileHandler( void )

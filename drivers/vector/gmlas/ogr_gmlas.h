@@ -31,7 +31,6 @@
 #ifndef OGR_GMLAS_INCLUDED
 #define OGR_GMLAS_INCLUDED
 
-// Must be first for DEBUG_BOOL case
 #include "xercesc_headers.h"
 #include "ogr_xerces.h"
 
@@ -40,6 +39,7 @@
 
 #include "ogr_gmlas_consts.h"
 
+#include <list>
 #include <set>
 #include <map>
 #include <vector>
@@ -924,7 +924,7 @@ class GMLASSchemaAnalyzer
         CPLString GetPrefix( const CPLString& osNamespaceURI );
         CPLString MakeXPath( const CPLString& osNamespace,
                                           const CPLString& osName );
-        void LaunderFieldNames( GMLASFeatureClass& oClass );
+        bool LaunderFieldNames( GMLASFeatureClass& oClass );
         void LaunderClassNames();
 
         XSElementDeclaration* GetTopElementDeclarationFromXPath(
@@ -1308,7 +1308,7 @@ class GMLASReader final: public DefaultHandler
         std::vector<OGRGMLASLayer*>* m_papoLayers;
 
         /** Vector of features ready for consumption */
-        std::vector< std::pair<OGRFeature*, OGRGMLASLayer*> > m_aoFeaturesReady;
+        std::list< std::pair<OGRFeature*, OGRGMLASLayer*> > m_aoFeaturesReady;
 
         /** OGR field index of the current field */
         int               m_nCurFieldIdx;

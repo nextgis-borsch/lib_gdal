@@ -295,7 +295,7 @@ PNGDataset::PNGDataset() :
 PNGDataset::~PNGDataset()
 
 {
-    PNGDataset::FlushCache();
+    PNGDataset::FlushCache(true);
 
     if( hPNG != nullptr )
         png_destroy_read_struct( &hPNG, &psPNGInfo, nullptr );
@@ -448,10 +448,10 @@ CPLErr PNGDataset::GetGeoTransform( double * padfTransform )
 /*      cache if need be.                                               */
 /************************************************************************/
 
-void PNGDataset::FlushCache()
+void PNGDataset::FlushCache(bool bAtClosing)
 
 {
-    GDALPamDataset::FlushCache();
+    GDALPamDataset::FlushCache(bAtClosing);
 
     if( pabyBuffer != nullptr )
     {
@@ -473,7 +473,7 @@ static void PNGDatasetDisableCRCCheck( png_structp hPNG )
     hPNG->flags |= PNG_FLAG_CRC_CRITICAL_IGNORE;
 
     hPNG->flags &= ~PNG_FLAG_CRC_ANCILLARY_MASK;
-    hPNG->flags |= PNG_FLAG_CRC_ANCILLARY_NOWARN; 
+    hPNG->flags |= PNG_FLAG_CRC_ANCILLARY_NOWARN;
 }
 #endif
 
@@ -1446,8 +1446,8 @@ PNGDataset::CreateCopy( const char * pszFilename, GDALDataset *poSrcDS,
     if( fpImage == nullptr )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
-                  "Unable to create png file %s.\n",
-                  pszFilename );
+                  "Unable to create png file %s: %s\n",
+                  pszFilename, VSIStrerror(errno) );
         return nullptr;
     }
 
@@ -2443,8 +2443,8 @@ GDALDataset *PNGDataset::Create
     if( poDS->m_fpImage == NULL )
     {
         CPLError( CE_Failure, CPLE_OpenFailed,
-                  "Unable to create PNG file %s.\n",
-                  pszFilename );
+                  "Unable to create PNG file %s: %s\n",
+                  pszFilename, VSIStrerror(errno) );
         delete poDS;
         return NULL;
     }

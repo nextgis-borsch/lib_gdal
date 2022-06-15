@@ -36,6 +36,8 @@
 #include "cpl_error.h"
 #include "cpl_minixml.h"
 #include "cpl_string.h"
+#include "cpl_time.h"
+
 #include "gdal_priv.h"
 
 CPL_CVSID("$Id$")
@@ -191,9 +193,10 @@ void GDALMDReaderDigitalGlobe::LoadMetadata()
                                        "IMAGE.FIRSTLINETIME");
     if(nullptr != pszDateTime)
     {
-        time_t timeStart = GetAcquisitionTimeFromString(pszDateTime);
+        GIntBig timeStart = GetAcquisitionTimeFromString(pszDateTime);
         char szMidDateTime[80];
-        strftime (szMidDateTime, 80, MD_DATETIMEFORMAT, localtime(&timeStart));
+        struct tm tmBuf;
+        strftime (szMidDateTime, 80, MD_DATETIMEFORMAT, CPLUnixTimeToYMDHMS(timeStart, &tmBuf));
 
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_ACQDATETIME,
@@ -204,9 +207,10 @@ void GDALMDReaderDigitalGlobe::LoadMetadata()
         pszDateTime = CSLFetchNameValue(m_papszIMDMD, "IMAGE_1.firstLineTime");
         if(nullptr != pszDateTime)
         {
-            time_t timeStart = GetAcquisitionTimeFromString(pszDateTime);
+            GIntBig timeStart = GetAcquisitionTimeFromString(pszDateTime);
             char szMidDateTime[80];
-            strftime (szMidDateTime, 80, MD_DATETIMEFORMAT, localtime(&timeStart));
+            struct tm tmBuf;
+            strftime (szMidDateTime, 80, MD_DATETIMEFORMAT, CPLUnixTimeToYMDHMS(timeStart, &tmBuf));
 
             m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                                MD_NAME_ACQDATETIME,
@@ -246,6 +250,8 @@ char** GDALMDReaderDigitalGlobe::LoadIMDXmlNode(CPLXMLNode* psNode)
  * GDALLoadRPBXmlNode()
  */
 static const char * const apszRPBMap[] = {
+    RPC_ERR_BIAS,   "image.errBias",
+    RPC_ERR_RAND,   "image.errRand",
     RPC_LINE_OFF,   "image.lineOffset",
     RPC_SAMP_OFF,   "image.sampOffset",
     RPC_LAT_OFF,    "image.latOffset",

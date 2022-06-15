@@ -36,6 +36,10 @@
 #include <string.h>
 #include <algorithm>
 
+// Suppress deprecation warning for GDALOpenVerticalShiftGrid and GDALApplyVerticalShiftGrid
+#define CPL_WARN_DEPRECATED_GDALOpenVerticalShiftGrid(x)
+#define CPL_WARN_DEPRECATED_GDALApplyVerticalShiftGrid(x)
+
 #include "cpl_conv.h"
 #include "cpl_error.h"
 #include "cpl_minixml.h"
@@ -74,6 +78,29 @@ CPL_CVSID("$Id$")
  * to the passed in hSrcDS.  Reference counting semantics on the source
  * dataset should be honoured.  That is, don't just GDALClose() it unless it
  * was opened with GDALOpenShared().
+ *
+ * It is possible to "transfer" the ownership of the source dataset
+ * to the warped dataset in the following way:
+ *
+ * \code{.c}
+ *      GDALDatasetH src_ds = GDALOpen("source.tif");
+ *      GDALDatasetH warped_ds = GDALAutoCreateWarpedVRT( src_ds, ... );
+ *      GDALReleaseDataset(src_ds); // src_ds is not "owned" fully by warped_ds. Do NOT use GDALClose(src_ds) here
+ *      ...
+ *      ...
+ *      GDALReleaseDataset(warped_ds); // or GDALClose(warped_ds);
+ * \endcode
+ *
+ * Traditonal nested calls are also possible of course:
+ *
+ * \code{.c}
+ *      GDALDatasetH src_ds = GDALOpen("source.tif");
+ *      GDALDatasetH warped_ds = GDALAutoCreateWarpedVRT( src_ds, ... );
+ *      ...
+ *      ...
+ *      GDALReleaseDataset(warped_ds); // or GDALClose(warped_ds);
+ *      GDALReleaseDataset(src_ds); // or GDALClose(src_ds);
+ * \endcode
  *
  * The returned dataset will have no associated filename for itself.  If you
  * want to write the virtual dataset description to a file, use the
@@ -153,39 +180,47 @@ GDALAutoCreateWarpedVRTEx( GDALDatasetH hSrcDS,
     GDALWarpInitDefaultBandMapping( psWO, GDALGetRasterCount( hSrcDS ) );
 
 /* -------------------------------------------------------------------- */
-/*      Setup no data values                                            */
+/*      Setup no data values (if not done in psOptionsIn)               */
 /* -------------------------------------------------------------------- */
-    for( int i = 0; i < psWO->nBandCount; i++ )
+    if( psWO->padfSrcNoDataReal == nullptr &&
+        psWO->padfDstNoDataReal == nullptr &&
+        psWO->nSrcAlphaBand == 0 )
     {
-        GDALRasterBandH rasterBand = GDALGetRasterBand(psWO->hSrcDS, psWO->panSrcBands[i]);
-
-        int hasNoDataValue;
-        double noDataValue = GDALGetRasterNoDataValue(rasterBand, &hasNoDataValue);
-
-        if( hasNoDataValue )
+        for( int i = 0; i < psWO->nBandCount; i++ )
         {
-            // Check if the nodata value is out of range
-            int bClamped = FALSE;
-            int bRounded = FALSE;
-            CPL_IGNORE_RET_VAL(
-                GDALAdjustValueToDataType(GDALGetRasterDataType(rasterBand),
-                                      noDataValue, &bClamped, &bRounded ));
-            if( !bClamped )
-            {
-                GDALWarpInitNoDataReal(psWO, -1e10);
+            GDALRasterBandH rasterBand = GDALGetRasterBand(psWO->hSrcDS, psWO->panSrcBands[i]);
 
-                psWO->padfSrcNoDataReal[i] = noDataValue;
-                psWO->padfDstNoDataReal[i] = noDataValue;
+            int hasNoDataValue;
+            double noDataValue = GDALGetRasterNoDataValue(rasterBand, &hasNoDataValue);
+
+            if( hasNoDataValue )
+            {
+                // Check if the nodata value is out of range
+                int bClamped = FALSE;
+                int bRounded = FALSE;
+                CPL_IGNORE_RET_VAL(
+                    GDALAdjustValueToDataType(GDALGetRasterDataType(rasterBand),
+                                          noDataValue, &bClamped, &bRounded ));
+                if( !bClamped )
+                {
+                    GDALWarpInitNoDataReal(psWO, -1e10);
+                    if( psWO->padfSrcNoDataReal != nullptr &&
+                        psWO->padfDstNoDataReal != nullptr )
+                    {
+                        psWO->padfSrcNoDataReal[i] = noDataValue;
+                        psWO->padfDstNoDataReal[i] = noDataValue;
+                    }
+                }
             }
         }
-    }
 
-    if( psWO->padfDstNoDataReal != nullptr )
-    {
-        if (CSLFetchNameValue( psWO->papszWarpOptions, "INIT_DEST" ) == nullptr)
+        if( psWO->padfDstNoDataReal != nullptr )
         {
-            psWO->papszWarpOptions =
-                CSLSetNameValue(psWO->papszWarpOptions, "INIT_DEST", "NO_DATA");
+            if (CSLFetchNameValue( psWO->papszWarpOptions, "INIT_DEST" ) == nullptr)
+            {
+                psWO->papszWarpOptions =
+                    CSLSetNameValue(psWO->papszWarpOptions, "INIT_DEST", "NO_DATA");
+            }
         }
     }
 
@@ -258,14 +293,17 @@ GDALAutoCreateWarpedVRTEx( GDALDatasetH hSrcDS,
 
     GDALDestroyWarpOptions( psWO );
 
-    if( pszDstWKT != nullptr )
-        GDALSetProjection( hDstDS, pszDstWKT );
-    else if( pszSrcWKT != nullptr )
-        GDALSetProjection( hDstDS, pszSrcWKT );
-    else if( GDALGetGCPCount( hSrcDS ) > 0 )
-        GDALSetProjection( hDstDS, GDALGetGCPProjection( hSrcDS ) );
-    else
-        GDALSetProjection( hDstDS, GDALGetProjectionRef( hSrcDS ) );
+    if( hDstDS != nullptr )
+    {
+        if( pszDstWKT != nullptr )
+            GDALSetProjection( hDstDS, pszDstWKT );
+        else if( pszSrcWKT != nullptr )
+            GDALSetProjection( hDstDS, pszSrcWKT );
+        else if( GDALGetGCPCount( hSrcDS ) > 0 )
+            GDALSetProjection( hDstDS, GDALGetGCPProjection( hSrcDS ) );
+        else
+            GDALSetProjection( hDstDS, GDALGetProjectionRef( hSrcDS ) );
+    }
 
     return hDstDS;
 }
@@ -288,6 +326,34 @@ GDALAutoCreateWarpedVRTEx( GDALDatasetH hSrcDS,
  * to the passed in hSrcDS.  Reference counting semantics on the source
  * dataset should be honoured.  That is, don't just GDALClose() it unless it
  * was opened with GDALOpenShared().
+ *
+ * It is possible to "transfer" the ownership of the source dataset
+ * to the warped dataset in the following way:
+ *
+ * \code{.c}
+ *      GDALDatasetH src_ds = GDALOpen("source.tif");
+ *      GDALDatasetH warped_ds = GDALAutoCreateWarpedVRT( src_ds, ... );
+ *      GDALReleaseDataset(src_ds); // src_ds is not "owned" fully by warped_ds. Do NOT use GDALClose(src_ds) here
+ *      ...
+ *      ...
+ *      GDALReleaseDataset(warped_ds); // or GDALClose(warped_ds);
+ * \endcode
+ *
+ * Traditonal nested calls are also possible of course:
+ *
+ * \code{.c}
+ *      GDALDatasetH src_ds = GDALOpen("source.tif");
+ *      GDALDatasetH warped_ds = GDALAutoCreateWarpedVRT( src_ds, ... );
+ *      ...
+ *      ...
+ *      GDALReleaseDataset(warped_ds); // or GDALClose(warped_ds);
+ *      GDALReleaseDataset(src_ds); // or GDALClose(src_ds);
+ * \endcode
+ *
+ * The returned dataset will have no associated filename for itself.  If you
+ * want to write the virtual dataset description to a file, use the
+ * GDALSetDescription() function (or SetDescription() method) on the dataset
+ * to assign a filename before it is closed.
  *
  * @param hSrcDS The source dataset.
  *
@@ -327,7 +393,7 @@ GDALCreateWarpedVRT( GDALDatasetH hSrcDS,
     {
         int nDstBand = psOptions->panDstBands[i];
         while( poDS->GetRasterCount() < nDstBand )
-        {   
+        {
             poDS->AddBand( psOptions->eWorkingDataType, nullptr );
         }
 
@@ -395,7 +461,7 @@ VRTWarpedDataset::VRTWarpedDataset( int nXSize, int nYSize ) :
 VRTWarpedDataset::~VRTWarpedDataset()
 
 {
-    VRTWarpedDataset::FlushCache();
+    VRTWarpedDataset::FlushCache(true);
     VRTWarpedDataset::CloseDependentDatasets();
 }
 
@@ -552,6 +618,11 @@ CPLErr VRTWarpedDataset::Initialize( void *psWO )
 
     GDALDestroyWarpOptions(psWO_Dup);
 
+    if( nBands > 1 )
+    {
+        GDALDataset::SetMetadataItem("INTERLEAVE", "PIXEL", "IMAGE_STRUCTURE");
+    }
+
     return eErr;
 }
 
@@ -592,6 +663,7 @@ public:
     virtual OGRCoordinateTransformation* Clone() const override {
         return new GDALWarpCoordRescaler(*this); }
 
+    virtual OGRCoordinateTransformation* GetInverse() const override { return nullptr; }
 };
 
 /************************************************************************/
@@ -789,26 +861,6 @@ char** VRTWarpedDataset::GetFileList()
 
     return papszFileList;
 }
-
-/************************************************************************/
-/*                      SetApplyVerticalShiftGrid()                     */
-/************************************************************************/
-
-void  VRTWarpedDataset::SetApplyVerticalShiftGrid(const char* pszVGrids,
-                                               int bInverse,
-                                               double dfToMeterSrc,
-                                               double dfToMeterDest,
-                                               char** papszOptions )
-{
-    VerticalShiftGrid oVertShiftGrid;
-    oVertShiftGrid.osVGrids = pszVGrids;
-    oVertShiftGrid.bInverse = bInverse;
-    oVertShiftGrid.dfToMeterSrc = dfToMeterSrc;
-    oVertShiftGrid.dfToMeterDest = dfToMeterDest;
-    oVertShiftGrid.aosOptions.Assign(papszOptions,FALSE);
-    m_aoVerticalShiftGrids.push_back(oVertShiftGrid);
-}
-
 
 /************************************************************************/
 /* ==================================================================== */
@@ -1246,6 +1298,26 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPathIn )
             return eErr;
     }
 
+    // Check that band block sizes didn't change the dataset block size.
+    for(int i = 1; i <= nBands; i++ )
+    {
+        int nBlockXSize = 0;
+        int nBlockYSize = 0;
+        GetRasterBand(i)->GetBlockSize(&nBlockXSize, &nBlockYSize);
+        if( nBlockXSize != m_nBlockXSize || nBlockYSize != m_nBlockYSize )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "Block size specified on band %d not consistent with "
+                     "dataset block size", i);
+            return CE_Failure;
+        }
+    }
+
+    if( nBands > 1 )
+    {
+        GDALDataset::SetMetadataItem("INTERLEAVE", "PIXEL", "IMAGE_STRUCTURE");
+    }
+
 /* -------------------------------------------------------------------- */
 /*      Find the GDALWarpOptions XML tree.                              */
 /* -------------------------------------------------------------------- */
@@ -1311,6 +1383,11 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPathIn )
         {
             continue;
         }
+
+        CPLError(CE_Warning, CPLE_AppDefined,
+                 "The VerticalShiftGrids in a warped VRT is now deprecated, "
+                 "and will no longer be handled in GDAL 4.0");
+
         const char* pszVGrids = CPLGetXMLValue(psIter, "Grids", nullptr);
         if( pszVGrids )
         {
@@ -1337,9 +1414,7 @@ CPLErr VRTWarpedDataset::XMLInit( CPLXMLNode *psTree, const char *pszVRTPathIn )
                                                    pszValue);
                 }
             }
-            SetApplyVerticalShiftGrid(pszVGrids, bInverse,
-                                      dfToMeterSrc, dfToMeterDest,
-                                      papszOptions );
+
             int bError = FALSE;
             GDALDatasetH hGridDataset =
                 GDALOpenVerticalShiftGrid(pszVGrids, &bError);
@@ -1529,44 +1604,6 @@ CPLXMLNode *VRTWarpedDataset::SerializeToXML( const char *pszVRTPathIn )
                 psTree, "SrcOvrLevel", CPLSPrintf("%d", m_nSrcOvrLevel) );
     }
 
-/* -------------------------------------------------------------------- */
-/*      Serialize vertical shift grids.                                 */
-/* -------------------------------------------------------------------- */
-    for(size_t i = 0; i < m_aoVerticalShiftGrids.size(); ++i )
-    {
-        CPLXMLNode* psVertShiftGridNode = 
-            CPLCreateXMLNode( psTree, CXT_Element, "VerticalShiftGrids" );
-        CPLCreateXMLElementAndValue(psVertShiftGridNode,
-                                    "Grids",
-                                    m_aoVerticalShiftGrids[i].osVGrids);
-        CPLCreateXMLElementAndValue(psVertShiftGridNode,
-                "Inverse",
-                m_aoVerticalShiftGrids[i].bInverse ? "TRUE" : "FALSE");
-        CPLCreateXMLElementAndValue(psVertShiftGridNode,
-                "ToMeterSrc",
-                CPLSPrintf("%.18g", m_aoVerticalShiftGrids[i].dfToMeterSrc));
-        CPLCreateXMLElementAndValue(psVertShiftGridNode,
-                "ToMeterDest",
-                CPLSPrintf("%.18g", m_aoVerticalShiftGrids[i].dfToMeterDest));
-        for( int j=0; j < m_aoVerticalShiftGrids[i].aosOptions.size(); ++j )
-        {
-            char* pszKey = nullptr;
-            const char* pszValue = CPLParseNameValue(
-                m_aoVerticalShiftGrids[i].aosOptions[j], &pszKey);
-            if( pszKey && pszValue )
-            {
-                CPLXMLNode* psOption = CPLCreateXMLElementAndValue(
-                    psVertShiftGridNode,
-                    "Option",
-                    pszValue);
-                CPLCreateXMLNode(
-                    CPLCreateXMLNode( psOption, CXT_Attribute, "name" ),
-                    CXT_Text, pszKey );
-            }
-            CPLFree(pszKey);
-        }
-    }
-
 /* ==================================================================== */
 /*      Serialize the warp options.                                     */
 /* ==================================================================== */
@@ -1597,8 +1634,29 @@ CPLXMLNode *VRTWarpedDataset::SerializeToXML( const char *pszVRTPathIn )
         if( VSIStatExL( psSDS->psChild->pszValue, &sStat,
                         VSI_STAT_EXISTS_FLAG) == 0 )
         {
+            std::string osVRTFilename = pszVRTPathIn;
+            std::string osSourceDataset = psSDS->psChild->pszValue;
+            char* pszCurDir = CPLGetCurrentDir();
+            if( CPLIsFilenameRelative(osSourceDataset.c_str()) &&
+                !CPLIsFilenameRelative(osVRTFilename.c_str()) &&
+                pszCurDir != nullptr )
+            {
+                osSourceDataset = CPLFormFilename(pszCurDir,
+                                                  osSourceDataset.c_str(),
+                                                  nullptr);
+            }
+            else if( !CPLIsFilenameRelative(osSourceDataset.c_str()) &&
+                     CPLIsFilenameRelative(osVRTFilename.c_str()) &&
+                     pszCurDir != nullptr )
+            {
+                osVRTFilename = CPLFormFilename(pszCurDir,
+                                                osVRTFilename.c_str(),
+                                                nullptr);
+            }
+            CPLFree(pszCurDir);
             char *pszRelativePath = CPLStrdup(
-                CPLExtractRelativePath( pszVRTPathIn, psSDS->psChild->pszValue,
+                CPLExtractRelativePath( osVRTFilename.c_str(),
+                                        osSourceDataset.c_str(),
                                         &bRelativeToVRT ) );
 
             CPLFree( psSDS->psChild->pszValue );
@@ -1658,7 +1716,7 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
 /* -------------------------------------------------------------------- */
 /*      Warp into this buffer.                                          */
 /* -------------------------------------------------------------------- */
-    
+
     const GDALWarpOptions *psWO = m_poWarper->GetOptions();
     const CPLErr eErr =
         m_poWarper->WarpRegionToBuffer(
@@ -1685,7 +1743,7 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
         GDALRasterBlock *poBlock
             = poBand->GetLockedBlockRef( iBlockX, iBlockY, TRUE );
 
-        const GByte* pabyDstBandBuffer = 
+        const GByte* pabyDstBandBuffer =
             pabyDstBuffer + static_cast<GPtrDiff_t>(i)*nReqXSize*nReqYSize*nWordSize;
 
         if( poBlock != nullptr )
@@ -1711,9 +1769,9 @@ CPLErr VRTWarpedDataset::ProcessBlock( int iBlockX, int iBlockY )
                     for(int iY=0;iY<nReqYSize;iY++)
                     {
                         GDALCopyWords(
-                            pabyDstBandBuffer + iY * nReqXSize*nWordSize,
+                            pabyDstBandBuffer + static_cast<GPtrDiff_t>(iY) * nReqXSize*nWordSize,
                             psWO->eWorkingDataType, nWordSize,
-                            pabyBlock + iY * m_nBlockXSize * nDTSize,
+                            pabyBlock + static_cast<GPtrDiff_t>(iY) * m_nBlockXSize * nDTSize,
                             poBlock->GetDataType(),
                             nDTSize,
                             nReqXSize );
@@ -1777,7 +1835,7 @@ VRTWarpedRasterBand::VRTWarpedRasterBand( GDALDataset *poDSIn, int nBandIn,
 VRTWarpedRasterBand::~VRTWarpedRasterBand()
 
 {
-    FlushCache();
+    FlushCache(true);
 }
 
 /************************************************************************/
@@ -1789,17 +1847,34 @@ CPLErr VRTWarpedRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
 {
     VRTWarpedDataset *poWDS = static_cast<VRTWarpedDataset *>( poDS );
+    const GPtrDiff_t nDataBytes
+        = static_cast<GPtrDiff_t>(GDALGetDataTypeSizeBytes(eDataType)) *
+            nBlockXSize * nBlockYSize;
+
     GDALRasterBlock *poBlock = GetLockedBlockRef( nBlockXOff, nBlockYOff, TRUE );
     if( poBlock == nullptr )
         return CE_Failure;
+
+    if( poWDS->m_poWarper )
+    {
+        const GDALWarpOptions *psWO = poWDS->m_poWarper->GetOptions();
+        if( nBand == psWO->nDstAlphaBand )
+        {
+            // For a reader starting by asking on band 1, we should normally
+            // not reach here, because ProcessBlock() on band 1 will have
+            // populated the block cache for the regular bands and the alpha
+            // band.
+            // But if there's no source window corresponding to the block,
+            // the alpha band block will not be written through RasterIO(),
+            // so we nee to initialize it.
+            memset(poBlock->GetDataRef(), 0, nDataBytes);
+        }
+    }
 
     const CPLErr eErr = poWDS->ProcessBlock( nBlockXOff, nBlockYOff );
 
     if( eErr == CE_None && pImage != poBlock->GetDataRef() )
     {
-        const GPtrDiff_t nDataBytes
-            = static_cast<GPtrDiff_t>(GDALGetDataTypeSize(poBlock->GetDataType()) / 8)
-            * poBlock->GetXSize() * poBlock->GetYSize();
         memcpy( pImage, poBlock->GetDataRef(), nDataBytes );
     }
 
@@ -1821,8 +1896,9 @@ CPLErr VRTWarpedRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
     // This is a bit tricky. In the case we are warping a VRTWarpedDataset
     // with a destination alpha band, IWriteBlock can be called on that alpha
     // band by GDALWarpDstAlphaMasker
-    // We don't need to do anything since the data will be kept in the block
-    // cache by VRTWarpedRasterBand::IReadBlock.
+    // We don't need to do anything since the data will have hopefully been
+    // read from the block cache before if the reader processes all the bands
+    // of a same block.
     if (poWDS->m_poWarper->GetOptions()->nDstAlphaBand != nBand)
     {
         /* Otherwise, call the superclass method, that will fail of course */

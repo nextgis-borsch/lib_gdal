@@ -35,6 +35,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 set(LIB_HHEADERS
     memdataset.h
+    memmultidim.h
 )
 
 set(LIB_HHEADERS_PRIV

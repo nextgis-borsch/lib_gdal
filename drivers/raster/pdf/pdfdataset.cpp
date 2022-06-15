@@ -1234,7 +1234,7 @@ int UnloadPdfiumDocumentPage(TPdfiumDocumentStruct** doc, TPdfiumPageStruct** pa
   // Get mutex for loading pdfium
   CPLCreateOrAcquireMutex(&g_oPdfiumLoadDocMutex, PDFIUM_MUTEX_TIMEOUT);
 
-  // Decreas page use
+  // Decrease page use
   --pPage->sharedNum;
 
 #ifdef DEBUG
@@ -1306,7 +1306,7 @@ int UnloadPdfiumDocumentPage(TPdfiumDocumentStruct** doc, TPdfiumPageStruct** pa
 /*                             GetOption()                              */
 /************************************************************************/
 
-const char* PDFDataset::GetOption(char** papszOpenOptions,
+const char* PDFDataset::GetOption(char** papszOpenOptionsIn,
                                   const char* pszOptionName,
                                   const char* pszDefaultVal)
 {
@@ -1321,7 +1321,7 @@ const char* PDFDataset::GetOption(char** papszOpenOptions,
     {
         if( EQUAL(CPLGetXMLValue( psIter, "name", "" ), pszOptionName) )
         {
-            const char* pszVal = CSLFetchNameValue(papszOpenOptions, pszOptionName);
+            const char* pszVal = CSLFetchNameValue(papszOpenOptionsIn, pszOptionName);
             if( pszVal != nullptr )
             {
                 CPLDestroyXMLNode(psNode);
@@ -1410,26 +1410,25 @@ public:
 
     virtual void SetBaseClip(const FX_RECT& rect) override { m_poParent->SetBaseClip(rect); }
 
-    virtual bool SetClip_PathFill(const CFX_PathData* pPathData,
+    virtual bool SetClip_PathFill(const CFX_Path& path,
                                 const CFX_Matrix* pObject2Device,
                                 const CFX_FillRenderOptions& fill_options) override
     {
         if( !bEnableVector && !bTemporaryEnableVectorForTextStroking )
             return true;
-        return m_poParent->SetClip_PathFill(pPathData, pObject2Device, fill_options);
+        return m_poParent->SetClip_PathFill(path, pObject2Device, fill_options);
     }
 
-    virtual bool     SetClip_PathStroke(const CFX_PathData* pPathData,
-                                       const CFX_Matrix* pObject2Device,
-                                       const CFX_GraphStateData* pGraphState
-                                      ) override
+    virtual bool     SetClip_PathStroke(const CFX_Path& path,
+                                  const CFX_Matrix* pObject2Device,
+                                  const CFX_GraphStateData* pGraphState) override
     {
         if( !bEnableVector && !bTemporaryEnableVectorForTextStroking )
             return true;
-        return m_poParent->SetClip_PathStroke(pPathData, pObject2Device, pGraphState);
+        return m_poParent->SetClip_PathStroke(path, pObject2Device, pGraphState);
     }
 
-    virtual bool DrawPath(const CFX_PathData* pPathData,
+    virtual bool DrawPath(const CFX_Path& path,
                         const CFX_Matrix* pObject2Device,
                         const CFX_GraphStateData* pGraphState,
                         uint32_t fill_color,
@@ -1439,7 +1438,7 @@ public:
     {
         if( !bEnableVector && !bTemporaryEnableVectorForTextStroking )
             return true;
-        return m_poParent->DrawPath(pPathData, pObject2Device, pGraphState ,
+        return m_poParent->DrawPath(path, pObject2Device, pGraphState ,
                                     fill_color, stroke_color, fill_options,
                                     blend_type);
     }
@@ -1528,8 +1527,7 @@ public:
         return m_poParent->ContinueDIBits(handle, pPause);
     }
 
-    virtual bool DrawDeviceText(int nChars,
-                              const TextCharPos* pCharPos,
+    virtual bool DrawDeviceText(pdfium::span<const TextCharPos> pCharPos,
                               CFX_Font* pFont,
                               const CFX_Matrix& mtObject2Device,
                               float font_size,
@@ -1544,7 +1542,7 @@ public:
             if( bTemporaryEnableVectorForTextStroking )
                 return FALSE; // this is the default behavior of the parent
             bTemporaryEnableVectorForTextStroking = true;
-            bool bRet = m_pDevice->DrawNormalText(nChars, pCharPos,
+            bool bRet = m_pDevice->DrawNormalText(pCharPos,
                                                      pFont,
                                                      font_size, mtObject2Device,
                                                      color, options);
@@ -1657,7 +1655,7 @@ void myRenderPageImpl(PDFDataset* poDS,
   }
 
   const CPDF_OCContext::UsageType usage =
-      (flags & FPDF_PRINTING) ? CPDF_OCContext::Print : CPDF_OCContext::View;
+      (flags & FPDF_PRINTING) ? CPDF_OCContext::kPrint : CPDF_OCContext::kView;
   pContext->m_pOptions->SetOCContext(
       pdfium::MakeRetain<GDALPDFiumOCContext>(poDS, pPage->GetDocument(), usage));
 
@@ -1665,10 +1663,10 @@ void myRenderPageImpl(PDFDataset* poDS,
   pContext->m_pDevice->SetBaseClip(clipping_rect);
   pContext->m_pDevice->SetClip_Rect(clipping_rect);
   pContext->m_pContext = std::make_unique<CPDF_RenderContext>(
-      pPage->GetDocument(), pPage->m_pPageResources.Get(),
+      pPage->GetDocument(), pPage->GetPageResources(),
       static_cast<CPDF_PageRenderCache*>(pPage->GetRenderCache()));
 
-  pContext->m_pContext->AppendLayer(pPage, &matrix);
+  pContext->m_pContext->AppendLayer(pPage, matrix);
 
   if (flags & FPDF_ANNOT) {
     auto pOwnedList = std::make_unique<CPDF_AnnotList>(pPage);
@@ -1676,8 +1674,12 @@ void myRenderPageImpl(PDFDataset* poDS,
     pContext->m_pAnnots = std::move(pOwnedList);
     bool bPrinting =
         pContext->m_pDevice->GetDeviceType() != DeviceType::kDisplay;
-    pList->DisplayAnnots(pPage, pContext->m_pContext.get(), bPrinting, &matrix,
-                         false, nullptr);
+
+    // TODO(https://crbug.com/pdfium/993) - maybe pass true here.
+    const bool bShowWidget = false;
+    pList->DisplayAnnots(pPage, pContext->m_pDevice.get(),
+                         pContext->m_pContext.get(), bPrinting, matrix,
+                         bShowWidget);
   }
 
   pContext->m_pRenderer = std::make_unique<CPDF_ProgressiveRenderer>(
@@ -1731,7 +1733,7 @@ bool MyRenderDevice::Attach(const RetainPtr<CFX_DIBitmap>& pBitmap,
 {
   SetBitmap(pBitmap);
 
-  std::unique_ptr<RenderDeviceDriverIface> driver = std::make_unique<CFX_AggDeviceDriver>(
+  std::unique_ptr<RenderDeviceDriverIface> driver = std::make_unique<pdfium::CFX_AggDeviceDriver>(
       pBitmap, bRgbByteOrder, pBackdropBitmap, bGroupKnockout);
   if (pszRenderingOptions != nullptr)
   {
@@ -2305,7 +2307,6 @@ PDFDataset::PDFDataset( PDFDataset* poParentDSIn, int nXSize, int nYSize ) :
 #endif
     poCatalogObject(nullptr),
     bUseOCG(FALSE),
-    papszOpenOptions(nullptr),
     bHasLoadedLayers(FALSE),
     nLayers(0),
     papoLayers(nullptr),
@@ -2560,7 +2561,6 @@ PDFDataset::~PDFDataset()
     }
     CPLFree(pszWKT);
     pszWKT = nullptr;
-    CSLDestroy(papszOpenOptions);
 
     CleanupIntermediateResources();
 
@@ -2714,7 +2714,16 @@ static void PDFDatasetErrorFunction(
                                    )
 {
     if( g_nPopplerErrors >= MAX_POPPLER_ERRORS )
+    {
+        // If there are too many errors, then unregister ourselves and turn
+        // quiet error mode, as the error() function in poppler can spend
+        // significant time formatting an error message we won't emit...
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 85
+        setErrorCallback(nullptr);
+        globalParams->setErrQuiet(true);
+#endif
         return;
+    }
 
     g_nPopplerErrors ++;
     CPLString osError;
@@ -3457,7 +3466,7 @@ void PDFDataset::AddLayer(const char* pszLayerName)
             osNewLayerList.AddNameValue(CPLSPrintf("LAYER_%03d_NAME", i),
                                         osLayerList[/*2 * */ i] + strlen("LAYER_00_NAME="));
         }
-        osLayerList = osNewLayerList;
+        osLayerList = std::move(osNewLayerList);
     }
 
     char szFormatName[64];
@@ -3592,7 +3601,7 @@ void PDFDataset::FindLayersPoppler()
         }
     }
 
-    oMDMD.SetMetadata(osLayerList.List(), "LAYERS");
+    oMDMD_PDF.SetMetadata(osLayerList.List(), "LAYERS");
 }
 
 /************************************************************************/
@@ -3806,6 +3815,7 @@ void PDFDataset::ExploreLayersPdfium(GDALPDFArray* poArray,
             if (poName != nullptr && poName->GetType() == PDFObjectType_String)
             {
                 CPLString osName = PDFSanitizeLayerName(poName->GetString().c_str());
+                // coverity[copy_paste_error]
                 if (!osTopLayer.empty() )
                     osCurLayer = osTopLayer + "." + osName;
                 else
@@ -3855,7 +3865,7 @@ void PDFDataset::FindLayersPdfium()
     }
 #endif
 
-    oMDMD.SetMetadata(osLayerList.List(), "LAYERS");
+    oMDMD_PDF.SetMetadata(osLayerList.List(), "LAYERS");
 }
 
 /************************************************************************/
@@ -4198,9 +4208,7 @@ PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
     GDALPDFObject* poPageObj = nullptr;
 #ifdef HAVE_POPPLER
     PDFDoc* poDocPoppler = nullptr;
-#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58
-    Object oObj;
-#else
+#if !(POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58)
     ObjectAutoFree oObj;
 #endif
     Page* poPagePoppler = nullptr;
@@ -4230,20 +4238,13 @@ PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
 #ifdef HAVE_POPPLER
   if(bUseLib.test(PDFLIB_POPPLER))
   {
-    GooString* poUserPwd = nullptr;
-
-    /* Set custom error handler for poppler errors */
-#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 85
-    setErrorCallback(PDFDatasetErrorFunction);
-#else
-    setErrorCallback(PDFDatasetErrorFunction, nullptr);
-#endif
-
+    static bool globalParamsCreatedByGDAL = false;
     {
         CPLMutexHolderD(&hGlobalParamsMutex);
         /* poppler global variable */
         if (globalParams == nullptr)
         {
+            globalParamsCreatedByGDAL = true;
 #if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 83
             globalParams.reset(new GlobalParams());
 #else
@@ -4255,28 +4256,78 @@ PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
             CPLGetConfigOption("GDAL_PDF_PRINT_COMMANDS", "FALSE")));
     }
 
+    const auto registerErrorCallback = []()
+    {
+        /* Set custom error handler for poppler errors */
+#if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 85
+        setErrorCallback(PDFDatasetErrorFunction);
+#else
+        setErrorCallback(PDFDatasetErrorFunction, nullptr);
+#endif
+        globalParams->setErrQuiet(false);
+    };
+
     VSILFILE* fp = VSIFOpenL(pszFilename, "rb");
     if (fp == nullptr)
         return nullptr;
 
+#ifdef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
+    {
+        // Workaround for ossfuzz only due to
+        // https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=37584
+        // https://gitlab.freedesktop.org/poppler/poppler/-/issues/1137
+        GByte* pabyRet = nullptr;
+        vsi_l_offset nSize = 0;
+        if( VSIIngestFile(fp, pszFilename, &pabyRet, &nSize, 10 * 1024 * 1024) )
+        {
+            // Replace nul byte by something else so that strstr() works
+            for( size_t i = 0; i < nSize; i++ )
+            {
+                if( pabyRet[i] == 0 ) pabyRet[i] = ' ';
+            }
+            if( strstr(reinterpret_cast<const char*>(pabyRet), "/JBIG2Decode") )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined,
+                         "/JBIG2Decode found. Giving up due to potential "
+                         "very long processing time.");
+                CPLFree(pabyRet);
+                VSIFCloseL(fp);
+                return nullptr;
+            }
+        }
+        CPLFree(pabyRet);
+    }
+#endif
+
     fp = (VSILFILE*)VSICreateBufferedReaderHandle((VSIVirtualHandle*)fp);
     fpKeeper.reset(fp);
-
     while( true )
     {
         VSIFSeekL(fp, 0, SEEK_SET);
-        if (pszUserPwd)
-            poUserPwd = new GooString(pszUserPwd);
-
         g_nPopplerErrors = 0;
+        if( globalParamsCreatedByGDAL )
+            registerErrorCallback();
 #if POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 58
+        Object oObj;
         auto poStream = new VSIPDFFileStream(fp, pszFilename, std::move(oObj));
 #else
         oObj.getObj()->initNull();
         auto poStream = new VSIPDFFileStream(fp, pszFilename, oObj.getObj());
 #endif
+#if POPPLER_MAJOR_VERSION > 22 || (POPPLER_MAJOR_VERSION == 22 && POPPLER_MINOR_VERSION > 2)
+        std::optional<GooString> osUserPwd;
+        if (pszUserPwd)
+            osUserPwd = std::optional<GooString>(pszUserPwd);
+        poDocPoppler = new PDFDoc(poStream, std::optional<GooString>(), osUserPwd);
+#else
+        GooString* poUserPwd = nullptr;
+        if (pszUserPwd)
+            poUserPwd = new GooString(pszUserPwd);
         poDocPoppler = new PDFDoc(poStream, nullptr, poUserPwd);
         delete poUserPwd;
+#endif
+        if( globalParamsCreatedByGDAL )
+            registerErrorCallback();
         if( g_nPopplerErrors >= MAX_POPPLER_ERRORS )
         {
             PDFFreeDoc(poDocPoppler);
@@ -4963,7 +5014,7 @@ PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
 #ifdef HAVE_POPPLER
   if (bUseLib.test(PDFLIB_POPPLER))
   {
-    GooString* poMetadata = poCatalogPoppler->readMetadata();
+    auto poMetadata = poCatalogPoppler->readMetadata();
     if (poMetadata)
     {
 #if (POPPLER_MAJOR_VERSION >= 1 || POPPLER_MINOR_VERSION >= 72)
@@ -4977,7 +5028,9 @@ PDFDataset *PDFDataset::Open( GDALOpenInfo * poOpenInfo )
             const char * const apszMDList[2] = { pszContent, nullptr };
             poDS->SetMetadata(const_cast<char**>(apszMDList), "xml:XMP");
         }
+#if (POPPLER_MAJOR_VERSION < 21 || (POPPLER_MAJOR_VERSION == 21 && POPPLER_MINOR_VERSION < 10))
         delete poMetadata;
+#endif
     }
 
     /* Read Info object */
@@ -6203,7 +6256,11 @@ int PDFDataset::ParseVP(GDALPDFObject* poVP, double dfMediaBoxWidth, double dfMe
 /* -------------------------------------------------------------------- */
 /*      Find the largest BBox                                           */
 /* -------------------------------------------------------------------- */
+    const char* pszNeatlineToSelect =
+        GetOption(papszOpenOptions, "NEATLINE", "Map Layers");
+
     int iLargest = 0;
+    int iRequestedVP = -1;
     double dfLargestArea = 0;
 
     for(i=0;i<nLength;i++)
@@ -6237,6 +6294,16 @@ int PDFDataset::ParseVP(GDALPDFObject* poVP, double dfMediaBoxWidth, double dfMe
         if( !EQUAL(poSubtype->GetName(), "GEO") )
         {
             continue;
+        }
+
+        GDALPDFObject* poName = poVPEltDict->Get("Name");
+        if( poName != nullptr &&
+            poName->GetType() == PDFObjectType_String )
+        {
+            CPLDebug("PDF", "Name = %s", poName->GetString().c_str());
+            if( EQUAL(poName->GetString().c_str(), pszNeatlineToSelect) ) {
+                iRequestedVP = i;
+            }
         }
 
         GDALPDFObject* poBBox = poVPEltDict->Get("BBox");
@@ -6274,7 +6341,15 @@ int PDFDataset::ParseVP(GDALPDFObject* poVP, double dfMediaBoxWidth, double dfMe
         CPLDebug("PDF", "Largest BBox in VP array is element %d", iLargest);
     }
 
-    GDALPDFObject* poVPElt = poVPArray->Get(iLargest);
+    GDALPDFObject* poVPElt = nullptr;
+
+    if (iRequestedVP > -1) {
+        CPLDebug("PDF", "Requested NEATLINE BBox in VP array is element %d", iRequestedVP);
+        poVPElt = poVPArray->Get(iRequestedVP);
+    } else {
+        poVPElt = poVPArray->Get(iLargest);
+    }
+
     if (poVPElt == nullptr || poVPElt->GetType() != PDFObjectType_Dictionary)
     {
         return FALSE;
@@ -6776,7 +6851,7 @@ char      **PDFDataset::GetMetadata( const char * pszDomain )
 {
     if( pszDomain != nullptr && EQUAL(pszDomain, "EMBEDDED_METADATA") )
     {
-        char** papszRet = oMDMD.GetMetadata(pszDomain);
+        char** papszRet = oMDMD_PDF.GetMetadata(pszDomain);
         if( papszRet )
             return papszRet;
 
@@ -6797,9 +6872,9 @@ char      **PDFDataset::GetMetadata( const char * pszDomain )
 
         char* apszMetadata[2] = { nullptr, nullptr };
         apszMetadata[0] = poStream->GetBytes();
-        oMDMD.SetMetadata(apszMetadata, pszDomain);
+        oMDMD_PDF.SetMetadata(apszMetadata, pszDomain);
         VSIFree(apszMetadata[0]);
-        return oMDMD.GetMetadata(pszDomain);
+        return oMDMD_PDF.GetMetadata(pszDomain);
     }
     if( pszDomain == nullptr || EQUAL(pszDomain, "") )
     {
@@ -6812,18 +6887,18 @@ char      **PDFDataset::GetMetadata( const char * pszDomain )
             const char* pszValue = CPLParseNameValue(*papszIter, &pszKey);
             if( pszKey && pszValue )
             {
-                if( oMDMD.GetMetadataItem( pszKey, pszDomain ) == nullptr )
-                    oMDMD.SetMetadataItem( pszKey, pszValue, pszDomain );
+                if( oMDMD_PDF.GetMetadataItem( pszKey, pszDomain ) == nullptr )
+                    oMDMD_PDF.SetMetadataItem( pszKey, pszValue, pszDomain );
             }
             CPLFree(pszKey);
         }
-        return oMDMD.GetMetadata(pszDomain);
+        return oMDMD_PDF.GetMetadata(pszDomain);
     }
     if( EQUAL(pszDomain, "LAYERS") ||
         EQUAL(pszDomain, "xml:XMP") ||
         EQUAL(pszDomain, "SUBDATASETS") )
     {
-        return oMDMD.GetMetadata(pszDomain);
+        return oMDMD_PDF.GetMetadata(pszDomain);
     }
     return GDALPamDataset::GetMetadata(pszDomain);
 }
@@ -6838,7 +6913,7 @@ CPLErr      PDFDataset::SetMetadata( char ** papszMetadata,
     if (pszDomain == nullptr || EQUAL(pszDomain, ""))
     {
         char** papszMetadataDup = CSLDuplicate(papszMetadata);
-        oMDMD.SetMetadata(nullptr, pszDomain);
+        oMDMD_PDF.SetMetadata(nullptr, pszDomain);
 
         for(char** papszIter = papszMetadataDup;
             papszIter && *papszIter;
@@ -6858,11 +6933,11 @@ CPLErr      PDFDataset::SetMetadata( char ** papszMetadata,
     else if (EQUAL(pszDomain, "xml:XMP"))
     {
         bXMPDirty = TRUE;
-        return oMDMD.SetMetadata(papszMetadata, pszDomain);
+        return oMDMD_PDF.SetMetadata(papszMetadata, pszDomain);
     }
     else if (EQUAL(pszDomain, "SUBDATASETS") )
     {
-        return oMDMD.SetMetadata(papszMetadata, pszDomain);
+        return oMDMD_PDF.SetMetadata(papszMetadata, pszDomain);
     }
     else
     {
@@ -6902,7 +6977,7 @@ CPLErr      PDFDataset::SetMetadataItem( const char * pszName,
     {
         if (EQUAL(pszName, "NEATLINE"))
         {
-            const char* pszOldValue = oMDMD.GetMetadataItem(pszName, pszDomain);
+            const char* pszOldValue = oMDMD_PDF.GetMetadataItem(pszName, pszDomain);
             if( (pszValue == nullptr && pszOldValue != nullptr) ||
                 (pszValue != nullptr && pszOldValue == nullptr) ||
                 (pszValue != nullptr && pszOldValue != nullptr &&
@@ -6911,7 +6986,7 @@ CPLErr      PDFDataset::SetMetadataItem( const char * pszName,
                 bProjDirty = TRUE;
                 bNeatLineDirty = TRUE;
             }
-            return oMDMD.SetMetadataItem(pszName, pszValue, pszDomain);
+            return oMDMD_PDF.SetMetadataItem(pszName, pszValue, pszDomain);
         }
         else
         {
@@ -6925,21 +7000,21 @@ CPLErr      PDFDataset::SetMetadataItem( const char * pszName,
             {
                 if (pszValue == nullptr)
                     pszValue = "";
-                const char* pszOldValue = oMDMD.GetMetadataItem(pszName, pszDomain);
+                const char* pszOldValue = oMDMD_PDF.GetMetadataItem(pszName, pszDomain);
                 if( pszOldValue == nullptr ||
                     strcmp(pszValue, pszOldValue) != 0 )
                 {
                     bInfoDirty = TRUE;
                 }
-                return oMDMD.SetMetadataItem(pszName, pszValue, pszDomain);
+                return oMDMD_PDF.SetMetadataItem(pszName, pszValue, pszDomain);
             }
             else if( EQUAL(pszName, "DPI") )
             {
-                return oMDMD.SetMetadataItem(pszName, pszValue, pszDomain);
+                return oMDMD_PDF.SetMetadataItem(pszName, pszValue, pszDomain);
             }
             else
             {
-                oMDMD.SetMetadataItem(pszName, pszValue, pszDomain);
+                oMDMD_PDF.SetMetadataItem(pszName, pszValue, pszDomain);
                 return GDALPamDataset::SetMetadataItem(pszName, pszValue, pszDomain);
             }
         }
@@ -6947,11 +7022,11 @@ CPLErr      PDFDataset::SetMetadataItem( const char * pszName,
     else if (EQUAL(pszDomain, "xml:XMP"))
     {
         bXMPDirty = TRUE;
-        return oMDMD.SetMetadataItem(pszName, pszValue, pszDomain);
+        return oMDMD_PDF.SetMetadataItem(pszName, pszValue, pszDomain);
     }
     else if (EQUAL(pszDomain, "SUBDATASETS"))
     {
-        return oMDMD.SetMetadataItem(pszName, pszValue, pszDomain);
+        return oMDMD_PDF.SetMetadataItem(pszName, pszValue, pszDomain);
     }
     else
     {
@@ -7150,6 +7225,7 @@ void GDALRegister_PDF()
 #endif
 
     poDriver->SetMetadataItem( GDAL_DCAP_FEATURE_STYLES, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_MULTIPLE_VECTOR_LAYERS, "YES" );
 
 #ifdef HAVE_POPPLER
     poDriver->SetMetadataItem( "HAVE_POPPLER", "YES" );
@@ -7229,6 +7305,7 @@ void GDALRegister_PDF()
     poDriver->pfnOpen = PDFDataset::OpenWrapper;
     poDriver->pfnIdentify = PDFDataset::Identify;
     poDriver->SetMetadataItem( GDAL_DMD_SUBDATASETS, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_MULTIPLE_VECTOR_LAYERS, "YES" );
 #endif // HAVE_PDF_READ_SUPPORT
 
     poDriver->pfnCreateCopy = GDALPDFCreateCopy;

@@ -65,6 +65,7 @@ CPLGetAWS_SIGN4_Signature( const CPLString& osSecretAccessKey,
                                const CPLString& osCanonicalURI,
                                const CPLString& osCanonicalQueryString,
                                const CPLString& osXAMZContentSHA256,
+                               bool bAddHeaderAMZContentSHA256,
                                const CPLString& osTimestamp,
                                CPLString& osSignedHeaders );
 
@@ -112,6 +113,7 @@ public:
         CPLString GetURLNoKVP() const;
 
         virtual CPLString GetCopySourceHeader() const { return std::string(); }
+        virtual const char* GetMetadataDirectiveREPLACE() const { return ""; }
 
         static bool GetBucketAndObjectKey(const char* pszURI,
                                           const char* pszFSPrefix,
@@ -125,6 +127,15 @@ public:
                             const char* pszHeaderPrefix);
 
         static CPLString GetRFC822DateTime();
+};
+
+enum class AWSCredentialsSource
+{
+    REGULAR,         // credentials from env variables or ~/.aws/crediential
+    EC2,             // credentials from EC2 private networking
+    ASSUMED_ROLE     // credentials from an STS assumed role
+                     // See https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_use_switch-role-cli.html
+                     // and https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_temp_request.html
 };
 
 class VSIS3HandleHelper final: public IVSIS3LikeHandleHelper
@@ -142,27 +153,35 @@ class VSIS3HandleHelper final: public IVSIS3LikeHandleHelper
         CPLString m_osObjectKey{};
         bool m_bUseHTTPS = false;
         bool m_bUseVirtualHosting = false;
-        bool m_bFromEC2 = false;
+        AWSCredentialsSource m_eCredentialsSource = AWSCredentialsSource::REGULAR;
 
         void RebuildURL() override;
 
-        static bool GetConfigurationFromEC2(CPLString& osSecretAccessKey,
+        static bool GetConfigurationFromEC2(const std::string& osPathForOption,
+                                            CPLString& osSecretAccessKey,
                                             CPLString& osAccessKeyId,
                                             CPLString& osSessionToken);
 
         static bool GetConfigurationFromAWSConfigFiles(
+                                     const std::string& osPathForOption,
                                      CPLString& osSecretAccessKey,
                                      CPLString& osAccessKeyId,
                                      CPLString& osSessionToken,
                                      CPLString& osRegion,
-                                     CPLString& osCredentials);
+                                     CPLString& osCredentials,
+                                     CPLString& osRoleArn,
+                                     CPLString& osSourceProfile,
+                                     CPLString& osExternalId,
+                                     CPLString& osMFASerial,
+                                     CPLString& osRoleSessionName);
 
-        static bool GetConfiguration(CSLConstList papszOptions,
+        static bool GetConfiguration(const std::string& osPathForOption,
+                                     CSLConstList papszOptions,
                                      CPLString& osSecretAccessKey,
                                      CPLString& osAccessKeyId,
                                      CPLString& osSessionToken,
                                      CPLString& osRegion,
-                                     bool& bFromEC2);
+                                     AWSCredentialsSource& eCredentialsSource);
   protected:
 
     public:
@@ -174,7 +193,8 @@ class VSIS3HandleHelper final: public IVSIS3LikeHandleHelper
                     const CPLString& osRequestPayer,
                     const CPLString& osBucket,
                     const CPLString& osObjectKey,
-                    bool bUseHTTPS, bool bUseVirtualHosting, bool bFromEC2);
+                    bool bUseHTTPS, bool bUseVirtualHosting,
+                    AWSCredentialsSource eCredentialsSource);
        ~VSIS3HandleHelper();
 
         static VSIS3HandleHelper* BuildFromURI(const char* pszURI,
@@ -210,6 +230,7 @@ class VSIS3HandleHelper final: public IVSIS3LikeHandleHelper
         void SetVirtualHosting(bool b);
 
         CPLString GetCopySourceHeader() const override { return "x-amz-copy-source"; }
+        const char* GetMetadataDirectiveREPLACE() const override { return "x-amz-metadata-directive: REPLACE"; }
 
         CPLString GetSignedURL(CSLConstList papszOptions);
 

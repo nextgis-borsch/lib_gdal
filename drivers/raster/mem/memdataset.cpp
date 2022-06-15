@@ -29,6 +29,7 @@
 
 #include "cpl_port.h"
 #include "memdataset.h"
+#include "memmultidim.h"
 
 #include <algorithm>
 #include <climits>
@@ -95,13 +96,7 @@ MEMRasterBand::MEMRasterBand( GByte *pabyDataIn, GDALDataType eTypeIn,
     pabyData(pabyDataIn),
     nPixelOffset(GDALGetDataTypeSizeBytes(eTypeIn)),
     nLineOffset(0),
-    bOwnData(true),
-    bNoDataSet(FALSE),
-    dfNoData(0.0),
-    eColorInterp(GCI_Undefined),
-    dfOffset(0.0),
-    dfScale(1.0),
-    psSavedHistograms(nullptr)
+    bOwnData(true)
 {
     eAccess = GA_Update;
     eDataType = eTypeIn;
@@ -110,6 +105,8 @@ MEMRasterBand::MEMRasterBand( GByte *pabyDataIn, GDALDataType eTypeIn,
     nBlockXSize = nXSizeIn;
     nBlockYSize = 1;
     nLineOffset = nPixelOffset * static_cast<size_t>(nBlockXSize);
+
+    PamInitializeNoParent();
 }
 
 /************************************************************************/
@@ -124,13 +121,7 @@ MEMRasterBand::MEMRasterBand( GDALDataset *poDSIn, int nBandIn,
     pabyData(pabyDataIn),
     nPixelOffset(nPixelOffsetIn),
     nLineOffset(nLineOffsetIn),
-    bOwnData(bAssumeOwnership),
-    bNoDataSet(FALSE),
-    dfNoData(0.0),
-    eColorInterp(GCI_Undefined),
-    dfOffset(0.0),
-    dfScale(1.0),
-    psSavedHistograms(nullptr)
+    bOwnData(bAssumeOwnership)
 {
     poDS = poDSIn;
     nBand = nBandIn;
@@ -150,6 +141,8 @@ MEMRasterBand::MEMRasterBand( GDALDataset *poDSIn, int nBandIn,
 
     if( pszPixelType && EQUAL(pszPixelType,"SIGNEDBYTE") )
         SetMetadataItem( "PIXELTYPE", "SIGNEDBYTE", "IMAGE_STRUCTURE" );
+
+    PamInitializeNoParent();
 }
 
 /************************************************************************/
@@ -163,9 +156,6 @@ MEMRasterBand::~MEMRasterBand()
     {
         VSIFree( pabyData );
     }
-
-    if (psSavedHistograms != nullptr)
-        CPLDestroyXMLNode(psSavedHistograms);
 }
 
 /************************************************************************/
@@ -258,7 +248,7 @@ CPLErr MEMRasterBand::IRasterIO( GDALRWFlag eRWFlag,
     }
 
     // In case block based I/O has been done before.
-    FlushCache();
+    FlushCache(false);
 
     if( eRWFlag == GF_Read )
     {
@@ -351,7 +341,7 @@ CPLErr MEMDataset::IRasterIO( GDALRWFlag eRWFlag,
         }
         if( iBandIndex == nBandCount )
         {
-            FlushCache();
+            FlushCache(false);
             if( eRWFlag == GF_Read )
             {
                 for(int iLine=0;iLine<nYSize;iLine++)
@@ -405,290 +395,6 @@ CPLErr MEMDataset::IRasterIO( GDALRWFlag eRWFlag,
 }
 
 /************************************************************************/
-/*                            GetNoDataValue()                          */
-/************************************************************************/
-double MEMRasterBand::GetNoDataValue( int *pbSuccess )
-
-{
-    if( pbSuccess )
-        *pbSuccess = bNoDataSet;
-
-    if( bNoDataSet )
-        return dfNoData;
-
-    return 0.0;
-}
-
-/************************************************************************/
-/*                            SetNoDataValue()                          */
-/************************************************************************/
-CPLErr MEMRasterBand::SetNoDataValue( double dfNewValue )
-{
-    dfNoData = dfNewValue;
-    bNoDataSet = TRUE;
-
-    return CE_None;
-}
-
-/************************************************************************/
-/*                         DeleteNoDataValue()                          */
-/************************************************************************/
-
-CPLErr MEMRasterBand::DeleteNoDataValue()
-{
-    dfNoData = 0.0;
-    bNoDataSet = FALSE;
-
-    return CE_None;
-}
-
-/************************************************************************/
-/*                       GetColorInterpretation()                       */
-/************************************************************************/
-
-GDALColorInterp MEMRasterBand::GetColorInterpretation()
-
-{
-    if( m_poColorTable != nullptr )
-        return GCI_PaletteIndex;
-
-    return eColorInterp;
-}
-
-/************************************************************************/
-/*                       SetColorInterpretation()                       */
-/************************************************************************/
-
-CPLErr MEMRasterBand::SetColorInterpretation( GDALColorInterp eGCI )
-
-{
-    eColorInterp = eGCI;
-
-    return CE_None;
-}
-
-/************************************************************************/
-/*                           GetColorTable()                            */
-/************************************************************************/
-
-GDALColorTable *MEMRasterBand::GetColorTable()
-
-{
-    return m_poColorTable.get();
-}
-
-/************************************************************************/
-/*                           SetColorTable()                            */
-/************************************************************************/
-
-CPLErr MEMRasterBand::SetColorTable( GDALColorTable *poCT )
-
-{
-    if( poCT == nullptr )
-        m_poColorTable.reset();
-    else
-        m_poColorTable.reset(poCT->Clone());
-
-    return CE_None;
-}
-/************************************************************************/
-/*                           GetDefaultRAT()                            */
-/************************************************************************/
-
-GDALRasterAttributeTable* MEMRasterBand::GetDefaultRAT()
-{
-    return m_poRAT.get();
-}
-
-/************************************************************************/
-/*                            SetDefaultRAT()                           */
-/************************************************************************/
-
-CPLErr MEMRasterBand::SetDefaultRAT( const GDALRasterAttributeTable * poRAT )
-{
-    if( poRAT == nullptr )
-        m_poRAT.reset();
-    else
-        m_poRAT.reset(poRAT->Clone());
-
-    return CE_None;
-}
-
-/************************************************************************/
-/*                            GetUnitType()                             */
-/************************************************************************/
-
-const char *MEMRasterBand::GetUnitType()
-
-{
-    return m_osUnitType.c_str();
-}
-
-/************************************************************************/
-/*                            SetUnitType()                             */
-/************************************************************************/
-
-CPLErr MEMRasterBand::SetUnitType( const char *pszNewValue )
-
-{
-    m_osUnitType = pszNewValue ? pszNewValue : "";
-
-    return CE_None;
-}
-
-/************************************************************************/
-/*                             GetOffset()                              */
-/************************************************************************/
-
-double MEMRasterBand::GetOffset( int *pbSuccess )
-
-{
-    if( pbSuccess != nullptr )
-        *pbSuccess = TRUE;
-
-    return dfOffset;
-}
-
-/************************************************************************/
-/*                             SetOffset()                              */
-/************************************************************************/
-
-CPLErr MEMRasterBand::SetOffset( double dfNewOffset )
-
-{
-    dfOffset = dfNewOffset;
-    return CE_None;
-}
-
-/************************************************************************/
-/*                              GetScale()                              */
-/************************************************************************/
-
-double MEMRasterBand::GetScale( int *pbSuccess )
-
-{
-    if( pbSuccess != nullptr )
-        *pbSuccess = TRUE;
-
-    return dfScale;
-}
-
-/************************************************************************/
-/*                              SetScale()                              */
-/************************************************************************/
-
-CPLErr MEMRasterBand::SetScale( double dfNewScale )
-
-{
-    dfScale = dfNewScale;
-    return CE_None;
-}
-
-/************************************************************************/
-/*                          GetCategoryNames()                          */
-/************************************************************************/
-
-char **MEMRasterBand::GetCategoryNames()
-
-{
-    return m_aosCategoryNames.List();
-}
-
-/************************************************************************/
-/*                          SetCategoryNames()                          */
-/************************************************************************/
-
-CPLErr MEMRasterBand::SetCategoryNames( char ** papszNewNames )
-
-{
-    m_aosCategoryNames = CSLDuplicate(papszNewNames);
-
-    return CE_None;
-}
-
-/************************************************************************/
-/*                        SetDefaultHistogram()                         */
-/************************************************************************/
-
-CPLErr MEMRasterBand::SetDefaultHistogram( double dfMin, double dfMax,
-                                           int nBuckets, GUIntBig *panHistogram)
-
-{
-/* -------------------------------------------------------------------- */
-/*      Do we have a matching histogram we should replace?              */
-/* -------------------------------------------------------------------- */
-    CPLXMLNode *psNode = PamFindMatchingHistogram( psSavedHistograms,
-                                                   dfMin, dfMax, nBuckets,
-                                                   TRUE, TRUE );
-    if( psNode != nullptr )
-    {
-        /* blow this one away */
-        CPLRemoveXMLChild( psSavedHistograms, psNode );
-        CPLDestroyXMLNode( psNode );
-    }
-
-/* -------------------------------------------------------------------- */
-/*      Translate into a histogram XML tree.                            */
-/* -------------------------------------------------------------------- */
-    CPLXMLNode *psHistItem = PamHistogramToXMLTree( dfMin, dfMax, nBuckets,
-                                                    panHistogram, TRUE, FALSE );
-    if( psHistItem == nullptr )
-        return CE_Failure;
-
-/* -------------------------------------------------------------------- */
-/*      Insert our new default histogram at the front of the            */
-/*      histogram list so that it will be the default histogram.        */
-/* -------------------------------------------------------------------- */
-
-    if( psSavedHistograms == nullptr )
-        psSavedHistograms = CPLCreateXMLNode( nullptr, CXT_Element,
-                                              "Histograms" );
-
-    psHistItem->psNext = psSavedHistograms->psChild;
-    psSavedHistograms->psChild = psHistItem;
-
-    return CE_None;
-}
-
-/************************************************************************/
-/*                        GetDefaultHistogram()                         */
-/************************************************************************/
-
-CPLErr
-MEMRasterBand::GetDefaultHistogram( double *pdfMin, double *pdfMax,
-                                    int *pnBuckets, GUIntBig **ppanHistogram,
-                                    int bForce,
-                                    GDALProgressFunc pfnProgress,
-                                    void *pProgressData )
-
-{
-    if( psSavedHistograms != nullptr )
-    {
-        for( CPLXMLNode *psXMLHist = psSavedHistograms->psChild;
-             psXMLHist != nullptr;
-             psXMLHist = psXMLHist->psNext )
-        {
-            if( psXMLHist->eType != CXT_Element
-                || !EQUAL(psXMLHist->pszValue,"HistItem") )
-                continue;
-
-            int bApprox = FALSE;
-            int bIncludeOutOfRange = FALSE;
-            if( PamParseHistogram( psXMLHist, pdfMin, pdfMax, pnBuckets,
-                                   ppanHistogram, &bIncludeOutOfRange,
-                                   &bApprox ) )
-                return CE_None;
-
-            return CE_Failure;
-        }
-    }
-
-    return GDALRasterBand::GetDefaultHistogram( pdfMin, pdfMax, pnBuckets,
-                                                ppanHistogram, bForce,
-                                                pfnProgress,pProgressData);
-}
-
-/************************************************************************/
 /*                          GetOverviewCount()                          */
 /************************************************************************/
 
@@ -739,8 +445,10 @@ CPLErr MEMRasterBand::CreateMaskBand( int nFlagsIn )
 
     nMaskFlags = nFlagsIn;
     bOwnMask = true;
-    poMask = new MEMRasterBand( pabyMaskData, GDT_Byte,
+    auto poMemMaskBand = new MEMRasterBand( pabyMaskData, GDT_Byte,
                                 nRasterXSize, nRasterYSize );
+    poMask = poMemMaskBand;
+    poMemMaskBand->m_bIsMask = true;
     if( (nFlagsIn & GMF_PER_DATASET) != 0 && nBand == 1 && poMemDS != nullptr )
     {
         for( int i = 2; i <= poMemDS->GetRasterCount(); ++i )
@@ -757,6 +465,15 @@ CPLErr MEMRasterBand::CreateMaskBand( int nFlagsIn )
 }
 
 /************************************************************************/
+/*                            IsMaskBand()                              */
+/************************************************************************/
+
+bool MEMRasterBand::IsMaskBand() const
+{
+    return m_bIsMask || GDALPamRasterBand::IsMaskBand();
+}
+
+/************************************************************************/
 /* ==================================================================== */
 /*      MEMDataset                                                     */
 /* ==================================================================== */
@@ -769,7 +486,6 @@ CPLErr MEMRasterBand::CreateMaskBand( int nFlagsIn )
 MEMDataset::MEMDataset() :
     GDALDataset(FALSE),
     bGeoTransformSet(FALSE),
-    pszProjection(nullptr),
     m_nGCPCount(0),
     m_pasGCPs(nullptr),
     m_nOverviewDSCount(0),
@@ -792,8 +508,10 @@ MEMDataset::MEMDataset() :
 MEMDataset::~MEMDataset()
 
 {
-    FlushCache();
-    CPLFree( pszProjection );
+    const bool bSuppressOnCloseBackup = bSuppressOnClose;
+    bSuppressOnClose = true;
+    FlushCache(true);
+    bSuppressOnClose = bSuppressOnCloseBackup;
 
     GDALDeinitGCPs( m_nGCPCount, m_pasGCPs );
     CPLFree( m_pasGCPs );
@@ -823,27 +541,25 @@ void MEMDataset::LeaveReadWrite()
 #endif  // if 0
 
 /************************************************************************/
-/*                          GetProjectionRef()                          */
+/*                          GetSpatialRef()                             */
 /************************************************************************/
 
-const char *MEMDataset::_GetProjectionRef()
+const OGRSpatialReference *MEMDataset::GetSpatialRef() const
 
 {
-    if( pszProjection == nullptr )
-        return "";
-
-    return pszProjection;
+    return m_oSRS.IsEmpty() ? nullptr : &m_oSRS;
 }
 
 /************************************************************************/
-/*                           SetProjection()                            */
+/*                           SetSpatialRef()                            */
 /************************************************************************/
 
-CPLErr MEMDataset::_SetProjection( const char *pszProjectionIn )
+CPLErr MEMDataset::SetSpatialRef( const OGRSpatialReference* poSRS )
 
 {
-    CPLFree( pszProjection );
-    pszProjection = CPLStrdup( pszProjectionIn );
+    m_oSRS.Clear();
+    if( poSRS )
+        m_oSRS = *poSRS;
 
     return CE_None;
 }
@@ -977,7 +693,7 @@ CPLErr MEMDataset::AddBand( GDALDataType eType, char **papszOptions )
     if( CSLFetchNameValue( papszOptions, "DATAPOINTER" ) == nullptr )
     {
         const GSpacing nTmp = nPixelSize * GetRasterXSize();
-        GByte* pData = 
+        GByte* pData =
 #if SIZEOF_VOIDP == 4
             ( nTmp > INT_MAX ) ? nullptr :
 #endif
@@ -1432,6 +1148,24 @@ GDALDataset *MEMDataset::Open( GDALOpenInfo * poOpenInfo )
     }
 
 /* -------------------------------------------------------------------- */
+/*      Set GeoTransform information.                                   */
+/* -------------------------------------------------------------------- */
+
+    pszOption = CSLFetchNameValue(papszOptions, "GEOTRANSFORM");
+    if( pszOption != nullptr ) {
+        char **values = CSLTokenizeStringComplex(pszOption, "/", TRUE, FALSE );
+        if ( CSLCount( values ) == 6 ) {
+            double adfGeoTransform[6] = {0,0,0,0,0,0};
+            for ( size_t i = 0; i < 6; ++i ) {
+                adfGeoTransform[i] =
+                    CPLScanDouble( values[i], static_cast<int>(strlen(values[i])) );
+            }
+            poDS->SetGeoTransform(adfGeoTransform);
+        }
+        CSLDestroy( values );
+    }
+
+/* -------------------------------------------------------------------- */
 /*      Try to return a regular handle on the file.                     */
 /* -------------------------------------------------------------------- */
     CSLDestroy( papszOptions );
@@ -1445,7 +1179,7 @@ GDALDataset *MEMDataset::Open( GDALOpenInfo * poOpenInfo )
 GDALDataset *MEMDataset::Create( const char * /* pszFilename */,
                                  int nXSize,
                                  int nYSize,
-                                 int nBands,
+                                 int nBandsIn,
                                  GDALDataType eType,
                                  char **papszOptions )
 {
@@ -1466,15 +1200,15 @@ GDALDataset *MEMDataset::Create( const char * /* pszFilename */,
 /*      memory.                                                         */
 /* -------------------------------------------------------------------- */
     const int nWordSize = GDALGetDataTypeSize(eType) / 8;
-    if( nBands > 0 && nWordSize > 0 && (nBands > INT_MAX / nWordSize ||
-        (GIntBig)nXSize * nYSize > GINTBIG_MAX / (nWordSize * nBands)) )
+    if( nBandsIn > 0 && nWordSize > 0 && (nBandsIn > INT_MAX / nWordSize ||
+        (GIntBig)nXSize * nYSize > GINTBIG_MAX / (nWordSize * nBandsIn)) )
     {
         CPLError( CE_Failure, CPLE_OutOfMemory, "Multiplication overflow");
         return nullptr;
     }
 
     const GUIntBig nGlobalBigSize
-        = static_cast<GUIntBig>(nWordSize) * nBands * nXSize * nYSize;
+        = static_cast<GUIntBig>(nWordSize) * nBandsIn * nXSize * nYSize;
     const size_t nGlobalSize = static_cast<size_t>(nGlobalBigSize);
 #if SIZEOF_VOIDP == 4
     if( static_cast<GUIntBig>(nGlobalSize) != nGlobalBigSize )
@@ -1498,13 +1232,13 @@ GDALDataset *MEMDataset::Create( const char * /* pszFilename */,
             bAllocOK = FALSE;
         else
         {
-            for( int iBand = 1; iBand < nBands; iBand++ )
+            for( int iBand = 1; iBand < nBandsIn; iBand++ )
                 apbyBandData.push_back( apbyBandData[0] + iBand * nWordSize );
         }
     }
     else
     {
-        for( int iBand = 0; iBand < nBands; iBand++ )
+        for( int iBand = 0; iBand < nBandsIn; iBand++ )
         {
             apbyBandData.push_back(
                 reinterpret_cast<GByte *>(
@@ -1550,13 +1284,13 @@ GDALDataset *MEMDataset::Create( const char * /* pszFilename */,
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    for( int iBand = 0; iBand < nBands; iBand++ )
+    for( int iBand = 0; iBand < nBandsIn; iBand++ )
     {
         MEMRasterBand *poNewBand = nullptr;
 
         if( bPixelInterleaved )
             poNewBand = new MEMRasterBand( poDS, iBand+1, apbyBandData[iBand],
-                                           eType, nWordSize * nBands, 0,
+                                           eType, nWordSize * nBandsIn, 0,
                                            iBand == 0 );
         else
             poNewBand = new MEMRasterBand( poDS, iBand+1, apbyBandData[iBand],
@@ -1570,250 +1304,6 @@ GDALDataset *MEMDataset::Create( const char * /* pszFilename */,
 /* -------------------------------------------------------------------- */
     return poDS;
 }
-
-/************************************************************************/
-/*                               MEMGroup                               */
-/************************************************************************/
-
-class MEMGroup final: public GDALGroup
-{
-    std::map<CPLString, std::shared_ptr<GDALGroup>> m_oMapGroups{};
-    std::map<CPLString, std::shared_ptr<GDALMDArray>> m_oMapMDArrays{};
-    std::map<CPLString, std::shared_ptr<GDALAttribute>> m_oMapAttributes{};
-    std::map<CPLString, std::shared_ptr<GDALDimension>> m_oMapDimensions{};
-
-public:
-    MEMGroup(const std::string& osParentName, const char* pszName): GDALGroup(osParentName, pszName ? pszName : "") {}
-
-    std::vector<std::string> GetMDArrayNames(CSLConstList papszOptions) const override;
-    std::shared_ptr<GDALMDArray> OpenMDArray(const std::string& osName,
-                                             CSLConstList papszOptions) const override;
-
-    std::vector<std::string> GetGroupNames(CSLConstList papszOptions) const override;
-    std::shared_ptr<GDALGroup> OpenGroup(const std::string& osName,
-                                         CSLConstList papszOptions) const override;
-
-    std::shared_ptr<GDALGroup> CreateGroup(const std::string& osName,
-                                           CSLConstList papszOptions) override;
-
-    std::shared_ptr<GDALDimension> CreateDimension(const std::string&,
-                                                   const std::string&,
-                                                   const std::string&,
-                                                   GUInt64,
-                                                   CSLConstList papszOptions) override;
-
-    std::shared_ptr<GDALMDArray> CreateMDArray(const std::string& osName,
-                                                       const std::vector<std::shared_ptr<GDALDimension>>& aoDimensions,
-                                                       const GDALExtendedDataType& oDataType,
-                                                       CSLConstList papszOptions) override;
-
-    std::shared_ptr<GDALAttribute> GetAttribute(const std::string& osName) const override;
-
-    std::vector<std::shared_ptr<GDALAttribute>> GetAttributes(CSLConstList papszOptions) const override;
-
-    std::vector<std::shared_ptr<GDALDimension>> GetDimensions(CSLConstList papszOptions) const override;
-
-    std::shared_ptr<GDALAttribute> CreateAttribute(
-        const std::string& osName,
-        const std::vector<GUInt64>& anDimensions,
-        const GDALExtendedDataType& oDataType,
-        CSLConstList papszOptions) override;
-};
-
-/************************************************************************/
-/*                            MEMAbstractMDArray                        */
-/************************************************************************/
-
-class MEMAbstractMDArray: virtual public GDALAbstractMDArray
-{
-    std::vector<std::shared_ptr<GDALDimension>> m_aoDims;
-    size_t m_nTotalSize = 0;
-    GByte* m_pabyArray{};
-    bool m_bOwnArray = false;
-    std::vector<GPtrDiff_t> m_anStrides{};
-
-    struct StackReadWrite
-    {
-        size_t       nIters = 0;
-        const GByte* src_ptr = nullptr;
-        GByte*       dst_ptr = nullptr;
-        GPtrDiff_t   src_inc_offset = 0;
-        GPtrDiff_t   dst_inc_offset = 0;
-    };
-
-    void ReadWrite(bool bIsWrite,
-                   const size_t* count,
-                    std::vector<StackReadWrite>& stack,
-                    const GDALExtendedDataType& srcType,
-                    const GDALExtendedDataType& dstType) const;
-
-protected:
-    GDALExtendedDataType m_oType;
-
-    bool IRead(const GUInt64* arrayStartIdx,     // array of size GetDimensionCount()
-                      const size_t* count,                 // array of size GetDimensionCount()
-                      const GInt64* arrayStep,        // step in elements
-                      const GPtrDiff_t* bufferStride, // stride in elements
-                      const GDALExtendedDataType& bufferDataType,
-                      void* pDstBuffer) const override;
-
-    bool IWrite(const GUInt64* arrayStartIdx,     // array of size GetDimensionCount()
-                      const size_t* count,                 // array of size GetDimensionCount()
-                      const GInt64* arrayStep,        // step in elements
-                      const GPtrDiff_t* bufferStride, // stride in elements
-                      const GDALExtendedDataType& bufferDataType,
-                      const void* pSrcBuffer) override;
-
-public:
-    MEMAbstractMDArray(const std::string& osParentName,
-                       const std::string& osName,
-                       const std::vector<std::shared_ptr<GDALDimension>>& aoDimensions,
-                       const GDALExtendedDataType& oType);
-    ~MEMAbstractMDArray();
-
-    const std::vector<std::shared_ptr<GDALDimension>>& GetDimensions() const override { return m_aoDims; }
-
-    const GDALExtendedDataType& GetDataType() const override { return m_oType; }
-
-    bool Init(GByte* pData = nullptr,
-              const std::vector<GPtrDiff_t>& anStrides = std::vector<GPtrDiff_t>());
-};
-
-/************************************************************************/
-/*                                MEMMDArray                            */
-/************************************************************************/
-
-#ifdef _MSC_VER
-#pragma warning (push)
-#pragma warning (disable:4250) // warning C4250: 'MEMMDArray': inherits 'MEMAbstractMDArray::MEMAbstractMDArray::IRead' via dominance
-#endif //_MSC_VER
-
-class MEMMDArray final: public MEMAbstractMDArray, public GDALMDArray
-{
-    std::map<CPLString, std::shared_ptr<GDALAttribute>> m_oMapAttributes{};
-    std::string m_osUnit{};
-    std::shared_ptr<OGRSpatialReference> m_poSRS{};
-    GByte* m_pabyNoData = nullptr;
-    double m_dfScale = 1.0;
-    double m_dfOffset = 0.0;
-    bool m_bHasScale = false;
-    bool m_bHasOffset = false;
-    GDALDataType m_eOffsetStorageType = GDT_Unknown;
-    GDALDataType m_eScaleStorageType = GDT_Unknown;
-
-protected:
-    MEMMDArray(const std::string& osParentName,
-               const std::string& osName,
-               const std::vector<std::shared_ptr<GDALDimension>>& aoDimensions,
-               const GDALExtendedDataType& oType);
-
-public:
-    static std::shared_ptr<MEMMDArray> Create(const std::string& osParentName,
-               const std::string& osName,
-               const std::vector<std::shared_ptr<GDALDimension>>& aoDimensions,
-               const GDALExtendedDataType& oType)
-    {
-        auto array(std::shared_ptr<MEMMDArray>(
-            new MEMMDArray(osParentName, osName, aoDimensions, oType)));
-        array->SetSelf(array);
-        return array;
-    }
-    ~MEMMDArray();
-
-    bool IsWritable() const override { return true; }
-
-    std::shared_ptr<GDALAttribute> GetAttribute(const std::string& osName) const override;
-
-    std::vector<std::shared_ptr<GDALAttribute>> GetAttributes(CSLConstList papszOptions) const override;
-
-    std::shared_ptr<GDALAttribute> CreateAttribute(
-        const std::string& osName,
-        const std::vector<GUInt64>& anDimensions,
-        const GDALExtendedDataType& oDataType,
-        CSLConstList papszOptions) override;
-
-    const std::string& GetUnit() const override { return m_osUnit; }
-
-    bool SetUnit(const std::string& osUnit) override {
-        m_osUnit = osUnit; return true; }
-
-    bool SetSpatialRef(const OGRSpatialReference* poSRS) override {
-        m_poSRS.reset(poSRS ? poSRS->Clone() : nullptr); return true; }
-
-    std::shared_ptr<OGRSpatialReference> GetSpatialRef() const override { return m_poSRS; }
-
-    const void* GetRawNoDataValue() const override;
-
-    bool SetRawNoDataValue(const void*) override;
-
-    double GetOffset(bool* pbHasOffset, GDALDataType* peStorageType) const override
-    {
-        if( pbHasOffset) *pbHasOffset = m_bHasOffset;
-        if( peStorageType ) *peStorageType = m_eOffsetStorageType;
-        return m_dfOffset;
-    }
-
-    double GetScale(bool* pbHasScale, GDALDataType* peStorageType) const override
-    {
-        if( pbHasScale) *pbHasScale = m_bHasScale;
-        if( peStorageType ) *peStorageType = m_eScaleStorageType;
-        return m_dfScale;
-    }
-
-    bool SetOffset(double dfOffset, GDALDataType eStorageType) override
-    { m_bHasOffset = true; m_dfOffset = dfOffset; m_eOffsetStorageType = eStorageType; return true; }
-
-    bool SetScale(double dfScale, GDALDataType eStorageType) override
-    { m_bHasScale = true; m_dfScale = dfScale; m_eScaleStorageType = eStorageType; return true; }
-};
-
-/************************************************************************/
-/*                               MEMAttribute                           */
-/************************************************************************/
-
-class MEMAttribute final: public MEMAbstractMDArray, public GDALAttribute
-{
-protected:
-    MEMAttribute(const std::string& osParentName,
-                 const std::string& osName,
-                 const std::vector<GUInt64>& anDimensions,
-                 const GDALExtendedDataType& oType);
-public:
-    static std::shared_ptr<MEMAttribute> Create(const std::string& osParentName,
-                                                const std::string& osName,
-                                                const std::vector<GUInt64>& anDimensions,
-                                                const GDALExtendedDataType& oType)
-    {
-        auto attr(std::shared_ptr<MEMAttribute>(
-            new MEMAttribute(osParentName, osName, anDimensions, oType)));
-        attr->SetSelf(attr);
-        return attr;
-    }
-};
-
-#ifdef _MSC_VER
-#pragma warning (pop)
-#endif //_MSC_VER
-
-/************************************************************************/
-/*                               MEMDimension                           */
-/************************************************************************/
-
-class MEMDimension final: public GDALDimension
-{
-    std::weak_ptr<GDALMDArray> m_poIndexingVariable{};
-
-public:
-    MEMDimension(const std::string& osParentName,
-                 const std::string& osName,
-                 const std::string& osType,
-                 const std::string& osDirection,
-                 GUInt64 nSize);
-
-    std::shared_ptr<GDALMDArray> GetIndexingVariable() const override { return m_poIndexingVariable.lock(); }
-
-    bool SetIndexingVariable(std::shared_ptr<GDALMDArray> poIndexingVariable) override;
-};
 
 /************************************************************************/
 /*                           GetMDArrayNames()                          */
@@ -2009,7 +1499,7 @@ std::shared_ptr<GDALAttribute> MEMGroup::CreateAttribute(
     auto newAttr(MEMAttribute::Create(
         (GetFullName() == "/" ? "/" : GetFullName() + "/") + "_GLOBAL_",
         osName, anDimensions, oDataType));
-    if( !newAttr->Init() )
+    if( !newAttr )
         return nullptr;
     m_oMapAttributes[osName] = newAttr;
     return newAttr;
@@ -2166,9 +1656,11 @@ void MEMAbstractMDArray::ReadWrite(bool bIsWrite,
 {
     const auto nDims = m_aoDims.size();
     const auto nDimsMinus1 = nDims - 1;
-    const bool bSameNumericDT =
+    const bool bBothAreNumericDT =
         srcType.GetClass() == GEDTC_NUMERIC &&
-        dstType.GetClass() == GEDTC_NUMERIC &&
+        dstType.GetClass() == GEDTC_NUMERIC;
+    const bool bSameNumericDT =
+        bBothAreNumericDT &&
         srcType.GetNumericDataType() == dstType.GetNumericDataType();
     const auto nSameDTSize = bSameNumericDT ? srcType.GetSize() : 0;
     const bool bCanUseMemcpyLastDim =
@@ -2225,6 +1717,20 @@ void MEMAbstractMDArray::ReadWrite(bool bIsWrite,
                     return;
                 }
                 CPLAssert(false);
+            }
+            else if ( bBothAreNumericDT
+#if SIZEOF_VOIDP == 8
+                      && src_inc_offset <= std::numeric_limits<int>::max()
+                      && dst_inc_offset <= std::numeric_limits<int>::max()
+#endif
+                 )
+            {
+                GDALCopyWords64( srcPtr, srcType.GetNumericDataType(),
+                                 static_cast<int>(src_inc_offset),
+                                 dstPtr, dstType.GetNumericDataType(),
+                                 static_cast<int>(dst_inc_offset),
+                                 static_cast<GPtrDiff_t>(nIters) );
+                return;
             }
 
             while(true)
@@ -2369,6 +1875,13 @@ bool MEMAbstractMDArray::IWrite(const GUInt64* arrayStartIdx,
                                const GDALExtendedDataType& bufferDataType,
                                const void* pSrcBuffer)
 {
+    if( !m_bWritable )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "Non updatable object");
+        return false;
+    }
+    m_bModified = true;
+
     const auto nDims = m_aoDims.size();
     if( nDims == 0 )
     {
@@ -2507,7 +2020,7 @@ std::shared_ptr<GDALAttribute> MEMMDArray::CreateAttribute(
         return nullptr;
     }
     auto newAttr(MEMAttribute::Create(GetFullName(), osName, anDimensions, oDataType));
-    if( !newAttr->Init() )
+    if( !newAttr )
         return nullptr;
     m_oMapAttributes[osName] = newAttr;
     return newAttr;
@@ -2542,6 +2055,23 @@ MEMAttribute::MEMAttribute(const std::string& osParentName,
     MEMAbstractMDArray(osParentName, osName, BuildDimensions(anDimensions), oType),
     GDALAttribute(osParentName, osName)
 {
+}
+
+/************************************************************************/
+/*                        MEMAttribute::Create()                        */
+/************************************************************************/
+
+std::shared_ptr<MEMAttribute> MEMAttribute::Create(const std::string& osParentName,
+                                                const std::string& osName,
+                                                const std::vector<GUInt64>& anDimensions,
+                                                const GDALExtendedDataType& oType)
+{
+    auto attr(std::shared_ptr<MEMAttribute>(
+        new MEMAttribute(osParentName, osName, anDimensions, oType)));
+    attr->SetSelf(attr);
+    if( !attr->Init() )
+        return nullptr;
+    return attr;
 }
 
 /************************************************************************/
@@ -2657,8 +2187,9 @@ void GDALRegister_MEM()
     poDriver->SetMetadataItem( GDAL_DCAP_MULTIDIM_RASTER, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "In Memory Raster" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
-                               "Byte Int16 UInt16 Int32 UInt32 Float32 Float64 "
+                               "Byte Int16 UInt16 Int32 UInt32 Int64 UInt64 Float32 Float64 "
                                "CInt16 CInt32 CFloat32 CFloat64" );
+    poDriver->SetMetadataItem( GDAL_DCAP_COORDINATE_EPOCH, "YES" );
 
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
 "<CreationOptionList>"

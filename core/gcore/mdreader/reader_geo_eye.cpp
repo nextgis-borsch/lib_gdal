@@ -39,6 +39,7 @@
 #include "cpl_conv.h"
 #include "cpl_error.h"
 #include "cpl_string.h"
+#include "cpl_time.h"
 
 CPL_CVSID("$Id$")
 
@@ -51,36 +52,28 @@ GDALMDReaderGeoEye::GDALMDReaderGeoEye(const char *pszPath,
 
     const CPLString osBaseName = CPLGetBasename(pszPath);
     const CPLString osDirName = CPLGetDirname(pszPath);
-    const size_t nBaseNameLen = osBaseName.size();
-    if( nBaseNameLen > 511 )
-        return;
 
     // get _metadata.txt file
 
     // split file name by _rgb_ or _pan_
-    char szMetadataName[512] = {0};
-    size_t i;
-    for(i = 0; i < nBaseNameLen; i++)
-    {
-        szMetadataName[i] = osBaseName[i];
-        if(STARTS_WITH_CI(osBaseName.c_str() + i, "_rgb_") || STARTS_WITH_CI(osBaseName.c_str() + i, "_pan_"))
-        {
-            break;
-        }
-    }
+    CPLString osRadixMetadataName(osBaseName);
+    size_t i = osRadixMetadataName.ifind("_rgb_");
+    if( i == std::string::npos )
+        i = osRadixMetadataName.ifind("_pan_");
+    if( i != std::string::npos )
+        osRadixMetadataName.resize(i);
 
     // form metadata file name
-    CPLStrlcpy(szMetadataName + i, "_metadata.txt", 14);
     CPLString osIMDSourceFilename = CPLFormFilename( osDirName,
-                                                        szMetadataName, nullptr );
+        (osRadixMetadataName + "_metadata.txt").c_str(), nullptr );
     if (CPLCheckForFile(&osIMDSourceFilename[0], papszSiblingFiles))
     {
         m_osIMDSourceFilename = osIMDSourceFilename;
     }
     else
     {
-        CPLStrlcpy(szMetadataName + i, "_METADATA.TXT", 14);
-        osIMDSourceFilename = CPLFormFilename( osDirName, szMetadataName, nullptr );
+        osIMDSourceFilename = CPLFormFilename( osDirName,
+            (osRadixMetadataName + "_METADATA.txt").c_str(), nullptr );
         if (CPLCheckForFile(&osIMDSourceFilename[0], papszSiblingFiles))
         {
             m_osIMDSourceFilename = osIMDSourceFilename;
@@ -201,9 +194,10 @@ void GDALMDReaderGeoEye::LoadMetadata()
     if(nullptr != pszDateTime)
     {
         char buffer[80];
-        time_t timeMid = GetAcquisitionTimeFromString(pszDateTime);
+        GIntBig timeMid = GetAcquisitionTimeFromString(pszDateTime);
 
-        strftime (buffer, 80, MD_DATETIMEFORMAT, localtime(&timeMid));
+        struct tm tmBuf;
+        strftime (buffer, 80, MD_DATETIMEFORMAT, CPLUnixTimeToYMDHMS(timeMid, &tmBuf));
         m_papszIMAGERYMD = CSLAddNameValue(m_papszIMAGERYMD,
                                            MD_NAME_ACQDATETIME, buffer);
     }
@@ -212,7 +206,7 @@ void GDALMDReaderGeoEye::LoadMetadata()
 /**
  * GetAcqisitionTimeFromString()
  */
-time_t GDALMDReaderGeoEye::GetAcquisitionTimeFromString(
+GIntBig GDALMDReaderGeoEye::GetAcquisitionTimeFromString(
         const char* pszDateTime)
 {
     if(nullptr == pszDateTime)
@@ -242,7 +236,7 @@ time_t GDALMDReaderGeoEye::GetAcquisitionTimeFromString(
     tmDateTime.tm_year = iYear - 1900;
     tmDateTime.tm_isdst = -1;
 
-    return mktime(&tmDateTime);
+    return CPLYMDHMSToUnixTime(&tmDateTime);
 }
 
 /**

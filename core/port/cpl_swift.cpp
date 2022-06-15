@@ -90,13 +90,14 @@ VSISwiftHandleHelper::~VSISwiftHandleHelper()
 /*                        GetConfiguration()                            */
 /************************************************************************/
 
-bool VSISwiftHandleHelper::GetConfiguration(CPLString& osStorageURL,
+bool VSISwiftHandleHelper::GetConfiguration(const std::string& osPathForOption,
+                                            CPLString& osStorageURL,
                                             CPLString& osAuthToken)
 {
-    osStorageURL = CPLGetConfigOption("SWIFT_STORAGE_URL", "");
+    osStorageURL = VSIGetCredential(osPathForOption.c_str(), "SWIFT_STORAGE_URL", "");
     if( !osStorageURL.empty() )
     {
-        osAuthToken = CPLGetConfigOption("SWIFT_AUTH_TOKEN", "");
+        osAuthToken = VSIGetCredential(osPathForOption.c_str(), "SWIFT_AUTH_TOKEN", "");
         if( osAuthToken.empty() )
         {
             const char* pszMsg = "Missing SWIFT_AUTH_TOKEN";
@@ -107,26 +108,37 @@ bool VSISwiftHandleHelper::GetConfiguration(CPLString& osStorageURL,
         return true;
     }
 
-    const CPLString osAuthVersion = CPLGetConfigOption("OS_IDENTITY_API_VERSION", "");
+    const CPLString osAuthVersion = VSIGetCredential(osPathForOption.c_str(), "OS_IDENTITY_API_VERSION", "");
     if ( osAuthVersion == "3" )
     {
-        if( ! CheckCredentialsV3() )
+        const CPLString osAuthType = VSIGetCredential(osPathForOption.c_str(), "OS_AUTH_TYPE", "");
+        if( ! CheckCredentialsV3(osPathForOption, osAuthType) )
             return false;
-        if( GetCached("OS_AUTH_URL", "OS_USERNAME", "OS_PASSWORD", osStorageURL, osAuthToken) )
-            return true;
-        if( AuthV3(osStorageURL, osAuthToken) )
+        if( osAuthType == "v3applicationcredential" )
+        {
+            if( GetCached(osPathForOption,
+                          "OS_AUTH_URL", "OS_APPLICATION_CREDENTIAL_ID",
+                          "OS_APPLICATION_CREDENTIAL_SECRET", osStorageURL, osAuthToken) )
+                return true;
+        }
+        else
+        {
+            if( GetCached(osPathForOption, "OS_AUTH_URL", "OS_USERNAME", "OS_PASSWORD", osStorageURL, osAuthToken) )
+                return true;
+        }
+        if( AuthV3(osPathForOption, osAuthType, osStorageURL, osAuthToken) )
             return true;
     }
     else
     {
-        const CPLString osAuthV1URL = CPLGetConfigOption("SWIFT_AUTH_V1_URL", "");
+        const CPLString osAuthV1URL = VSIGetCredential(osPathForOption.c_str(), "SWIFT_AUTH_V1_URL", "");
         if ( ! osAuthV1URL.empty() )
         {
-            if( ! CheckCredentialsV1() )
+            if( ! CheckCredentialsV1(osPathForOption) )
                 return false;
-            if( GetCached("SWIFT_AUTH_V1_URL", "SWIFT_USER", "SWIFT_KEY", osStorageURL, osAuthToken) )
+            if( GetCached(osPathForOption, "SWIFT_AUTH_V1_URL", "SWIFT_USER", "SWIFT_KEY", osStorageURL, osAuthToken) )
                 return true;
-            if( AuthV1(osStorageURL, osAuthToken) )
+            if( AuthV1(osPathForOption, osStorageURL, osAuthToken) )
                 return true;
         }
     }
@@ -143,12 +155,13 @@ bool VSISwiftHandleHelper::GetConfiguration(CPLString& osStorageURL,
 /*                               AuthV1()                               */
 /************************************************************************/
 
-bool VSISwiftHandleHelper::AuthV1(CPLString& osStorageURL,
+bool VSISwiftHandleHelper::AuthV1(const std::string& osPathForOption,
+                                  CPLString& osStorageURL,
                                   CPLString& osAuthToken)
 {
-    CPLString osAuthURL = CPLGetConfigOption("SWIFT_AUTH_V1_URL", "");
-    CPLString osUser = CPLGetConfigOption("SWIFT_USER", "");
-    CPLString osKey = CPLGetConfigOption("SWIFT_KEY", "");
+    CPLString osAuthURL = VSIGetCredential(osPathForOption.c_str(), "SWIFT_AUTH_V1_URL", "");
+    CPLString osUser = VSIGetCredential(osPathForOption.c_str(), "SWIFT_USER", "");
+    CPLString osKey = VSIGetCredential(osPathForOption.c_str(), "SWIFT_KEY", "");
     char** papszHeaders = CSLSetNameValue(nullptr, "HEADERS",
         CPLSPrintf("X-Auth-User: %s\r\n"
                    "X-Auth-Key: %s",
@@ -190,50 +203,67 @@ bool VSISwiftHandleHelper::AuthV1(CPLString& osStorageURL,
 /*                      CreateAuthV3RequestObject()                     */
 /************************************************************************/
 
-CPLJSONObject VSISwiftHandleHelper::CreateAuthV3RequestObject()
+CPLJSONObject VSISwiftHandleHelper::CreateAuthV3RequestObject(const std::string& osPathForOption,
+                                                              const CPLString& osAuthType)
 {
-    CPLString osUser = CPLGetConfigOption("OS_USERNAME", "");
-    CPLString osPassword = CPLGetConfigOption("OS_PASSWORD", "");
-
-    CPLJSONObject user;
-    user.Add("name", osUser);
-    user.Add("password", osPassword);
-
-    CPLString osUserDomainName = CPLGetConfigOption("OS_USER_DOMAIN_NAME", "");
-    if( ! osUserDomainName.empty() )
-    {
-        CPLJSONObject userDomain;
-        userDomain.Add("name", osUserDomainName);
-        user.Add("domain", userDomain);
-    }
-
-    CPLJSONObject password;
-    password.Add("user", user);
-
     CPLJSONArray methods;
-    methods.Add("password");
-
     CPLJSONObject identity;
-    identity.Add("methods", methods);
-    identity.Add("password", password);
-
     CPLJSONObject scope;
-    CPLString osProjectName = CPLGetConfigOption("OS_PROJECT_NAME", "");
-    if( ! osProjectName.empty() )
+    if ( osAuthType == "v3applicationcredential" )
     {
-        CPLJSONObject project;
-        project.Add("name", osProjectName);
+        CPLString osApplicationCredentialID =
+                VSIGetCredential(osPathForOption.c_str(), "OS_APPLICATION_CREDENTIAL_ID", "");
+        CPLString osApplicationCredentialSecret =
+                VSIGetCredential(osPathForOption.c_str(), "OS_APPLICATION_CREDENTIAL_SECRET", "");
+        CPLJSONObject applicationCredential;
+        applicationCredential.Add("id", osApplicationCredentialID);
+        applicationCredential.Add("secret", osApplicationCredentialSecret);
+        methods.Add("application_credential");
+        identity.Add("application_credential", applicationCredential);
+        //Application credentials cannot request a scope.
+    }
+    else
+    {
+        CPLString osUser = VSIGetCredential(osPathForOption.c_str(), "OS_USERNAME", "");
+        CPLString osPassword = VSIGetCredential(osPathForOption.c_str(), "OS_PASSWORD", "");
 
-        CPLString osProjectDomainName = CPLGetConfigOption("OS_PROJECT_DOMAIN_NAME", "");
-        if( ! osProjectDomainName.empty() )
+        CPLJSONObject user;
+        user.Add("name", osUser);
+        user.Add("password", osPassword);
+
+        CPLString osUserDomainName = VSIGetCredential(osPathForOption.c_str(), "OS_USER_DOMAIN_NAME", "");
+        if( ! osUserDomainName.empty() )
         {
-            CPLJSONObject projectDomain;
-            projectDomain.Add("name", osProjectDomainName);
-            project.Add("domain", projectDomain);
+            CPLJSONObject userDomain;
+            userDomain.Add("name", osUserDomainName);
+            user.Add("domain", userDomain);
         }
 
-        scope.Add("project", project);
+        CPLJSONObject password;
+        password.Add("user", user);
+        methods.Add("password");
+        identity.Add("password", password);
+
+        //Request a scope if one is specified in the configuration
+        CPLString osProjectName = VSIGetCredential(osPathForOption.c_str(), "OS_PROJECT_NAME", "");
+        if( ! osProjectName.empty() )
+        {
+            CPLJSONObject project;
+            project.Add("name", osProjectName);
+
+            CPLString osProjectDomainName = VSIGetCredential(osPathForOption.c_str(), "OS_PROJECT_DOMAIN_NAME", "");
+            if( ! osProjectDomainName.empty() )
+            {
+                CPLJSONObject projectDomain;
+                projectDomain.Add("name", osProjectDomainName);
+                project.Add("domain", projectDomain);
+            }
+
+            scope.Add("project", project);
+        }
     }
+
+    identity.Add("methods", methods);
 
     CPLJSONObject auth;
     auth.Add("identity", identity);
@@ -249,7 +279,8 @@ CPLJSONObject VSISwiftHandleHelper::CreateAuthV3RequestObject()
 /*                      GetAuthV3StorageURL()                           */
 /************************************************************************/
 
-bool VSISwiftHandleHelper::GetAuthV3StorageURL(const CPLHTTPResult *psResult,
+bool VSISwiftHandleHelper::GetAuthV3StorageURL(const std::string& osPathForOption,
+                                               const CPLHTTPResult *psResult,
                                                CPLString& storageURL)
 {
     if( psResult->pabyData == nullptr )
@@ -271,7 +302,7 @@ bool VSISwiftHandleHelper::GetAuthV3StorageURL(const CPLHTTPResult *psResult,
     for(int i = 0; i < catalog.Size(); ++i)
     {
         CPLJSONObject item(catalog[i]);
-        if( item.GetString("name") == "swift" )
+        if( item.GetString("type") == "object-store" )
         {
             endpoints = item.GetArray("endpoints");
             break;
@@ -281,12 +312,20 @@ bool VSISwiftHandleHelper::GetAuthV3StorageURL(const CPLHTTPResult *psResult,
     if( endpoints.Size() == 0 )
         return false;
 
-    CPLString osRegionName = CPLGetConfigOption("OS_REGION_NAME", "");
+    CPLString osRegionName = VSIGetCredential(osPathForOption.c_str(), "OS_REGION_NAME", "");
     if( osRegionName.empty() )
     {
-        CPLJSONObject endpoint(endpoints[0]);
-        storageURL = endpoint.GetString("url");
-        return true;
+        for(int i = 0; i < endpoints.Size(); ++i)
+        {
+            CPLJSONObject endpoint(endpoints[i]);
+            CPLString interfaceType = endpoint.GetString("interface", ""); //internal, admin, public
+            if( interfaceType.empty() ||  interfaceType == "public" )
+            {
+                storageURL = endpoint.GetString("url");
+                return true;
+            }
+        }
+        return false;
     }
 
     for(int i = 0; i < endpoints.Size(); ++i)
@@ -294,9 +333,13 @@ bool VSISwiftHandleHelper::GetAuthV3StorageURL(const CPLHTTPResult *psResult,
         CPLJSONObject endpoint(endpoints[i]);
         if( endpoint.GetString("region") == osRegionName )
         {
-            storageURL = endpoint.GetString("url");
-            CPLDebug("SWIFT", "Storage URL '%s' for region '%s'", storageURL.c_str(), osRegionName.c_str());
-            return true;
+            CPLString interfaceType = endpoint.GetString("interface", ""); //internal, admin, public
+            if( interfaceType.empty() ||  interfaceType == "public" )
+            {
+                storageURL = endpoint.GetString("url");
+                CPLDebug("SWIFT", "Storage URL '%s' for region '%s'", storageURL.c_str(), osRegionName.c_str());
+                return true;
+            }
         }
     }
 
@@ -307,16 +350,34 @@ bool VSISwiftHandleHelper::GetAuthV3StorageURL(const CPLHTTPResult *psResult,
 /*                                AuthV3()                              */
 /************************************************************************/
 
-bool VSISwiftHandleHelper::AuthV3(CPLString& osStorageURL,
+bool VSISwiftHandleHelper::AuthV3(const std::string& osPathForOption,
+                                  const CPLString& osAuthType,
+                                  CPLString& osStorageURL,
                                   CPLString& osAuthToken)
 {
-    CPLString osUser = CPLGetConfigOption("OS_USERNAME", "");
-    CPLString osPass = CPLGetConfigOption("OS_PASSWORD", "");
-    CPLJSONObject postObject(CreateAuthV3RequestObject());
+    CPLString osAuthID;
+    CPLString osAuthKey;
+    if( osAuthType.empty() || osAuthType == "password" )
+    {
+        osAuthID = VSIGetCredential(osPathForOption.c_str(), "OS_USERNAME", "");
+        osAuthKey = VSIGetCredential(osPathForOption.c_str(), "OS_PASSWORD", "");
+    }
+    else if( osAuthType == "v3applicationcredential" )
+    {
+        osAuthID = VSIGetCredential(osPathForOption.c_str(), "OS_APPLICATION_CREDENTIAL_ID", "");
+        osAuthKey = VSIGetCredential(osPathForOption.c_str(), "OS_APPLICATION_CREDENTIAL_SECRET", "");
+    }
+    else
+    {
+        CPLDebug("SWIFT", "Unsupported OS SWIFT Auth Type: %s", osAuthType.c_str());
+        VSIError(VSIE_AWSInvalidCredentials, "%s", osAuthType.c_str());
+        return false;
+    }
+    CPLJSONObject postObject(CreateAuthV3RequestObject(osPathForOption, osAuthType));
     std::string post = postObject.Format(CPLJSONObject::PrettyFormat::Plain);
 
     // coverity[tainted_data]
-    CPLString osAuthURL = CPLGetConfigOption("OS_AUTH_URL", "");
+    CPLString osAuthURL = VSIGetCredential(osPathForOption.c_str(), "OS_AUTH_URL", "");
     std::string url = osAuthURL;
     if( !url.empty() && url.back() != '/' )
         url += '/';
@@ -335,7 +396,7 @@ bool VSISwiftHandleHelper::AuthV3(CPLString& osStorageURL,
     osAuthToken = CSLFetchNameValueDef(psResult->papszHeaders,
                                        "X-Subject-Token", "");
 
-    if( !GetAuthV3StorageURL(psResult, osStorageURL) )
+    if( !GetAuthV3StorageURL(osPathForOption, psResult, osStorageURL) )
     {
         CPLHTTPDestroyResult(psResult);
         return false;
@@ -357,12 +418,11 @@ bool VSISwiftHandleHelper::AuthV3(CPLString& osStorageURL,
     {
         CPLMutexHolder oHolder( &g_hMutex );
         g_osLastAuthURL = osAuthURL;
-        g_osLastUser = osUser;
-        g_osLastKey = osPass;
+        g_osLastUser = osAuthID;
+        g_osLastKey = osAuthKey;
         g_osLastStorageURL = osStorageURL;
         g_osLastAuthToken = osAuthToken;
     }
-
     return true;
 }
 
@@ -370,17 +430,18 @@ bool VSISwiftHandleHelper::AuthV3(CPLString& osStorageURL,
 /*                           Authenticate()                             */
 /************************************************************************/
 
-bool VSISwiftHandleHelper::Authenticate()
+bool VSISwiftHandleHelper::Authenticate(const std::string& osPathForOption)
 {
-    CPLString osAuthV1URL = CPLGetConfigOption("SWIFT_AUTH_V1_URL", "");
-    if( !osAuthV1URL.empty() && AuthV1(m_osStorageURL, m_osAuthToken) )
+    CPLString osAuthV1URL = VSIGetCredential(osPathForOption.c_str(), "SWIFT_AUTH_V1_URL", "");
+    if( !osAuthV1URL.empty() && AuthV1(osPathForOption, m_osStorageURL, m_osAuthToken) )
     {
         RebuildURL();
         return true;
     }
 
-    CPLString osAuthVersion = CPLGetConfigOption("OS_IDENTITY_API_VERSION", "");
-    if( osAuthVersion == "3" && AuthV3(m_osStorageURL, m_osAuthToken) )
+    const CPLString osAuthVersion = VSIGetCredential(osPathForOption.c_str(), "OS_IDENTITY_API_VERSION", "");
+    const CPLString osAuthType = VSIGetCredential(osPathForOption.c_str(), "OS_AUTH_TYPE", "");
+    if( osAuthVersion == "3" && AuthV3(osPathForOption, osAuthType, m_osStorageURL, m_osAuthToken) )
     {
         RebuildURL();
         return true;
@@ -393,11 +454,11 @@ bool VSISwiftHandleHelper::Authenticate()
 /*                         CheckCredentialsV1()                         */
 /************************************************************************/
 
-bool VSISwiftHandleHelper::CheckCredentialsV1()
+bool VSISwiftHandleHelper::CheckCredentialsV1(const std::string& osPathForOption)
 {
     const char* pszMissingKey = nullptr;
-    CPLString osUser = CPLGetConfigOption("SWIFT_USER", "");
-    CPLString osKey = CPLGetConfigOption("SWIFT_KEY", "");
+    CPLString osUser = VSIGetCredential(osPathForOption.c_str(), "SWIFT_USER", "");
+    CPLString osKey = VSIGetCredential(osPathForOption.c_str(), "SWIFT_KEY", "");
     if( osUser.empty() )
     {
         pszMissingKey = "SWIFT_USER";
@@ -421,16 +482,33 @@ bool VSISwiftHandleHelper::CheckCredentialsV1()
 /*                         CheckCredentialsV3()                         */
 /************************************************************************/
 
-bool VSISwiftHandleHelper::CheckCredentialsV3()
+bool VSISwiftHandleHelper::CheckCredentialsV3(const std::string& osPathForOption,
+                                              const CPLString& osAuthType)
 {
-    const char* papszManatoryOptionKeys[] = {
+    const char* papszMandatoryOptionKeys[3] = {
         "OS_AUTH_URL",
-        "OS_USERNAME",
-        "OS_PASSWORD",
+        "",
+        "",
     };
-    for( auto const * pszOptionKey : papszManatoryOptionKeys )
+    if(osAuthType.empty() || osAuthType == "password")
     {
-        CPLString option = CPLGetConfigOption(pszOptionKey, "");
+        papszMandatoryOptionKeys[1] = "OS_USERNAME";
+        papszMandatoryOptionKeys[2] = "OS_PASSWORD";
+    }
+    else if( osAuthType == "v3applicationcredential" )
+    {
+        papszMandatoryOptionKeys[1] = "OS_APPLICATION_CREDENTIAL_ID";
+        papszMandatoryOptionKeys[2] = "OS_APPLICATION_CREDENTIAL_SECRET";
+    }
+    else
+    {
+        CPLDebug("SWIFT", "Unsupported OS SWIFT Auth Type: %s", osAuthType.c_str());
+        VSIError(VSIE_AWSInvalidCredentials, "%s", osAuthType.c_str());
+        return false;
+    }
+    for( auto const * pszOptionKey : papszMandatoryOptionKeys )
+    {
+        CPLString option = VSIGetCredential(osPathForOption.c_str(), pszOptionKey, "");
         if( option.empty() )
         {
             CPLDebug("SWIFT", "Missing %s configuration option", pszOptionKey);
@@ -442,18 +520,19 @@ bool VSISwiftHandleHelper::CheckCredentialsV3()
 }
 
 /************************************************************************/
-/*                         GetCachedAuth()                            */
+/*                            GetCached()                               */
 /************************************************************************/
 
-bool VSISwiftHandleHelper::GetCached(const char* pszURLKey,
+bool VSISwiftHandleHelper::GetCached(const std::string& osPathForOption,
+                                     const char* pszURLKey,
                                      const char* pszUserKey,
                                      const char* pszPasswordKey,
                                      CPLString& osStorageURL,
                                      CPLString& osAuthToken)
 {
-    CPLString osAuthURL = CPLGetConfigOption(pszURLKey, "");
-    CPLString osUser = CPLGetConfigOption(pszUserKey, "");
-    CPLString osKey = CPLGetConfigOption(pszPasswordKey, "");
+    CPLString osAuthURL = VSIGetCredential(osPathForOption.c_str(), pszURLKey, "");
+    CPLString osUser = VSIGetCredential(osPathForOption.c_str(), pszUserKey, "");
+    CPLString osKey = VSIGetCredential(osPathForOption.c_str(), pszPasswordKey, "");
 
     CPLMutexHolder oHolder( &g_hMutex );
     // Re-use cached credentials if available
@@ -476,10 +555,13 @@ bool VSISwiftHandleHelper::GetCached(const char* pszURLKey,
 VSISwiftHandleHelper* VSISwiftHandleHelper::BuildFromURI( const char* pszURI,
                                                     const char* /*pszFSPrefix*/ )
 {
+    std::string osPathForOption("/vsiswift/");
+    osPathForOption += pszURI;
+
     CPLString osStorageURL;
     CPLString osAuthToken;
 
-    if( !GetConfiguration(osStorageURL, osAuthToken) )
+    if( !GetConfiguration(osPathForOption, osStorageURL, osAuthToken) )
     {
         return nullptr;
     }

@@ -53,7 +53,7 @@ using namespace std;
 /************************************************************************/
 /*                           GenerateTiles()                            */
 /************************************************************************/
-static void GenerateTiles(std::string filename,
+static void GenerateTiles(const std::string& filename,
                    CPL_UNUSED int zoom,
                    int rxsize,
                    int rysize,
@@ -274,17 +274,17 @@ int  GenerateRootKml(const char* filename,
 /************************************************************************/
 
 static
-int  GenerateChildKml(std::string filename,
+int  GenerateChildKml(const std::string& filename,
                       int zoom, int ix, int iy,
                       double zoomxpixel, double zoomypixel, int dxsize, int dysize,
                       double south, double west, int xsize,
                       int ysize, int maxzoom,
                       OGRCoordinateTransformation * poTransform,
-                      std::string fileExt,
+                      const std::string& fileExt,
                       bool fixAntiMeridian,
                       const char* pszAltitude,
                       const char* pszAltitudeMode,
-                      std::vector<std::pair<std::pair<int,int>,bool> > childTiles)
+                      const std::vector<std::pair<std::pair<int,int>,bool> >& childTiles)
 {
     double tnorth = south + zoomypixel *((iy + 1)*dysize);
     double tsouth = south + zoomypixel *(iy*dysize);
@@ -352,10 +352,9 @@ int  GenerateChildKml(std::string filename,
         maxLodPix = 2048;
 
         bool hasChildKML = false;
-        for ( std::vector<std::pair<std::pair<int,int>,bool> >::iterator it=
-                            childTiles.begin() ; it < childTiles.end(); ++it )
+        for ( const auto& kv: childTiles )
         {
-            if ((*it).second) {
+            if (kv.second) {
                 hasChildKML = true;
                 break;
             }
@@ -445,11 +444,10 @@ int  GenerateChildKml(std::string filename,
     }
     VSIFPrintfL(fp, "\t\t</GroundOverlay>\n");
 
-    for ( std::vector<std::pair<std::pair<int,int>,bool> >::iterator it=
-                            childTiles.begin() ; it < childTiles.end(); ++it )
+    for ( const auto& kv: childTiles )
     {
-        int cx = (*it).first.first;
-        int cy = (*it).first.second;
+        int cx = kv.first.first;
+        int cy = kv.first.second;
 
         double cnorth = south + zoomypixel/2 *((cy + 1)*dysize);
         double csouth = south + zoomypixel/2 *(cy*dysize);
@@ -1681,7 +1679,7 @@ int KmlSuperOverlayReadDataset::Identify(GDALOpenInfo * poOpenInfo)
         return -1;
     if( poOpenInfo->nHeaderBytes == 0 )
         return FALSE;
-    if( 
+    if(
 #ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
         !EQUAL(pszExt, "kml") ||
 #endif
@@ -2469,11 +2467,10 @@ GDALDataset* KmlSingleOverlayRasterDataset::Open(const char* pszFilename,
                     return nullptr;
             }
         }
-        if( psFolder == nullptr )
-        {
-            return nullptr;
-        }
-        for( auto psIter = psFolder->psChild; psIter; psIter = psIter->psNext )
+
+        // folder is not mandatory -- some kml have a structure kml.Document.GroundOverlay
+        CPLXMLNode* psParent = psFolder != nullptr ? psFolder : psDoc;
+        for( auto psIter = psParent->psChild; psIter; psIter = psIter->psNext )
         {
             if( psIter->eType == CXT_Element &&
                 strcmp(psIter->pszValue, "GroundOverlay") == 0 )
@@ -2608,15 +2605,6 @@ GDALDataset *KmlSuperOverlayReadDataset::Open(const char* pszFilename,
         return psSingleDocDS;
     }
 
-    GDALDataset* psSingleOverlayDS = KmlSingleOverlayRasterDataset::Open(pszFilename,
-                                                                 osFilename,
-                                                                 psNode);
-    if( psSingleOverlayDS != nullptr )
-    {
-        CPLDestroyXMLNode(psNode);
-        return psSingleOverlayDS;
-    }
-
     CPLXMLNode* psRegion = nullptr;
     CPLXMLNode* psDocument = nullptr;
     CPLXMLNode* psGroundOverlay = nullptr;
@@ -2624,8 +2612,15 @@ GDALDataset *KmlSuperOverlayReadDataset::Open(const char* pszFilename,
     if( !KmlSuperOverlayFindRegionStart(psNode, &psRegion,
                                         &psDocument, &psGroundOverlay, &psLink) )
     {
+        // If we didn't find a super overlay, this still could be a valid kml containing
+        // a single overlay. Test for that now. (Note that we need to test first for super overlay
+        // in order to avoid false positive matches of super overlay datasets to single overlay
+        // datasets)
+        GDALDataset* psSingleOverlayDS = KmlSingleOverlayRasterDataset::Open(pszFilename,
+                                                                     osFilename,
+                                                                     psNode);
         CPLDestroyXMLNode(psNode);
-        return nullptr;
+        return psSingleOverlayDS;
     }
 
     if( psLink != nullptr )
@@ -2799,7 +2794,7 @@ void CPL_DLL GDALRegister_KMLSUPEROVERLAY()
                                "Byte Int16 UInt16 Int32 UInt32 Float32 Float64 "
                                "CInt16 CInt32 CFloat32 CFloat64" );
 
-    poDriver->SetMetadataItem( GDAL_DMD_EXTENSIONS, "kml kmz"); 
+    poDriver->SetMetadataItem( GDAL_DMD_EXTENSIONS, "kml kmz");
 
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
 "<CreationOptionList>"

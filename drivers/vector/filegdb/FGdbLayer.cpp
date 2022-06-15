@@ -29,12 +29,23 @@
 * DEALINGS IN THE SOFTWARE.
 ****************************************************************************/
 
+#include <cassert>
 #include "ogr_fgdb.h"
 #include "ogrpgeogeometry.h"
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "FGdbUtils.h"
 #include "cpl_minixml.h" // the only way right now to extract schema information
+#include "filegdb_gdbtoogrfieldtype.h"
+#include "filegdb_fielddomain.h"
+
+// See https://github.com/Esri/file-geodatabase-api/issues/46
+// On certain FileGDB datasets with binary fields, iterating over a result set
+// where the binary field is requested crashes in EnumRows::Next() at the
+// second iteration.
+// The workaround consists in iterating only over OBJECTID in the main loop,
+// and requesting each feature in a separate request.
+#define WORKAROUND_CRASH_ON_CDF_WITH_BINARY_FIELD
 
 CPL_CVSID("$Id$")
 
@@ -115,7 +126,7 @@ OGRFeature* FGdbBaseLayer::GetNextFeature()
         if (!OGRFeatureFromGdbRow(&row,  &pOGRFeature))
         {
             int32 oid = -1;
-            row.GetOID(oid);
+            CPL_IGNORE_RET_VAL(row.GetOID(oid));
 
             GDBErr(hr, CPLSPrintf("Failed translating FGDB row [%d] to OGR Feature", oid));
 
@@ -690,8 +701,11 @@ int  FGdbLayer::EditGDBTablX( const CPLString& osGDBTablX,
     int nCountBlocksBeforeIBlockValue = 0;
 
     int bRet = TRUE;
-    for(int i=1; i<=nOutMaxFID;i++, nOffsetInPage += nRecordSize)
+    int i = 0;
+    for(unsigned iUnsigned=1; iUnsigned <= static_cast<unsigned>(nOutMaxFID);
+                    iUnsigned = static_cast<unsigned>(i) + 1, nOffsetInPage += nRecordSize)
     {
+        i = static_cast<int>(iUnsigned);
         if( nOffsetInPage == 1024 * nRecordSize )
         {
             if( nLastWrittenOffset > 0 || bDisableSparsePages )
@@ -819,6 +833,7 @@ int  FGdbLayer::EditGDBTablX( const CPLString& osGDBTablX,
     //printf("nLastWrittenOffset = %d\n", nLastWrittenOffset);
     if( nLastWrittenOffset > 0 || bDisableSparsePages )
     {
+        assert( nOutMaxFID >= 1 );
         SET_BIT(pabyBlockMapOut, (nOutMaxFID - 1) / 1024);
         nNonEmptyPages ++;
         if( nLastWrittenOffset < 1024 * nRecordSize )
@@ -1761,6 +1776,27 @@ char* FGdbLayer::CreateFieldDefn(OGRFieldDefn& oField,
     }
     /* <DefaultValue xsi:type="xs:string">afternoon</DefaultValue> */
 
+    const auto& osDomainName = oField.GetDomainName();
+    if( !osDomainName.empty() )
+    {
+        const auto poDomain = m_pDS->GetFieldDomain(osDomainName);
+        if( poDomain )
+        {
+            std::string failureReason;
+            std::string osXML = BuildXMLFieldDomainDef(poDomain, true, failureReason);
+            if( !osXML.empty() )
+            {
+                auto psDomain = CPLParseXMLString(osXML.c_str());
+                if( psDomain )
+                {
+                    CPLFree(psDomain->pszValue);
+                    psDomain->pszValue = CPLStrdup("Domain");
+                    CPLAddXMLChild(defn_xml, psDomain);
+                }
+            }
+        }
+    }
+
     /* Convert our XML tree into a string for FGDB */
     char *defn_str = CPLSerializeXMLTree(defn_xml);
     CPLDebug("FGDB", "CreateField() generated XML for FGDB\n%s", defn_str);
@@ -1989,40 +2025,46 @@ static CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszO
             poSRSClone->exportToWkt(&wkt);
             if (wkt)
             {
-                EnumSpatialReferenceInfo oEnumESRI_SRS;
                 std::vector<int> oaiCandidateSRS;
                 nSRID = 0;
 
-                /* Enumerate SRS from ESRI DB and find a match */
-                while( true )
+                // Ask PROJ which known SRS matches poSRS
+                int nEntries = 0;
+                int* panMatchConfidence = nullptr;
+                auto pahSRS = poSRS->FindMatches(nullptr, &nEntries,
+                                                 &panMatchConfidence);
+                for( int i = 0; i < nEntries; ++i )
                 {
-                    if ( poSRS->IsProjected() )
+                    if( panMatchConfidence[i] >= 70 )
                     {
-                        if( !oEnumESRI_SRS.NextProjectedSpatialReference(oESRI_SRS) )
-                            break;
-                    }
-                    else
-                    {
-                        if( !oEnumESRI_SRS.NextGeographicSpatialReference(oESRI_SRS) )
-                            break;
-                    }
-
-                    std::string osESRI_WKT = WStringToString(oESRI_SRS.srtext);
-                    const char* pszESRI_WKT = osESRI_WKT.c_str();
-                    if( strcmp(pszESRI_WKT, wkt) == 0 )
-                    {
-                        /* Exact match found (not sure this case happens) */
-                        nSRID = oESRI_SRS.auth_srid;
-                        break;
-                    }
-                    OGRSpatialReference oSRS_FromESRI;
-                    if( oSRS_FromESRI.SetFromUserInput(pszESRI_WKT) == OGRERR_NONE &&
-                        poSRSClone->IsSame(&oSRS_FromESRI) )
-                    {
-                        /* Potential match found */
-                        oaiCandidateSRS.push_back(oESRI_SRS.auth_srid);
+                        // Look for candidates in the EPSG/ESRI namespace,
+                        // and find the correspond ESRI SRS from the code
+                        const char* pszAuthName = OSRGetAuthorityName(pahSRS[i], nullptr);
+                        const char* pszAuthCode = OSRGetAuthorityCode(pahSRS[i], nullptr);
+                        if( pszAuthName &&
+                            (EQUAL(pszAuthName, "EPSG") || EQUAL(pszAuthName, "ESRI")) &&
+                            pszAuthCode &&
+                            SpatialReferences::FindSpatialReferenceBySRID(atoi(pszAuthCode), oESRI_SRS) )
+                        {
+                            const std::string osESRI_WKT = WStringToString(oESRI_SRS.srtext);
+                            OGRSpatialReference oSRS_FromESRI;
+                            oSRS_FromESRI.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+                            if( oSRS_FromESRI.importFromWkt(osESRI_WKT.c_str()) == OGRERR_NONE &&
+                                poSRSClone->IsSame(&oSRS_FromESRI) )
+                            {
+                                if( panMatchConfidence[i] == 100 )
+                                {
+                                    /* Exact match found (not sure this case happens) */
+                                    nSRID = oESRI_SRS.auth_srid;
+                                    break;
+                                }
+                                oaiCandidateSRS.push_back(oESRI_SRS.auth_srid);
+                            }
+                        }
                     }
                 }
+                OSRFreeSRSArray(pahSRS);
+                CPLFree(panMatchConfidence);
 
                 if( nSRID != 0 )
                 {
@@ -2144,6 +2186,9 @@ static CPLXMLNode* XMLSpatialReference(OGRSpatialReference* poSRS, char** papszO
     CPLCreateXMLElementAndValue(srs_xml, "HighPrecision", "true");
 
     /* Add the WKID to the XML */
+    const char* pszWKID = CSLFetchNameValue(papszOptions, "WKID");
+    if( pszWKID )
+        nSRID = atoi(pszWKID);
     if ( nSRID )
     {
         CPLCreateXMLElementAndValue(srs_xml, "WKID", CPLSPrintf("%d", nSRID));
@@ -2880,6 +2925,7 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
             //int nPrecision = 0;
             int bNullable = TRUE;
             std::string osDefault;
+            std::string osDomainName;
 
             // loop through all items in Field element
             //
@@ -2931,6 +2977,13 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
                     else if (EQUAL(psFieldItemNode->pszValue,"DefaultValue"))
                     {
                         osDefault = CPLGetXMLValue(psFieldItemNode, nullptr, "");
+                    }
+                    // NOTE: when using the GetDefinition() API, the domain name
+                    // is set in <Domain><DomainName>, whereas the raw XML is
+                    // just <DomainName>
+                    else if (EQUAL(psFieldItemNode->pszValue,"Domain"))
+                    {
+                        osDomainName = CPLGetXMLValue(psFieldItemNode, "DomainName", "");
                     }
                 }
             }
@@ -3022,6 +3075,10 @@ bool FGdbLayer::GDBToOGRFields(CPLXMLNode* psRoot)
                     }
                 }
             }
+            if( !osDomainName.empty() )
+            {
+                fieldTemplate.SetDomainName(osDomainName);
+            }
 
             m_pFeatureDefn->AddFieldDefn( &fieldTemplate );
 
@@ -3075,6 +3132,23 @@ void FGdbLayer::ResetReading()
 
     EndBulkLoad();
 
+#ifdef WORKAROUND_CRASH_ON_CDF_WITH_BINARY_FIELD
+    const auto wstrSubFieldBackup = m_wstrSubfields;
+    if( !m_apoByteArrays.empty() )
+    {
+        m_bWorkaroundCrashOnCDFWithBinaryField = CPLTestBool(
+            CPLGetConfigOption("OGR_FGDB_WORKAROUND_CRASH_ON_BINARY_FIELD", "YES"));
+        if( m_bWorkaroundCrashOnCDFWithBinaryField )
+        {
+            m_wstrSubfields = StringToWString(m_strOIDFieldName);
+            if( !m_strShapeFieldName.empty() && m_poFilterGeom && !m_poFilterGeom->IsEmpty() )
+            {
+                m_wstrSubfields += StringToWString(", " + m_strShapeFieldName);
+            }
+        }
+    }
+#endif
+
     if (m_poFilterGeom && !m_poFilterGeom->IsEmpty())
     {
         // Search spatial
@@ -3090,16 +3164,18 @@ void FGdbLayer::ResetReading()
 
         if( FAILED(hr = m_pTable->Search(m_wstrSubfields, m_wstrWhereClause, env, true, *m_pEnumRows)) )
             GDBErr(hr, "Failed Searching");
-
-        m_bFilterDirty = false;
-
-        return;
+    }
+    else
+    {
+        // Search non-spatial
+        if( FAILED(hr = m_pTable->Search(m_wstrSubfields, m_wstrWhereClause, true, *m_pEnumRows)) )
+            GDBErr(hr, "Failed Searching");
     }
 
-    // Search non-spatial
-
-    if( FAILED(hr = m_pTable->Search(m_wstrSubfields, m_wstrWhereClause, true, *m_pEnumRows)) )
-        GDBErr(hr, "Failed Searching");
+#ifdef WORKAROUND_CRASH_ON_CDF_WITH_BINARY_FIELD
+    if( !m_apoByteArrays.empty() && m_bWorkaroundCrashOnCDFWithBinaryField )
+        m_wstrSubfields = wstrSubFieldBackup;
+#endif
 
     m_bFilterDirty = false;
 }
@@ -3159,11 +3235,12 @@ bool FGdbBaseLayer::OGRFeatureFromGdbRow(Row* pRow, OGRFeature** ppFeature)
     int32 oid = -1;
     if (FAILED(hr = pRow->GetOID(oid)))
     {
-        //this should never happen
-        delete pOutFeature;
-        return false;
+        //this should never happen unless not selecting the OBJECTID
     }
-    pOutFeature->SetFID(oid);
+    else
+    {
+        pOutFeature->SetFID(oid);
+    }
 
     /////////////////////////////////////////////////////////
     // Translate Geometry
@@ -3403,6 +3480,59 @@ OGRFeature* FGdbLayer::GetNextFeature()
         ResetReading();
 
     EndBulkLoad();
+
+#ifdef WORKAROUND_CRASH_ON_CDF_WITH_BINARY_FIELD
+    if( !m_apoByteArrays.empty() && m_bWorkaroundCrashOnCDFWithBinaryField )
+    {
+        while( true )
+        {
+            if (m_pEnumRows == nullptr)
+                return nullptr;
+
+            long hr;
+
+            Row rowOnlyOid;
+
+            if (FAILED(hr = m_pEnumRows->Next(rowOnlyOid)))
+            {
+                GDBErr(hr, "Failed fetching features");
+                return nullptr;
+            }
+
+            if (hr != S_OK)
+            {
+                // It's OK, we are done fetching - failure is caught by FAILED macro
+                return nullptr;
+            }
+
+            int32 oid = -1;
+            if (FAILED(hr = rowOnlyOid.GetOID(oid)))
+            {
+                GDBErr(hr, "Failed to get oid");
+                continue;
+            }
+
+            EnumRows       enumRows;
+            OGRFeature* pOGRFeature = nullptr;
+            Row rowFull;
+            if (GetRow(enumRows, rowFull, oid) != OGRERR_NONE ||
+                !OGRFeatureFromGdbRow(&rowFull, &pOGRFeature))
+            {
+                GDBErr(hr, CPLSPrintf("Failed translating FGDB row [%d] to OGR Feature", oid));
+
+                //return NULL;
+                continue; //skip feature
+            }
+
+            if( (m_poFilterGeom == nullptr
+                 || FilterGeometry( pOGRFeature->GetGeometryRef() )) )
+            {
+                return pOGRFeature;
+            }
+            delete pOGRFeature;
+        }
+    }
+#endif
 
     OGRFeature* poFeature = FGdbBaseLayer::GetNextFeature();
     if( poFeature )
@@ -3720,6 +3850,45 @@ OGRErr FGdbLayer::GetLayerMetadataXML (char **ppXml)
 }
 
 /************************************************************************/
+/*                           Rename()                                   */
+/************************************************************************/
+
+OGRErr FGdbLayer::Rename(const char* pszDstTableName)
+{
+    if( !TestCapability(OLCRename) )
+        return OGRERR_FAILURE;
+
+    if( m_pTable == nullptr )
+        return OGRERR_FAILURE;
+
+    if( m_pDS->GetLayerByName(pszDstTableName) != nullptr )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "Layer %s already exists",
+                 pszDstTableName);
+        return OGRERR_FAILURE;
+    }
+
+    long hr = m_pDS->GetGDB()->Rename(
+        m_wstrTablePath, m_wstrType, StringToWString(pszDstTableName));
+
+    if ( FAILED(hr) )
+    {
+        GDBErr(hr, "Failed renaming layer");
+        return OGRERR_FAILURE;
+    }
+
+    m_strName = pszDstTableName;
+    auto strTablePath = WStringToString(m_wstrTablePath);
+    m_wstrTablePath = StringToWString(
+        strTablePath.substr(0, strTablePath.rfind('\\')) + "\\" + pszDstTableName);
+    SetDescription(pszDstTableName);
+    m_pFeatureDefn->SetName(pszDstTableName);
+
+    return OGRERR_NONE;
+}
+
+/************************************************************************/
 /*                           TestCapability()                           */
 /************************************************************************/
 
@@ -3763,6 +3932,9 @@ int FGdbLayer::TestCapability( const char* pszCap )
     else if (EQUAL(pszCap,OLCAlterFieldDefn)) /* AlterFieldDefn() */
         return m_pDS->GetUpdate();
 #endif
+
+    else if (EQUAL(pszCap,OLCRename)) /* Rename() */
+        return m_pDS->GetUpdate();
 
     else if (EQUAL(pszCap,OLCFastSetNextByIndex)) /* TBD FastSetNextByIndex() */
         return FALSE;

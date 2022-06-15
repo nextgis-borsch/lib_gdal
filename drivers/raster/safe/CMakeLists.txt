@@ -39,6 +39,7 @@ if(ENABLE_SAFE)
     )
 
     set(LIB_HHEADERS_PRIV
+        safedataset.h
     )
 
     set(LIB_CSOURCES

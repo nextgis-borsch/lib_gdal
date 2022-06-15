@@ -402,7 +402,7 @@ EHdrDataset::EHdrDataset() :
 EHdrDataset::~EHdrDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
 
     if( nBands > 0 && GetAccess() == GA_Update )
     {
@@ -1674,7 +1674,7 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo, bool bFileSizeCheck )
         for( int i = 1; i <= poDS->nBands; i++ )
         {
             EHdrRasterBand *poBand =
-                    dynamic_cast<EHdrRasterBand*>(poDS->GetRasterBand(i));
+                    cpl::down_cast<EHdrRasterBand*>(poDS->GetRasterBand(i));
             poBand->m_poColorTable = poDS->m_poColorTable;
             poBand->m_poRAT = poDS->m_poRAT;
             poBand->SetColorInterpretation(GCI_PaletteIndex);
@@ -1700,16 +1700,16 @@ GDALDataset *EHdrDataset::Open( GDALOpenInfo * poOpenInfo, bool bFileSizeCheck )
 /************************************************************************/
 
 GDALDataset *EHdrDataset::Create( const char * pszFilename,
-                                  int nXSize, int nYSize, int nBands,
+                                  int nXSize, int nYSize, int nBandsIn,
                                   GDALDataType eType,
-                                  char **papszParmList )
+                                  char **papszParamList )
 
 {
     // Verify input options.
-    if (nBands <= 0)
+    if (nBandsIn <= 0)
     {
         CPLError(CE_Failure, CPLE_NotSupported,
-                 "EHdr driver does not support %d bands.", nBands);
+                 "EHdr driver does not support %d bands.", nBandsIn);
         return nullptr;
     }
 
@@ -1763,13 +1763,13 @@ GDALDataset *EHdrDataset::Create( const char * pszFilename,
     // Decide how many bits the file should have.
     int nBits = GDALGetDataTypeSize(eType);
 
-    if( CSLFetchNameValue(papszParmList, "NBITS") != nullptr )
-        nBits = atoi(CSLFetchNameValue(papszParmList, "NBITS"));
+    if( CSLFetchNameValue(papszParamList, "NBITS") != nullptr )
+        nBits = atoi(CSLFetchNameValue(papszParamList, "NBITS"));
 
     const int nRowBytes = (nBits * nXSize + 7) / 8;
 
     // Check for signed byte.
-    const char *pszPixelType = CSLFetchNameValue(papszParmList, "PIXELTYPE");
+    const char *pszPixelType = CSLFetchNameValue(papszParamList, "PIXELTYPE");
     if( pszPixelType == nullptr )
         pszPixelType = "";
 
@@ -1778,10 +1778,10 @@ GDALDataset *EHdrDataset::Create( const char * pszFilename,
     bOK &= VSIFPrintfL(fp, "LAYOUT         BIL\n") >= 0;
     bOK &= VSIFPrintfL(fp, "NROWS          %d\n", nYSize) >= 0;
     bOK &= VSIFPrintfL(fp, "NCOLS          %d\n", nXSize) >= 0;
-    bOK &= VSIFPrintfL(fp, "NBANDS         %d\n", nBands) >= 0;
+    bOK &= VSIFPrintfL(fp, "NBANDS         %d\n", nBandsIn) >= 0;
     bOK &= VSIFPrintfL(fp, "NBITS          %d\n", nBits) >= 0;
     bOK &= VSIFPrintfL(fp, "BANDROWBYTES   %d\n", nRowBytes) >= 0;
-    bOK &= VSIFPrintfL(fp, "TOTALROWBYTES  %d\n", nRowBytes * nBands) >= 0;
+    bOK &= VSIFPrintfL(fp, "TOTALROWBYTES  %d\n", nRowBytes * nBandsIn) >= 0;
 
     if( eType == GDT_Float32 )
         bOK &= VSIFPrintfL(fp, "PIXELTYPE      FLOAT\n") >= 0;
@@ -1857,7 +1857,7 @@ GDALDataset *EHdrDataset::CreateCopy( const char * pszFilename,
     CSLDestroy(papszAdjustedOptions);
 
     if( poOutDS != nullptr )
-        poOutDS->FlushCache();
+        poOutDS->FlushCache(false);
 
     return poOutDS;
 }

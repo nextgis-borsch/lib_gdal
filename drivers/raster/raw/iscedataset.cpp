@@ -90,14 +90,14 @@ class ISCEDataset final: public RawDataset
     ISCEDataset();
     ~ISCEDataset() override;
 
-    void FlushCache() override;
+    void FlushCache(bool bAtClosing) override;
     char **GetFileList() override;
 
     static int          Identify( GDALOpenInfo *poOpenInfo );
     static GDALDataset *Open( GDALOpenInfo *poOpenInfo );
     static GDALDataset *Open( GDALOpenInfo *poOpenInfo, bool bFileSizeCheck );
     static GDALDataset *Create( const char *pszFilename,
-                                int nXSize, int nYSize, int nBands,
+                                int nXSize, int nYSize, int nBandsIn,
                                 GDALDataType eType, char **papszOptions );
 };
 
@@ -179,7 +179,7 @@ ISCEDataset::ISCEDataset() :
 
 ISCEDataset::~ISCEDataset( void )
 {
-    ISCEDataset::FlushCache();
+    ISCEDataset::FlushCache(true);
     if ( fpImage != nullptr )
     {
         if( VSIFCloseL( fpImage ) != 0 )
@@ -194,9 +194,9 @@ ISCEDataset::~ISCEDataset( void )
 /*                            FlushCache()                              */
 /************************************************************************/
 
-void ISCEDataset::FlushCache( void )
+void ISCEDataset::FlushCache(bool bAtClosing)
 {
-    RawDataset::FlushCache();
+    RawDataset::FlushCache(bAtClosing);
 
     GDALRasterBand *band = (GetRasterCount() > 0) ? GetRasterBand(1) : nullptr;
 
@@ -317,7 +317,7 @@ void ISCEDataset::FlushCache( void )
                                  "createCoordinate" );
     CPLCreateXMLElementAndValue( psCoordinate1Node,
                                  "doc",
-                                 "First coordinate of a 2D image (witdh)." );
+                                 "First coordinate of a 2D image (width)." );
     /* Property name */
     psTmpNode = CPLCreateXMLNode( psCoordinate1Node,
                                   CXT_Element,
@@ -831,7 +831,7 @@ GDALDataset *ISCEDataset::Open( GDALOpenInfo *poOpenInfo, bool bFileSizeCheck )
 /************************************************************************/
 
 GDALDataset *ISCEDataset::Create( const char *pszFilename,
-                                  int nXSize, int nYSize, int nBands,
+                                  int nXSize, int nYSize, int nBandsIn,
                                   GDALDataType eType,
                                   char **papszOptions )
 {
@@ -878,7 +878,7 @@ GDALDataset *ISCEDataset::Create( const char *pszFilename,
 
     psTmpNode = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );
     CPLAddXMLAttributeAndValue( psTmpNode, "name", "NUMBER_BANDS" );
-    CPLsnprintf(sBuf, sizeof(sBuf), "%d", nBands);
+    CPLsnprintf(sBuf, sizeof(sBuf), "%d", nBandsIn);
     CPLCreateXMLElementAndValue( psTmpNode, "value", sBuf );
 
     psTmpNode = CPLCreateXMLNode( psDocNode, CXT_Element, "property" );

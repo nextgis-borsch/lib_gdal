@@ -97,6 +97,7 @@ class OGRShapeGeomFieldDefn final: public OGRGeomFieldDefn
         OGRSpatialReference* GetSpatialRef() const override;
 
         const CPLString& GetPrjFilename() const { return osPrjFile; }
+        void SetPrjFilename(const std::string& osFilename) { osPrjFile = osFilename; }
 };
 
 /************************************************************************/
@@ -253,6 +254,8 @@ class OGRShapeLayer final: public OGRAbstractProxiedLayer
 
     OGRErr              SetAttributeFilter( const char * ) override;
 
+    OGRErr              Rename(const char* pszNewName) override;
+
     void                AddToFileList( CPLStringList& oFileList );
     void                CreateSpatialIndexAtClose( int bFlag )
         { bCreateSpatialIndexAtClose = CPL_TO_BOOL(bFlag); }
@@ -277,7 +280,6 @@ class OGRShapeDataSource final: public OGRDataSource
     std::vector<CPLString> oVectorLayerName{};
 
     bool                b2GBLimit;
-    char              **papszOpenOptions;
     bool                m_bIsZip = false;
     bool                m_bSingleLayerZip = false;
     CPLString           m_osTemporaryUnzipDir{};

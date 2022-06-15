@@ -34,6 +34,8 @@
 #include "cpl_string.h"
 #include "cpl_error.h"
 
+#include <mutex>
+
 CPL_CVSID("$Id$")
 
 #ifndef SQLColumns_TABLE_CAT
@@ -160,6 +162,164 @@ int CPLODBCDriverInstaller::InstallDriver( const char* pszDriver,
 
     // SUCCESS
     return TRUE;
+}
+
+/************************************************************************/
+/*                      FindMdbToolsDriverLib()                         */
+/************************************************************************/
+
+bool CPLODBCDriverInstaller::FindMdbToolsDriverLib(CPLString &osDriverFile)
+{
+    const char* pszDrvCfg = CPLGetConfigOption("MDBDRIVER_PATH", nullptr);
+    if ( nullptr != pszDrvCfg )
+    {
+        // Directory or file path
+        CPLString strLibPath(pszDrvCfg);
+
+        VSIStatBuf sStatBuf;
+        if ( VSIStat( pszDrvCfg, &sStatBuf ) == 0
+             && VSI_ISDIR( sStatBuf.st_mode ) )
+        {
+            // Find default library in custom directory
+            const char* pszDriverFile = CPLFormFilename( pszDrvCfg, "libmdbodbc.so", nullptr );
+            CPLAssert( nullptr != pszDriverFile );
+
+            strLibPath = pszDriverFile;
+        }
+
+        if ( LibraryExists( strLibPath.c_str() ) )
+        {
+            // Save custom driver path
+            osDriverFile = strLibPath;
+            return true;
+        }
+    }
+
+    // Check if we have a declaration of the driver in /etc/odbcinst.ini
+    GByte* pabyRet = nullptr;
+    CPL_IGNORE_RET_VAL(VSIIngestFile(nullptr, "/etc/odbcinst.ini", &pabyRet,
+                                     nullptr, 100 * 1000));
+    if( pabyRet )
+    {
+        const bool bFound = strstr(reinterpret_cast<const char*>(pabyRet),
+                                   "Microsoft Access Driver") != nullptr;
+        CPLFree(pabyRet);
+        if( bFound )
+        {
+            CPLDebug("ODBC", "Declaration of Microsoft Access Driver found in /etc/odbcinst.ini");
+            return false;
+        }
+    }
+
+    // Default name and path of driver library
+    const char* const apszLibNames[] = {
+        "libmdbodbc.so",
+        "libmdbodbc.so.0" /* for Ubuntu 8.04 support */
+    };
+    const char* const apzPaths[] = {
+        "/usr/lib/x86_64-linux-gnu/odbc", /* ubuntu 20.04 */
+        "/usr/lib64",
+        "/usr/lib64/odbc", /* fedora */
+        "/usr/local/lib64",
+        "/usr/lib",
+        "/usr/local/lib"
+    };
+
+    // Try to find library in default paths
+    for ( const char* pszPath: apzPaths )
+    {
+        for( const char* pszLibName: apszLibNames )
+        {
+            const char* pszDriverFile = CPLFormFilename( pszPath, pszLibName, nullptr );
+            CPLAssert( nullptr != pszDriverFile );
+
+            if ( LibraryExists( pszDriverFile ) )
+            {
+                // Save default driver path
+                osDriverFile = pszDriverFile;
+                return true;
+            }
+        }
+    }
+
+    CPLError(CE_Failure, CPLE_AppDefined, "ODBC: MDB Tools driver not found!\n" );
+    // Driver not found!
+    return false;
+}
+
+/************************************************************************/
+/*                              LibraryExists()                         */
+/************************************************************************/
+
+bool CPLODBCDriverInstaller::LibraryExists(const char *pszLibPath)
+{
+    CPLAssert( nullptr != pszLibPath );
+
+    VSIStatBuf stb;
+
+    if ( 0 == VSIStat( pszLibPath, &stb ) )
+    {
+        if (VSI_ISREG( stb.st_mode ) || VSI_ISLNK(stb.st_mode))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/************************************************************************/
+/*                      InstallMdbToolsDriver()                         */
+/************************************************************************/
+
+void CPLODBCDriverInstaller::InstallMdbToolsDriver()
+{
+#ifdef WIN32
+    return;
+#else
+    static std::once_flag oofDriverInstallAttempted;
+    std::call_once( oofDriverInstallAttempted, [ = ]
+    {
+        //
+        // ODBCINST.INI NOTE:
+        // This operation requires write access to odbcinst.ini file
+        // located in directory pointed by ODBCINISYS variable.
+        // Usually, it points to /etc, so non-root users can overwrite this
+        // setting ODBCINISYS with location they have write access to, e.g.:
+        // $ export ODBCINISYS=$HOME/etc
+        // $ touch $ODBCINISYS/odbcinst.ini
+        //
+        // See: http://www.unixodbc.org/internals.html
+        //
+        CPLString osDriverFile;
+
+        if ( FindMdbToolsDriverLib( osDriverFile ) )
+        {
+            CPLAssert( !osDriverFile.empty() );
+            CPLDebug( "ODBC", "MDB Tools driver: %s", osDriverFile.c_str() );
+
+            CPLString driverName("Microsoft Access Driver (*.mdb)");
+            CPLString driver(driverName);
+            driver += '\0';
+            driver += "Driver=";
+            driver += osDriverFile; // Found by FindDriverLib()
+            driver += '\0';
+            driver += "FileUsage=1";
+            driver += '\0';
+            driver += '\0';
+
+            // Rregister driver
+            CPLODBCDriverInstaller dri;
+            if ( !dri.InstallDriver(driver.c_str(), nullptr, ODBC_INSTALL_COMPLETE) )
+            {
+                // Report ODBC error
+                CPLError( CE_Failure, CPLE_AppDefined, "ODBC: Unable to install MDB driver for ODBC, MDB access may not supported: %s", dri.GetLastError() );
+            }
+            else
+                CPLDebug( "ODBC", "MDB Tools driver installed successfully!");
+        }
+    } );
+#endif
 }
 
 /************************************************************************/
@@ -363,7 +523,7 @@ int CPLODBCSession::RollbackTransaction()
  * ODBC error messages are reported in the following format:
  * [SQLState]ErrorMessage(NativeErrorCode)
  *
- * Multiple error messages are delimeted by ",".
+ * Multiple error messages are delimited by ",".
  */
 int CPLODBCSession::Failed( int nRetCode, HSTMT hStmt )
 
@@ -397,7 +557,7 @@ int CPLODBCSession::Failed( int nRetCode, HSTMT hStmt )
                     achSQLState, &nNativeError,
                     reinterpret_cast<SQLCHAR *>(pachCurErrMsg),
                     nTextLength, &nTextLength2);
-            }               
+            }
             pachCurErrMsg[nTextLength] = '\0';
             m_osLastError += CPLString().Printf("%s[%5s]%s(" CPL_FRMT_GIB ")",
                     (m_osLastError.empty() ? "" : ", "), achSQLState,
@@ -434,54 +594,50 @@ int CPLODBCSession::Failed( int nRetCode, HSTMT hStmt )
  */
 bool CPLODBCSession::ConnectToMsAccess(const char *pszName, const char *pszDSNStringTemplate)
 {
-    char *pszDSN = nullptr;
-
-    const bool usingAutomaticDSNStringTemplate = pszDSNStringTemplate == nullptr;
-
-    if( usingAutomaticDSNStringTemplate )
+    const auto Connect = [this, &pszName](const char* l_pszDSNStringTemplate, bool bVerboseError)
     {
-#ifdef WIN32
-        pszDSNStringTemplate = "DRIVER=Microsoft Access Driver (*.mdb, *.accdb);DBQ=%s";
-#else
-        pszDSNStringTemplate = "DRIVER=Microsoft Access Driver (*.mdb, *.accdb);DBQ=\"%s\"";
-#endif
-    }
-    pszDSN = static_cast< char * >( CPLMalloc(strlen(pszName)+strlen(pszDSNStringTemplate)+100) );
-    /* coverity[tainted_string] */
-    snprintf( pszDSN,
-        strlen(pszName)+strlen(pszDSNStringTemplate)+100,
-        pszDSNStringTemplate,  pszName );
-
-    CPLDebug( "ODBC", "EstablishSession(%s)", pszDSN );
-    int bError = !EstablishSession( pszDSN, nullptr, nullptr );
-    if( bError && usingAutomaticDSNStringTemplate )
-    {
-        // Trying with another template (#5594)
-#ifdef WIN32
-        pszDSNStringTemplate = "DRIVER=Microsoft Access Driver (*.mdb);DBQ=%s";
-#else
-        pszDSNStringTemplate = "DRIVER=Microsoft Access Driver (*.mdb);DBQ=\"%s\"";
-#endif
-        CPLFree( pszDSN );
-        pszDSN = static_cast< char * >( CPLMalloc(strlen(pszName)+strlen(pszDSNStringTemplate)+100) );
+        char* pszDSN = static_cast< char * >( CPLMalloc(strlen(pszName)+strlen(l_pszDSNStringTemplate)+100) );
+        /* coverity[tainted_string] */
         snprintf( pszDSN,
-            strlen(pszName)+strlen(pszDSNStringTemplate)+100,
-            pszDSNStringTemplate,  pszName );
+            strlen(pszName)+strlen(l_pszDSNStringTemplate)+100,
+            l_pszDSNStringTemplate,  pszName );
         CPLDebug( "ODBC", "EstablishSession(%s)", pszDSN );
-        bError = !EstablishSession( pszDSN, nullptr, nullptr );
-    }
+        int bError = !EstablishSession( pszDSN, nullptr, nullptr );
+        if ( bError )
+        {
+            if( bVerboseError )
+            {
+                CPLError( CE_Failure, CPLE_AppDefined,
+                          "Unable to initialize ODBC connection to DSN for %s,\n"
+                          "%s", pszDSN, GetLastError() );
+            }
+            CPLFree( pszDSN );
+            return false;
+        }
 
-    if ( bError )
-    {
-        CPLError( CE_Failure, CPLE_AppDefined,
-                  "Unable to initialize ODBC connection to DSN for %s,\n"
-                  "%s", pszDSN, GetLastError() );
         CPLFree( pszDSN );
-        return false;
+        return true;
+    };
+
+    if( pszDSNStringTemplate )
+    {
+        return Connect(pszDSNStringTemplate, true);
     }
 
-    CPLFree( pszDSN );
-    return true;
+    for( const char* l_pszDSNStringTemplate:
+            { "DRIVER=Microsoft Access Driver (*.mdb, *.accdb);DBQ=%s",
+              "DRIVER=Microsoft Access Driver (*.mdb, *.accdb);DBQ=\"%s\"",
+              "DRIVER=Microsoft Access Driver (*.mdb);DBQ=%s",
+              "DRIVER=Microsoft Access Driver (*.mdb);DBQ=\"%s\"" } )
+    {
+        if( Connect(l_pszDSNStringTemplate, false) )
+            return true;
+    }
+
+    CPLError( CE_Failure, CPLE_AppDefined,
+              "Unable to initialize ODBC connection to DSN for %s,\n"
+              "%s", pszName, GetLastError() );
+    return false;
 }
 
 /************************************************************************/
@@ -597,8 +753,14 @@ const char *CPLODBCSession::GetLastError()
 /*                          CPLODBCStatement()                          */
 /************************************************************************/
 
-/** Constructor */
-CPLODBCStatement::CPLODBCStatement( CPLODBCSession *poSession ) :
+/**
+ * Constructor.
+ *
+ * The optional flags argument can be used to specify flags which control
+ * the behavior of the statement.
+*/
+CPLODBCStatement::CPLODBCStatement( CPLODBCSession *poSession, const int flags ) :
+    m_nFlags(flags),
     m_poSession(poSession)
 {
 
@@ -701,6 +863,15 @@ int CPLODBCStatement::CollectResultsInfo()
         static_cast<char **>(CPLCalloc(sizeof(char *), m_nColCount + 1));
     m_panColValueLengths = static_cast<CPL_SQLLEN *>(
         CPLCalloc(sizeof(CPL_SQLLEN), m_nColCount + 1));
+    if ( m_nFlags & Flag::RetrieveNumericColumnsAsDouble )
+    {
+        m_padColValuesAsDouble =
+            static_cast<double *>(CPLCalloc(sizeof(double), m_nColCount + 1));
+    }
+    else
+    {
+        m_padColValuesAsDouble = nullptr;
+    }
 
     m_panColType =
         static_cast<SQLSMALLINT *>(CPLCalloc(sizeof(SQLSMALLINT), m_nColCount));
@@ -1019,6 +1190,8 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
     for( SQLSMALLINT iCol = 0; iCol < m_nColCount; iCol++ )
     {
         CPL_SQLLEN cbDataLen = 0;
+        if ( m_padColValuesAsDouble )
+            m_padColValuesAsDouble[iCol] = std::numeric_limits< double >::quiet_NaN();
         SQLSMALLINT nFetchType = GetTypeMapping( m_panColType[iCol] );
 
         // Handle values other than WCHAR and BINARY as CHAR.
@@ -1027,9 +1200,47 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
 
         char szWrkData[513] = {};
 
+        // If RetrieveNumericColumnsAsDouble flag is set, then read numeric columns using numeric data types and populate native double column values array.
+        // This allows retrieval of the original numeric value as a double via GetColDataAsDouble without risk of loss of precision.
+        // Additionally, some ODBC drivers (e.g. the MS Access ODBC driver) require reading numeric values using numeric
+        // data types, otherwise incorrect values can result. See https://github.com/OSGeo/gdal/issues/3885
+        if ( m_padColValuesAsDouble &&
+                ( m_panColType[iCol] == SQL_DOUBLE || m_panColType[iCol] == SQL_FLOAT || m_panColType[iCol] == SQL_REAL) )
+        {
+            if (m_panColType[iCol] == SQL_DOUBLE )
+            {
+                double dfValue = 0;
+                nRetCode = SQLGetData( m_hStmt, iCol + 1, SQL_C_DOUBLE,
+                            &dfValue, sizeof(dfValue), &cbDataLen );
+                if( cbDataLen != SQL_NULL_DATA )
+                    m_padColValuesAsDouble[iCol] = dfValue;
+            }
+            else
+            {
+                // note -- cannot request a float column as SQL_C_DOUBLE when using mdbtools driver!
+                float fValue = 0;
+                nRetCode = SQLGetData( m_hStmt, iCol + 1, SQL_C_FLOAT,
+                            &fValue, sizeof(fValue), &cbDataLen );
+                if( cbDataLen != SQL_NULL_DATA )
+                    m_padColValuesAsDouble[iCol] = static_cast< double >( fValue );
+            }
+            if( nRetCode != SQL_NO_DATA && Failed( nRetCode ) )
+            {
+                CPLError( CE_Failure, CPLE_AppDefined, "%s",
+                          m_poSession->GetLastError() );
+                return FALSE;
+            }
+            else
+            {
+                m_papszColValues[iCol] = nullptr;
+                m_panColValueLengths[iCol] = 0;
+                continue;
+            }
+        }
+
         nRetCode = SQLGetData( m_hStmt, iCol + 1, nFetchType,
-                               szWrkData, sizeof(szWrkData) - 1,
-                               &cbDataLen );
+                           szWrkData, sizeof(szWrkData) - 1,
+                           &cbDataLen );
 
         // SQLGetData() is giving garbage values in the first 4 bytes of
         // cbDataLen in some architectures. Converting it to int discards the
@@ -1037,17 +1248,20 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
         // size reaches 2GB. (#3385)
         cbDataLen = static_cast<int>(cbDataLen);
 
-        if( Failed( nRetCode ) )
+        // a return code of SQL_NO_DATA is not indicative of an error - see
+        // https://docs.microsoft.com/en-us/sql/odbc/reference/develop-app/getting-long-data?view=sql-server-ver15
+        // "When there is no more data to return, SQLGetData returns SQL_NO_DATA"
+        // and the example from that page which uses:
+        // while ((rc = SQLGetData(hstmt, 2, SQL_C_BINARY, BinaryPtr, sizeof(BinaryPtr), &BinaryLenOrInd)) != SQL_NO_DATA) { ... }
+        if( nRetCode != SQL_NO_DATA && Failed( nRetCode ) )
         {
-            if( nRetCode != SQL_NO_DATA )
-            {
-                CPLError( CE_Failure, CPLE_AppDefined, "%s",
-                          m_poSession->GetLastError() );
-            }
+            CPLError( CE_Failure, CPLE_AppDefined, "%s",
+                      m_poSession->GetLastError() );
             return FALSE;
         }
 
-        if( cbDataLen == SQL_NULL_DATA )
+        // if first call to SQLGetData resulted in SQL_NO_DATA return code, then the data is empty (NULL)
+        if( cbDataLen == SQL_NULL_DATA || nRetCode == SQL_NO_DATA )
         {
             m_papszColValues[iCol] = nullptr;
             m_panColValueLengths[iCol] = 0;
@@ -1131,16 +1345,6 @@ int CPLODBCStatement::Fetch( int nOrientation, int nOffset )
             memcpy( m_papszColValues[iCol], szWrkData, cbDataLen );
             m_papszColValues[iCol][cbDataLen] = '\0';
             m_papszColValues[iCol][cbDataLen+1] = '\0';
-        }
-
-        // Trim white space off end, if there is any.
-        if( nFetchType == SQL_C_CHAR && m_papszColValues[iCol] != nullptr )
-        {
-            char *pszTarget = m_papszColValues[iCol];
-            size_t iEnd = strlen(pszTarget);
-
-            while( iEnd > 0 && pszTarget[iEnd - 1] == ' ' )
-                pszTarget[--iEnd] = '\0';
         }
 
         // Convert WCHAR to UTF-8, assuming the WCHAR is UCS-2.
@@ -1256,6 +1460,72 @@ int CPLODBCStatement::GetColDataLength( int iCol )
         return 0;
 }
 
+
+/************************************************************************/
+/*                        GetColDataAsDouble()                          */
+/************************************************************************/
+
+/**
+ * Fetch column data as a double value.
+ *
+ * Fetches the data contents of the requested column for the currently loaded
+ * row as a double value.
+ *
+ * Returns NaN if a non-numeric column is requested or the actual column value
+ * is "NULL".
+ *
+ * @warning this method can only be used if the Flag::RetrieveNumericColumnsAsDouble
+ * flag was set for the CPLODBCStatement.
+ *
+ * @param iCol the zero based column to fetch.
+ *
+ * @return numeric column value or NaN on failure.
+ */
+
+double CPLODBCStatement::GetColDataAsDouble( int iCol ) const
+
+{
+    if( !m_padColValuesAsDouble || iCol < 0 || iCol >= m_nColCount )
+        return std::numeric_limits< double >::quiet_NaN();
+    else
+        return m_padColValuesAsDouble[iCol];
+}
+
+/************************************************************************/
+/*                         GetColDataAsDouble()                         */
+/************************************************************************/
+
+/**
+ * Fetch column data as a double value.
+ *
+ * Fetches the data contents of the requested column for the currently loaded
+ * row as a double value.
+ *
+ * Returns NaN if a non-numeric column is requested or the actual column value
+ * is "NULL".
+ *
+ * @warning this method can only be used if the Flag::RetrieveNumericColumnsAsDouble
+ * flag was set for the CPLODBCStatement.
+ *
+ * @param pszColName the name of the column requested.
+ *
+ * @return numeric column value or NaN on failure.
+ */
+
+double CPLODBCStatement::GetColDataAsDouble( const char *pszColName ) const
+
+{
+    if( !m_padColValuesAsDouble )
+        return std::numeric_limits< double >::quiet_NaN();
+
+    const int iCol = GetColId( pszColName );
+
+    if( iCol == -1 )
+        return std::numeric_limits< double >::quiet_NaN();
+    else
+        return GetColDataAsDouble( iCol );
+}
+
 /************************************************************************/
 /*                              GetColId()                              */
 /************************************************************************/
@@ -1271,7 +1541,7 @@ int CPLODBCStatement::GetColDataLength( int iCol )
  * @return the column index, or -1 if not found.
  */
 
-int CPLODBCStatement::GetColId( const char *pszColName )
+int CPLODBCStatement::GetColId( const char *pszColName ) const
 
 {
     for( SQLSMALLINT iCol = 0; iCol < m_nColCount; iCol++ )
@@ -1531,11 +1801,17 @@ void CPLODBCStatement::Clear()
         CSLDestroy( m_papszColNames );
         m_papszColNames = nullptr;
 
-        CPLFree( m_papszColValues );
-        m_papszColValues = nullptr;
+        if ( m_papszColValues )
+        {
+            CPLFree( m_papszColValues );
+            m_papszColValues = nullptr;
+        }
 
         CPLFree( m_panColValueLengths );
         m_panColValueLengths = nullptr;
+
+        CPLFree( m_padColValuesAsDouble );
+        m_padColValuesAsDouble = nullptr;
     }
 }
 
@@ -1763,7 +2039,8 @@ int CPLODBCStatement::GetTables( const char *pszCatalog,
 
 {
     CPLDebug( "ODBC", "CatalogNameL: %s\nSchema name: %s",
-                pszCatalog, pszSchema );
+              pszCatalog ? pszCatalog : "(null)",
+              pszSchema ? pszSchema : "(null)" );
 
 #if (ODBCVER >= 0x0300)
 
@@ -1982,6 +2259,8 @@ SQLSMALLINT CPLODBCStatement::GetTypeMapping( SQLSMALLINT nTypeCode )
         case SQL_INTERVAL_HOUR_TO_MINUTE:
         case SQL_INTERVAL_HOUR_TO_SECOND:
         case SQL_INTERVAL_MINUTE_TO_SECOND:
+            return SQL_C_CHAR;
+
         case SQL_GUID:
             return SQL_C_GUID;
 

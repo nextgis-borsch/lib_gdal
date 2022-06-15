@@ -361,9 +361,11 @@ NITFImage *NITFImageAccess( NITFFile *psFile, int iSegment )
         if ( (int)psSegInfo->nSegmentHeaderSize < nOffset + 80 * nNICOM )
             GOTO_header_too_small();
 
-        psImage->pszComments = (char *) CPLMalloc(nNICOM*80+1);
-        NITFGetField( psImage->pszComments, pachHeader,
-                      nOffset, 80 * nNICOM );
+        char *pszICOM = (char *) CPLMalloc(nNICOM*80+1);
+        psImage->pszComments = CPLRecode(
+            NITFGetField( pszICOM, pachHeader, nOffset, 80 * nNICOM ),
+            CPL_ENC_ISO8859_1, CPL_ENC_UTF8 );
+        CPLFree(pszICOM);
         nOffset += nNICOM * 80;
     }
 
@@ -2353,7 +2355,7 @@ static int NITFFormatRPC00BCoefficient( char* pszBuffer, double dfVal,
 
 char* NITFFormatRPC00BFromMetadata( char** papszRPC, int* pbPrecisionLoss )
 {
-    GDALRPCInfo sRPC;
+    GDALRPCInfoV2 sRPC;
     char* pszRPC00B;
     double dfErrBIAS;
     double dfErrRAND;
@@ -2365,15 +2367,19 @@ char* NITFFormatRPC00BFromMetadata( char** papszRPC, int* pbPrecisionLoss )
 
     if( pbPrecisionLoss ) *pbPrecisionLoss = FALSE;
 
-    if( !GDALExtractRPCInfo( papszRPC, &sRPC ) )
+    if( !GDALExtractRPCInfoV2( papszRPC, &sRPC ) )
         return NULL;
 
     pszRPC00B = (char*) CPLMalloc(1041 + 1);
     pszRPC00B[0] = '1'; /* success flag */
     nOffset = 1;
 
-    dfErrBIAS = CPLAtof(CSLFetchNameValueDef(papszRPC, "ERR_BIAS", "0"));
-    if( dfErrBIAS < 0 )
+    dfErrBIAS = sRPC.dfERR_BIAS;
+    if( dfErrBIAS == -1.0 ) // value by default to indicate unknown
+    {
+        dfErrBIAS = 0.0;
+    }
+    else if( dfErrBIAS < 0 )
     {
         CPLError(CE_Warning, CPLE_AppDefined,
                  "Correcting ERR_BIAS from %f to 0", dfErrBIAS);
@@ -2388,8 +2394,12 @@ char* NITFFormatRPC00BFromMetadata( char** papszRPC, int* pbPrecisionLoss )
     CPLsnprintf(pszRPC00B + nOffset, nLength + 1, "%07.2f", dfErrBIAS);
     nOffset += nLength;
 
-    dfErrRAND = CPLAtof(CSLFetchNameValueDef(papszRPC, "ERR_RAND", "0"));
-    if( dfErrRAND < 0 )
+    dfErrRAND = sRPC.dfERR_RAND;
+    if( dfErrRAND == -1.0 ) // value by default to indicate unknown
+    {
+        dfErrRAND = 0.0;
+    }
+    else if( dfErrRAND < 0 )
     {
         CPLError(CE_Warning, CPLE_AppDefined,
                  "Correcting ERR_RAND from %f to 0", dfErrRAND);

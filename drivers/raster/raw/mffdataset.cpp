@@ -94,8 +94,8 @@ class MFFDataset final : public RawDataset
 
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
-                                int nXSize, int nYSize, int nBands,
-                                GDALDataType eType, char ** papszParmList );
+                                int nXSize, int nYSize, int nBandsIn,
+                                GDALDataType eType, char ** papszParamList );
     static GDALDataset *CreateCopy( const char * pszFilename,
                                     GDALDataset *poSrcDS,
                                     int bStrict, char ** papszOptions,
@@ -271,7 +271,7 @@ MFFDataset::MFFDataset() :
 MFFDataset::~MFFDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
     CSLDestroy( papszHdrLines );
     if( pafpBandFiles != nullptr )
     {
@@ -1105,18 +1105,18 @@ int GetMFFProjectionType(const char *pszNewProjection)
 /************************************************************************/
 
 GDALDataset *MFFDataset::Create( const char * pszFilenameIn,
-                                 int nXSize, int nYSize, int nBands,
+                                 int nXSize, int nYSize, int nBandsIn,
                                  GDALDataType eType,
-                                 char ** papszParmList )
+                                 char ** papszParamList )
 
 {
 /* -------------------------------------------------------------------- */
 /*      Verify input options.                                           */
 /* -------------------------------------------------------------------- */
-    if( nBands <= 0 )
+    if( nBandsIn <= 0 )
     {
         CPLError( CE_Failure, CPLE_NotSupported,
-                  "MFF driver does not support %d bands.", nBands );
+                  "MFF driver does not support %d bands.", nBandsIn );
         return nullptr;
     }
 
@@ -1174,7 +1174,7 @@ GDALDataset *MFFDataset::Create( const char * pszFilenameIn,
     bOK &= VSIFPrintfL( fp, "BYTE_ORDER = LSB\n" ) >= 0;
 #endif
 
-    if (CSLFetchNameValue(papszParmList,"NO_END") == nullptr)
+    if (CSLFetchNameValue(papszParamList,"NO_END") == nullptr)
         bOK &= VSIFPrintfL( fp, "END\n" ) >= 0;
 
     if( VSIFCloseL( fp ) != 0 )
@@ -1183,7 +1183,7 @@ GDALDataset *MFFDataset::Create( const char * pszFilenameIn,
 /* -------------------------------------------------------------------- */
 /*      Create the data files, but don't bother writing any data to them.*/
 /* -------------------------------------------------------------------- */
-    for( int iBand = 0; bOK && iBand < nBands; iBand++ )
+    for( int iBand = 0; bOK && iBand < nBandsIn; iBand++ )
     {
         char szExtension[4] = { '\0' };
 
@@ -1611,7 +1611,7 @@ MFFDataset::CreateCopy( const char * pszFilename,
     {
         RawRasterBand *poDstBand = reinterpret_cast<RawRasterBand *>(
             poDS->GetRasterBand( iBand+1 ) );
-        poDstBand->FlushCache();
+        poDstBand->FlushCache(false);
     }
 
     if( !pfnProgress( 1.0, nullptr, pProgressData ) )

@@ -43,7 +43,7 @@ CPL_CVSID("$Id$")
 // #define DEBUG_VERBOSE 1
 
 #ifdef WIN32
-#if defined(_MSC_VER)
+#if defined(HAVE_ATLBASE_H)
 bool CPLFetchWindowsProductUUID(CPLString &osStr); // defined in cpl_aws_win32.cpp
 #endif
 const char* CPLGetWineVersion(); // defined in cpl_vsil_win32.cpp
@@ -56,6 +56,17 @@ static CPLString gosGlobalAccessKeyId;
 static CPLString gosGlobalSecretAccessKey;
 static CPLString gosGlobalSessionToken;
 static GIntBig gnGlobalExpiration = 0;
+static std::string gosRegion;
+
+// The below variables are used for credentials retrieved through a STS AssumedRole
+// operation
+static std::string gosRoleArn;
+static std::string gosExternalId;
+static std::string gosMFASerial;
+static std::string gosRoleSessionName;
+static std::string gosSourceProfileAccessKeyId;
+static std::string gosSourceProfileSecretAccessKey;
+static std::string gosSourceProfileSessionToken;
 
 /************************************************************************/
 /*                         CPLGetLowerCaseHex()                         */
@@ -170,6 +181,7 @@ CPLGetAWS_SIGN4_Signature( const CPLString& osSecretAccessKey,
                                const CPLString& osCanonicalURI,
                                const CPLString& osCanonicalQueryString,
                                const CPLString& osXAMZContentSHA256,
+                               bool bAddHeaderAMZContentSHA256,
                                const CPLString& osTimestamp,
                                CPLString& osSignedHeaders )
 {
@@ -184,7 +196,7 @@ CPLGetAWS_SIGN4_Signature( const CPLString& osSecretAccessKey,
 
     std::map<CPLString, CPLString> oSortedMapHeaders;
     oSortedMapHeaders["host"] = osHost;
-    if( osXAMZContentSHA256 != "UNSIGNED-PAYLOAD" )
+    if( osXAMZContentSHA256 != "UNSIGNED-PAYLOAD" && bAddHeaderAMZContentSHA256 )
     {
         oSortedMapHeaders["x-amz-content-sha256"] = osXAMZContentSHA256;
         oSortedMapHeaders["x-amz-date"] = osTimestamp;
@@ -320,6 +332,7 @@ CPLGetAWS_SIGN4_Authorization( const CPLString& osSecretAccessKey,
                                                     osCanonicalURI,
                                                     osCanonicalQueryString,
                                                     osXAMZContentSHA256,
+                                                    true, // bAddHeaderAMZContentSHA256
                                                     osTimestamp,
                                                     osSignedHeaders));
 
@@ -388,7 +401,7 @@ VSIS3HandleHelper::VSIS3HandleHelper( const CPLString& osSecretAccessKey,
                                       const CPLString& osObjectKey,
                                       bool bUseHTTPS,
                                       bool bUseVirtualHosting,
-                                      bool bFromEC2 ) :
+                                      AWSCredentialsSource eCredentialsSource ) :
     m_osURL(BuildURL(osEndpoint, osBucket, osObjectKey, bUseHTTPS,
                      bUseVirtualHosting)),
     m_osSecretAccessKey(osSecretAccessKey),
@@ -401,7 +414,7 @@ VSIS3HandleHelper::VSIS3HandleHelper( const CPLString& osSecretAccessKey,
     m_osObjectKey(osObjectKey),
     m_bUseHTTPS(bUseHTTPS),
     m_bUseVirtualHosting(bUseVirtualHosting),
-    m_bFromEC2(bFromEC2)
+    m_eCredentialsSource(eCredentialsSource)
 {}
 
 /************************************************************************/
@@ -612,7 +625,7 @@ static bool IsMachinePotentiallyEC2Instance()
 #if defined(__linux) || defined(WIN32)
     const auto IsMachinePotentiallyEC2InstanceFromLinuxHost = []()
     {
-        // On the newer Nitro Hypervisor (C5, M5, H1, T3), use 
+        // On the newer Nitro Hypervisor (C5, M5, H1, T3), use
         // /sys/devices/virtual/dmi/id/sys_vendor = 'Amazon EC2' instead.
 
         // On older Xen hypervisor EC2 instances, a /sys/hypervisor/uuid file will
@@ -688,7 +701,7 @@ static bool IsMachinePotentiallyEC2Instance()
     }
     else
     {
-#if defined(_MSC_VER)
+#if defined(HAVE_ATLBASE_H)
         CPLString osMachineUUID;
         if( CPLFetchWindowsProductUUID(osMachineUUID) )
         {
@@ -721,7 +734,8 @@ static bool IsMachinePotentiallyEC2Instance()
 /*                      GetConfigurationFromEC2()                       */
 /************************************************************************/
 
-bool VSIS3HandleHelper::GetConfigurationFromEC2(CPLString& osSecretAccessKey,
+bool VSIS3HandleHelper::GetConfigurationFromEC2(const std::string& osPathForOption,
+                                                CPLString& osSecretAccessKey,
                                                 CPLString& osAccessKeyId,
                                                 CPLString& osSessionToken)
 {
@@ -742,10 +756,10 @@ bool VSIS3HandleHelper::GetConfigurationFromEC2(CPLString& osSecretAccessKey,
     const CPLString osEC2DefaultURL("http://169.254.169.254");
     // coverity[tainted_data]
     const CPLString osEC2RootURL(
-        CPLGetConfigOption("CPL_AWS_EC2_API_ROOT_URL", osEC2DefaultURL));
+        VSIGetCredential(osPathForOption.c_str(), "CPL_AWS_EC2_API_ROOT_URL", osEC2DefaultURL));
     // coverity[tainted_data]
     const CPLString osECSRelativeURI(
-        CPLGetConfigOption("AWS_CONTAINER_CREDENTIALS_RELATIVE_URI", ""));
+        VSIGetCredential(osPathForOption.c_str(), "AWS_CONTAINER_CREDENTIALS_RELATIVE_URI", ""));
     CPLString osToken;
     if( osEC2RootURL == osEC2DefaultURL && !osECSRelativeURI.empty() )
     {
@@ -895,53 +909,20 @@ void UpdateAndWarnIfInconsistent(const char* pszKeyword,
 }
 
 /************************************************************************/
-/*                GetConfigurationFromAWSConfigFiles()                  */
+/*                         ReadAWSCredentials()                         */
 /************************************************************************/
 
-bool VSIS3HandleHelper::GetConfigurationFromAWSConfigFiles(
-                                                CPLString& osSecretAccessKey,
-                                                CPLString& osAccessKeyId,
-                                                CPLString& osSessionToken,
-                                                CPLString& osRegion,
-                                                CPLString& osCredentials)
+static bool ReadAWSCredentials(const std::string& osProfile,
+                               const std::string& osCredentials,
+                               CPLString& osSecretAccessKey,
+                               CPLString& osAccessKeyId,
+                               CPLString& osSessionToken)
 {
-    // See http://docs.aws.amazon.com/cli/latest/userguide/cli-config-files.html
-    // If AWS_DEFAULT_PROFILE is set (obsolete, no longer documented), use it in priority
-    // Otherwise use AWS_PROFILE
-    // Otherwise fallback to "default"
-    const char* pszProfile = CPLGetConfigOption("AWS_DEFAULT_PROFILE",
-        CPLGetConfigOption("AWS_PROFILE", ""));
-    const CPLString osProfile(pszProfile[0] != '\0' ? pszProfile : "default");
+    osSecretAccessKey.clear();
+    osAccessKeyId.clear();
+    osSessionToken.clear();
 
-#ifdef WIN32
-    const char* pszHome = CPLGetConfigOption("USERPROFILE", nullptr);
-    constexpr char SEP_STRING[] = "\\";
-#else
-    const char* pszHome = CPLGetConfigOption("HOME", nullptr);
-    constexpr char SEP_STRING[] = "/";
-#endif
-
-    CPLString osDotAws( pszHome ? pszHome : "" );
-    osDotAws += SEP_STRING;
-    osDotAws += ".aws";
-
-    // Read first ~/.aws/credential file
-
-    // GDAL specific config option (mostly for testing purpose, but also
-    // used in production in some cases)
-    const char* pszCredentials =
-                    CPLGetConfigOption( "CPL_AWS_CREDENTIALS_FILE", nullptr );
-    if( pszCredentials )
-    {
-        osCredentials = pszCredentials;
-    }
-    else
-    {
-        osCredentials = osDotAws;
-        osCredentials += SEP_STRING;
-        osCredentials += "credentials";
-    }
-    VSILFILE* fp = VSIFOpenL( osCredentials, "rb" );
+    VSILFILE* fp = VSIFOpenL( osCredentials.c_str(), "rb" );
     if( fp != nullptr )
     {
         const char* pszLine;
@@ -975,9 +956,70 @@ bool VSIS3HandleHelper::GetConfigurationFromAWSConfigFiles(
         VSIFCloseL(fp);
     }
 
+    return !osSecretAccessKey.empty() && !osAccessKeyId.empty();
+}
+
+/************************************************************************/
+/*                GetConfigurationFromAWSConfigFiles()                  */
+/************************************************************************/
+
+bool VSIS3HandleHelper::GetConfigurationFromAWSConfigFiles(
+                                                const std::string& osPathForOption,
+                                                CPLString& osSecretAccessKey,
+                                                CPLString& osAccessKeyId,
+                                                CPLString& osSessionToken,
+                                                CPLString& osRegion,
+                                                CPLString& osCredentials,
+                                                CPLString& osRoleArn,
+                                                CPLString& osSourceProfile,
+                                                CPLString& osExternalId,
+                                                CPLString& osMFASerial,
+                                                CPLString& osRoleSessionName)
+{
+    // See http://docs.aws.amazon.com/cli/latest/userguide/cli-config-files.html
+    // If AWS_DEFAULT_PROFILE is set (obsolete, no longer documented), use it in priority
+    // Otherwise use AWS_PROFILE
+    // Otherwise fallback to "default"
+    const char* pszProfile = VSIGetCredential(osPathForOption.c_str(), "AWS_DEFAULT_PROFILE", "");
+    if( pszProfile[0] == '\0' )
+        pszProfile = VSIGetCredential(osPathForOption.c_str(), "AWS_PROFILE", "");
+    const CPLString osProfile(pszProfile[0] != '\0' ? pszProfile : "default");
+
+#ifdef WIN32
+    const char* pszHome = CPLGetConfigOption("USERPROFILE", nullptr);
+    constexpr char SEP_STRING[] = "\\";
+#else
+    const char* pszHome = CPLGetConfigOption("HOME", nullptr);
+    constexpr char SEP_STRING[] = "/";
+#endif
+
+    CPLString osDotAws( pszHome ? pszHome : "" );
+    osDotAws += SEP_STRING;
+    osDotAws += ".aws";
+
+    // Read first ~/.aws/credential file
+
+    // GDAL specific config option (mostly for testing purpose, but also
+    // used in production in some cases)
+    const char* pszCredentials =
+        VSIGetCredential(osPathForOption.c_str(), "CPL_AWS_CREDENTIALS_FILE", nullptr );
+    if( pszCredentials )
+    {
+        osCredentials = pszCredentials;
+    }
+    else
+    {
+        osCredentials = osDotAws;
+        osCredentials += SEP_STRING;
+        osCredentials += "credentials";
+    }
+
+    ReadAWSCredentials(osProfile, osCredentials,
+                       osSecretAccessKey, osAccessKeyId, osSessionToken);
+
     // And then ~/.aws/config file (unless AWS_CONFIG_FILE is defined)
     const char* pszAWSConfigFileEnv =
-                            CPLGetConfigOption( "AWS_CONFIG_FILE", nullptr );
+        VSIGetCredential(osPathForOption.c_str(), "AWS_CONFIG_FILE", nullptr );
     CPLString osConfig;
     if( pszAWSConfigFileEnv )
     {
@@ -989,7 +1031,7 @@ bool VSIS3HandleHelper::GetConfigurationFromAWSConfigFiles(
         osConfig += SEP_STRING;
         osConfig += "config";
     }
-    fp = VSIFOpenL( osConfig, "rb" );
+    VSILFILE* fp = VSIFOpenL( osConfig, "rb" );
     if( fp != nullptr )
     {
         const char* pszLine;
@@ -1044,6 +1086,26 @@ bool VSIS3HandleHelper::GetConfigurationFromAWSConfigFiles(
                     {
                         osRegion = pszValue;
                     }
+                    else if( strcmp(pszKey, "role_arn") == 0 )
+                    {
+                        osRoleArn = pszValue;
+                    }
+                    else if( strcmp(pszKey, "source_profile") == 0 )
+                    {
+                        osSourceProfile = pszValue;
+                    }
+                    else if( strcmp(pszKey, "external_id") == 0 )
+                    {
+                        osExternalId = pszValue;
+                    }
+                    else if( strcmp(pszKey, "mfa_serial") == 0 )
+                    {
+                        osMFASerial = pszValue;
+                    }
+                    else if( strcmp(pszKey, "role_session_name") == 0 )
+                    {
+                        osRoleSessionName = pszValue;
+                    }
                 }
                 CPLFree(pszKey);
             }
@@ -1060,28 +1122,188 @@ bool VSIS3HandleHelper::GetConfigurationFromAWSConfigFiles(
         }
     }
 
-    return !osAccessKeyId.empty() && !osSecretAccessKey.empty();
+    return (!osAccessKeyId.empty() && !osSecretAccessKey.empty()) ||
+           (!osRoleArn.empty() && !osSourceProfile.empty());
+}
+
+
+/************************************************************************/
+/*                     GetTemporaryCredentialsForRole()                 */
+/************************************************************************/
+
+// Issue a STS AssumedRole operation to get temporary credentials for an assumed
+// role.
+static bool GetTemporaryCredentialsForRole(const std::string& osRoleArn,
+                                           const std::string& osExternalId,
+                                           const std::string& osMFASerial,
+                                           const std::string& osRoleSessionName,
+                                           const std::string& osSecretAccessKey,
+                                           const std::string& osAccessKeyId,
+                                           const std::string& osSessionToken,
+                                           std::string& osTempSecretAccessKey,
+                                           std::string& osTempAccessKeyId,
+                                           std::string& osTempSessionToken,
+                                           std::string& osExpiration)
+{
+    std::string osXAMZDate = CPLGetConfigOption("AWS_TIMESTAMP", "");
+    if( osXAMZDate.empty() )
+        osXAMZDate = CPLGetAWS_SIGN4_Timestamp();
+    std::string osDate(osXAMZDate);
+    osDate.resize(8);
+
+    const std::string osVerb("GET");
+    const std::string osService("sts");
+    const std::string osRegion(CPLGetConfigOption("AWS_STS_REGION", "us-east-1"));
+    const std::string osHost(CPLGetConfigOption("AWS_STS_ENDPOINT", "sts.amazonaws.com"));
+
+    std::map<std::string, std::string> oMap;
+    oMap["X-Amz-Algorithm"] = "AWS4-HMAC-SHA256";
+    oMap["X-Amz-Credential"] =
+        osAccessKeyId + "/" + osDate + "/" + osRegion + "/" + osService + "/aws4_request";
+    oMap["X-Amz-Date"] = osXAMZDate;
+    oMap["X-Amz-SignedHeaders"] = "host";
+    oMap["Version"] = "2011-06-15";
+    oMap["Action"] = "AssumeRole";
+    oMap["RoleArn"] = osRoleArn;
+    oMap["RoleSessionName"] = !osRoleSessionName.empty() ?
+        osRoleSessionName.c_str() :
+        CPLGetConfigOption("AWS_ROLE_SESSION_NAME", "GDAL-session");
+    if( !osExternalId.empty() )
+        oMap["ExternalId"] = osExternalId;
+    if( !osMFASerial.empty() )
+        oMap["SerialNumber"] = osMFASerial;
+
+    std::string osQueryString;
+    for( const auto& kv: oMap )
+    {
+        if( osQueryString.empty() )
+            osQueryString += "?";
+        else
+            osQueryString += "&";
+        osQueryString += kv.first;
+        osQueryString += "=";
+        osQueryString += CPLAWSURLEncode(kv.second);
+    }
+    CPLString osCanonicalQueryString(osQueryString.substr(1));
+
+    CPLString osSignedHeaders;
+    const CPLString osSignature =
+      CPLGetAWS_SIGN4_Signature(
+        osSecretAccessKey,
+        osSessionToken,
+        osRegion,
+        std::string(), //m_osRequestPayer,
+        osService,
+        osVerb,
+        nullptr, /* existing headers */
+        osHost,
+        "/",
+        osCanonicalQueryString,
+        CPLGetLowerCaseHexSHA256(std::string()),
+        false, // bAddHeaderAMZContentSHA256
+        osXAMZDate,
+        osSignedHeaders);
+
+    bool bRet = false;
+    const bool bUseHTTPS = CPLTestBool(CPLGetConfigOption("AWS_HTTPS", "YES"));
+    const std::string osURL = (bUseHTTPS ? "https://" : "http://") + osHost + "/" + osQueryString + "&X-Amz-Signature=" + osSignature;
+    CPLHTTPResult* psResult = CPLHTTPFetch( osURL.c_str(), nullptr );
+    if( psResult )
+    {
+        if( psResult->nStatus == 0 && psResult->pabyData != nullptr )
+        {
+            CPLXMLTreeCloser oTree(CPLParseXMLString(reinterpret_cast<char*>(psResult->pabyData)));
+            if( oTree )
+            {
+                const auto psCredentials = CPLGetXMLNode(oTree.get(), "=AssumeRoleResponse.AssumeRoleResult.Credentials");
+                if( psCredentials )
+                {
+                    osTempAccessKeyId = CPLGetXMLValue(psCredentials, "AccessKeyId", "");
+                    osTempSecretAccessKey = CPLGetXMLValue(psCredentials, "SecretAccessKey", "");
+                    osTempSessionToken = CPLGetXMLValue(psCredentials, "SessionToken", "");
+                    osExpiration = CPLGetXMLValue(psCredentials, "Expiration", "");
+                    bRet = true;
+                }
+                else
+                {
+                    CPLDebug("S3", "%s", reinterpret_cast<char*>(psResult->pabyData));
+                }
+            }
+        }
+        CPLHTTPDestroyResult(psResult);
+    }
+    return bRet;
+}
+
+/************************************************************************/
+/*               GetOrRefreshTemporaryCredentialsForRole()              */
+/************************************************************************/
+
+static bool GetOrRefreshTemporaryCredentialsForRole(CPLString& osSecretAccessKey,
+                                                    CPLString& osAccessKeyId,
+                                                    CPLString& osSessionToken,
+                                                    CPLString& osRegion)
+{
+    CPLMutexHolder oHolder( &ghMutex );
+    time_t nCurTime;
+    time(&nCurTime);
+    // Try to reuse credentials if they are still valid, but
+    // keep one minute of margin...
+    if( !gosGlobalAccessKeyId.empty() && nCurTime < gnGlobalExpiration - 60 )
+    {
+        osAccessKeyId = gosGlobalAccessKeyId;
+        osSecretAccessKey = gosGlobalSecretAccessKey;
+        osSessionToken = gosGlobalSessionToken;
+        osRegion = gosRegion;
+        return true;
+    }
+
+    std::string osExpiration;
+    gosGlobalSecretAccessKey.clear();
+    gosGlobalAccessKeyId.clear();
+    gosGlobalSessionToken.clear();
+    if( GetTemporaryCredentialsForRole(gosRoleArn,
+                                       gosExternalId,
+                                       gosMFASerial,
+                                       gosRoleSessionName,
+                                       gosSourceProfileSecretAccessKey,
+                                       gosSourceProfileAccessKeyId,
+                                       gosSourceProfileSessionToken,
+                                       gosGlobalSecretAccessKey,
+                                       gosGlobalAccessKeyId,
+                                       gosGlobalSessionToken,
+                                       osExpiration) )
+    {
+        Iso8601ToUnixTime(osExpiration.c_str(), &gnGlobalExpiration);
+        osAccessKeyId = gosGlobalAccessKeyId;
+        osSecretAccessKey = gosGlobalSecretAccessKey;
+        osSessionToken = gosGlobalSessionToken;
+        osRegion = gosRegion;
+        return true;
+    }
+    return false;
 }
 
 /************************************************************************/
 /*                        GetConfiguration()                            */
 /************************************************************************/
 
-bool VSIS3HandleHelper::GetConfiguration(CSLConstList papszOptions,
+bool VSIS3HandleHelper::GetConfiguration(const std::string& osPathForOption,
+                                         CSLConstList papszOptions,
                                          CPLString& osSecretAccessKey,
                                          CPLString& osAccessKeyId,
                                          CPLString& osSessionToken,
                                          CPLString& osRegion,
-                                         bool& bFromEC2)
+                                         AWSCredentialsSource& eCredentialsSource)
 {
-    bFromEC2 = false;
+    eCredentialsSource = AWSCredentialsSource::REGULAR;
 
     // AWS_REGION is GDAL specific. Later overloaded by standard
     // AWS_DEFAULT_REGION
     osRegion = CSLFetchNameValueDef(papszOptions, "AWS_REGION",
-                            CPLGetConfigOption("AWS_REGION", "us-east-1"));
+            VSIGetCredential(osPathForOption.c_str(), "AWS_REGION", "us-east-1"));
 
-    if( CPLTestBool(CPLGetConfigOption("AWS_NO_SIGN_REQUEST", "NO")) )
+    if( CPLTestBool(VSIGetCredential(osPathForOption.c_str(), "AWS_NO_SIGN_REQUEST", "NO")) )
     {
         osSecretAccessKey.clear();
         osAccessKeyId.clear();
@@ -1091,10 +1313,12 @@ bool VSIS3HandleHelper::GetConfiguration(CSLConstList papszOptions,
 
     osSecretAccessKey = CSLFetchNameValueDef(papszOptions,
         "AWS_SECRET_ACCESS_KEY",
-        CPLGetConfigOption("AWS_SECRET_ACCESS_KEY", ""));
+        VSIGetCredential(osPathForOption.c_str(), "AWS_SECRET_ACCESS_KEY", ""));
     if( !osSecretAccessKey.empty() )
     {
-        osAccessKeyId = CPLGetConfigOption("AWS_ACCESS_KEY_ID", "");
+        osAccessKeyId = CSLFetchNameValueDef(papszOptions,
+            "AWS_ACCESS_KEY_ID",
+            VSIGetCredential(osPathForOption.c_str(), "AWS_ACCESS_KEY_ID", ""));
         if( osAccessKeyId.empty() )
         {
             VSIError(VSIE_AWSInvalidCredentials,
@@ -1104,25 +1328,111 @@ bool VSIS3HandleHelper::GetConfiguration(CSLConstList papszOptions,
 
         osSessionToken = CSLFetchNameValueDef(papszOptions,
             "AWS_SESSION_TOKEN",
-            CPLGetConfigOption("AWS_SESSION_TOKEN", ""));
+            VSIGetCredential(osPathForOption.c_str(), "AWS_SESSION_TOKEN", ""));
+        return true;
+    }
+
+    // Next try to see if we have a current assumed role
+    bool bAssumedRole = false;
+    {
+        CPLMutexHolder oHolder( &ghMutex );
+        bAssumedRole = !gosRoleArn.empty();
+    }
+    if( bAssumedRole &&
+        GetOrRefreshTemporaryCredentialsForRole(osSecretAccessKey,
+                                                osAccessKeyId,
+                                                osSessionToken,
+                                                osRegion) )
+    {
+        eCredentialsSource = AWSCredentialsSource::ASSUMED_ROLE;
         return true;
     }
 
     // Next try reading from ~/.aws/credentials and ~/.aws/config
     CPLString osCredentials;
+    CPLString osRoleArn;
+    CPLString osSourceProfile;
+    CPLString osExternalId;
+    CPLString osMFASerial;
+    CPLString osRoleSessionName;
     // coverity[tainted_data]
-    if( GetConfigurationFromAWSConfigFiles(osSecretAccessKey, osAccessKeyId,
+    if( GetConfigurationFromAWSConfigFiles(osPathForOption,
+                                           osSecretAccessKey, osAccessKeyId,
                                            osSessionToken, osRegion,
-                                           osCredentials) )
+                                           osCredentials,
+                                           osRoleArn,
+                                           osSourceProfile,
+                                           osExternalId,
+                                           osMFASerial,
+                                           osRoleSessionName) )
     {
+        if( osSecretAccessKey.empty() && !osRoleArn.empty() )
+        {
+            // Get the credentials for the source profile, that will be
+            // used to sign the STS AssumedRole request.
+            if( !ReadAWSCredentials(osSourceProfile, osCredentials,
+                                    osSecretAccessKey,
+                                    osAccessKeyId,
+                                    osSessionToken) )
+            {
+                VSIError(VSIE_AWSInvalidCredentials,
+                         "Cannot retrieve credentials for source profile %s",
+                         osSourceProfile.c_str());
+                return false;
+            }
+
+            std::string osTempSecretAccessKey;
+            std::string osTempAccessKeyId;
+            std::string osTempSessionToken;
+            std::string osExpiration;
+            if( GetTemporaryCredentialsForRole(osRoleArn,
+                                               osExternalId,
+                                               osMFASerial,
+                                               osRoleSessionName,
+                                               osSecretAccessKey,
+                                               osAccessKeyId,
+                                               osSessionToken,
+                                               osTempSecretAccessKey,
+                                               osTempAccessKeyId,
+                                               osTempSessionToken,
+                                               osExpiration) )
+            {
+                CPLDebug("S3", "Using assumed role %s", osRoleArn.c_str());
+                {
+                    // Store global variables to be able to reuse the
+                    // temporary credentials
+                    CPLMutexHolder oHolder( &ghMutex );
+                    Iso8601ToUnixTime(osExpiration.c_str(), &gnGlobalExpiration);
+                    gosRoleArn = osRoleArn;
+                    gosExternalId = osExternalId;
+                    gosMFASerial = osMFASerial;
+                    gosRoleSessionName = osRoleSessionName;
+                    gosSourceProfileSecretAccessKey = osSecretAccessKey;
+                    gosSourceProfileAccessKeyId = osAccessKeyId;
+                    gosSourceProfileSessionToken = osSessionToken;
+                    gosGlobalAccessKeyId = osTempAccessKeyId;
+                    gosGlobalSecretAccessKey = osTempSecretAccessKey;
+                    gosGlobalSessionToken = osTempSessionToken;
+                    gosRegion = osRegion;
+                }
+                osSecretAccessKey = osTempSecretAccessKey;
+                osAccessKeyId = osTempAccessKeyId;
+                osSessionToken = osTempSessionToken;
+                eCredentialsSource = AWSCredentialsSource::ASSUMED_ROLE;
+                return true;
+            }
+            return false;
+        }
+
         return true;
     }
 
     // Last method: use IAM role security credentials on EC2 instances
-    if( GetConfigurationFromEC2(osSecretAccessKey, osAccessKeyId,
+    if( GetConfigurationFromEC2(osPathForOption,
+                                osSecretAccessKey, osAccessKeyId,
                                 osSessionToken) )
     {
-        bFromEC2 = true;
+        eCredentialsSource = AWSCredentialsSource::EC2;
         return true;
     }
 
@@ -1157,6 +1467,14 @@ void VSIS3HandleHelper::ClearCache()
     gosGlobalSecretAccessKey.clear();
     gosGlobalSessionToken.clear();
     gnGlobalExpiration = 0;
+    gosRoleArn.clear();
+    gosExternalId.clear();
+    gosMFASerial.clear();
+    gosRoleSessionName.clear();
+    gosSourceProfileAccessKeyId.clear();
+    gosSourceProfileSecretAccessKey.clear();
+    gosSourceProfileSessionToken.clear();
+    gosRegion.clear();
 }
 
 /************************************************************************/
@@ -1168,14 +1486,19 @@ VSIS3HandleHelper* VSIS3HandleHelper::BuildFromURI( const char* pszURI,
                                                     bool bAllowNoObject,
                                                     CSLConstList papszOptions )
 {
+    std::string osPathForOption("/vsis3/");
+    if( pszURI )
+        osPathForOption += pszURI;
+
     CPLString osSecretAccessKey;
     CPLString osAccessKeyId;
     CPLString osSessionToken;
     CPLString osRegion;
-    bool bFromEC2 = false;
-    if( !GetConfiguration(papszOptions,
+    AWSCredentialsSource eCredentialsSource = AWSCredentialsSource::REGULAR;
+    if( !GetConfiguration(osPathForOption,
+                          papszOptions,
                           osSecretAccessKey, osAccessKeyId,
-                          osSessionToken, osRegion, bFromEC2) )
+                          osSessionToken, osRegion, eCredentialsSource) )
     {
         return nullptr;
     }
@@ -1184,16 +1507,16 @@ VSIS3HandleHelper* VSIS3HandleHelper::BuildFromURI( const char* pszURI,
     // " This variable overrides the default region of the in-use profile, if set."
     const CPLString osDefaultRegion = CSLFetchNameValueDef(
         papszOptions, "AWS_DEFAULT_REGION",
-        CPLGetConfigOption("AWS_DEFAULT_REGION", ""));
+        VSIGetCredential(osPathForOption.c_str(), "AWS_DEFAULT_REGION", ""));
     if( !osDefaultRegion.empty() )
     {
         osRegion = osDefaultRegion;
     }
 
     const CPLString osEndpoint =
-        CPLGetConfigOption("AWS_S3_ENDPOINT", "s3.amazonaws.com");
+        VSIGetCredential(osPathForOption.c_str(), "AWS_S3_ENDPOINT", "s3.amazonaws.com");
     const CPLString osRequestPayer =
-        CPLGetConfigOption("AWS_REQUEST_PAYER", "");
+        VSIGetCredential(osPathForOption.c_str(), "AWS_REQUEST_PAYER", "");
     CPLString osBucket;
     CPLString osObjectKey;
     if( pszURI != nullptr && pszURI[0] != '\0' &&
@@ -1202,19 +1525,19 @@ VSIS3HandleHelper* VSIS3HandleHelper::BuildFromURI( const char* pszURI,
     {
         return nullptr;
     }
-    const bool bUseHTTPS = CPLTestBool(CPLGetConfigOption("AWS_HTTPS", "YES"));
+    const bool bUseHTTPS = CPLTestBool(VSIGetCredential(osPathForOption.c_str(), "AWS_HTTPS", "YES"));
     const bool bIsValidNameForVirtualHosting =
         osBucket.find('.') == std::string::npos;
     const bool bUseVirtualHosting = CPLTestBool(
         CSLFetchNameValueDef(papszOptions, "AWS_VIRTUAL_HOSTING",
-                CPLGetConfigOption("AWS_VIRTUAL_HOSTING",
+                VSIGetCredential(osPathForOption.c_str(), "AWS_VIRTUAL_HOSTING",
                            bIsValidNameForVirtualHosting ? "TRUE" : "FALSE")));
     return new VSIS3HandleHelper(osSecretAccessKey, osAccessKeyId,
                                  osSessionToken,
                                  osEndpoint, osRegion,
                                  osRequestPayer,
                                  osBucket, osObjectKey, bUseHTTPS,
-                                 bUseVirtualHosting, bFromEC2);
+                                 bUseVirtualHosting, eCredentialsSource);
 }
 
 /************************************************************************/
@@ -1286,10 +1609,16 @@ VSIS3HandleHelper::GetCurlHeaders( const CPLString& osVerb,
                                    const void *pabyDataContent,
                                    size_t nBytesContent ) const
 {
-    if( m_bFromEC2 )
+    std::string osPathForOption("/vsis3/");
+    osPathForOption += m_osBucket;
+    osPathForOption += '/';
+    osPathForOption += m_osObjectKey;
+
+    if( m_eCredentialsSource == AWSCredentialsSource::EC2 )
     {
         CPLString osSecretAccessKey, osAccessKeyId, osSessionToken;
-        if( GetConfigurationFromEC2(osSecretAccessKey,
+        if( GetConfigurationFromEC2(osPathForOption.c_str(),
+                                    osSecretAccessKey,
                                     osAccessKeyId,
                                     osSessionToken) )
         {
@@ -1298,8 +1627,22 @@ VSIS3HandleHelper::GetCurlHeaders( const CPLString& osVerb,
             m_osSessionToken = osSessionToken;
         }
     }
+    else if( m_eCredentialsSource == AWSCredentialsSource::ASSUMED_ROLE )
+    {
+        CPLString osSecretAccessKey, osAccessKeyId, osSessionToken;
+        CPLString osRegion;
+        if( GetOrRefreshTemporaryCredentialsForRole(osSecretAccessKey,
+                                                    osAccessKeyId,
+                                                    osSessionToken,
+                                                    osRegion) )
+        {
+            m_osSecretAccessKey = osSecretAccessKey;
+            m_osAccessKeyId = osAccessKeyId;
+            m_osSessionToken = osSessionToken;
+        }
+    }
 
-    CPLString osXAMZDate = CPLGetConfigOption("AWS_TIMESTAMP", "");
+    CPLString osXAMZDate = VSIGetCredential(osPathForOption.c_str(), "AWS_TIMESTAMP", "");
     if( osXAMZDate.empty() )
         osXAMZDate = CPLGetAWS_SIGN4_Timestamp();
 
@@ -1553,8 +1896,13 @@ void VSIS3HandleHelper::SetVirtualHosting( bool b )
 
 CPLString VSIS3HandleHelper::GetSignedURL(CSLConstList papszOptions)
 {
+    std::string osPathForOption("/vsis3/");
+    osPathForOption += m_osBucket;
+    osPathForOption += '/';
+    osPathForOption += m_osObjectKey;
+
     CPLString osXAMZDate = CSLFetchNameValueDef(papszOptions, "START_DATE",
-                                    CPLGetConfigOption("AWS_TIMESTAMP", ""));
+        VSIGetCredential(osPathForOption.c_str(), "AWS_TIMESTAMP", ""));
     if( osXAMZDate.empty() )
         osXAMZDate = CPLGetAWS_SIGN4_Timestamp();
     CPLString osDate(osXAMZDate);
@@ -1586,13 +1934,14 @@ CPLString VSIS3HandleHelper::GetSignedURL(CSLConstList papszOptions)
         m_osRequestPayer,
         "s3",
         osVerb,
-        nullptr, /* exhisting headers */
+        nullptr, /* existing headers */
         osHost,
         m_bUseVirtualHosting
         ? CPLAWSURLEncode("/" + m_osObjectKey, false).c_str() :
         CPLAWSURLEncode("/" + m_osBucket + "/" + m_osObjectKey, false).c_str(),
         osCanonicalQueryString,
         "UNSIGNED-PAYLOAD",
+        false, // bAddHeaderAMZContentSHA256
         osXAMZDate,
         osSignedHeaders);
 
@@ -1612,10 +1961,7 @@ void VSIS3UpdateParams::UpdateMapFromHandle( IVSIS3LikeHandleHelper* poHandleHel
     std::lock_guard<std::mutex> guard(gsMutex);
 
     VSIS3HandleHelper * poS3HandleHelper =
-        dynamic_cast<VSIS3HandleHelper *>(poHandleHelper);
-    CPLAssert( poS3HandleHelper );
-    if( !poS3HandleHelper )
-        return;
+        cpl::down_cast<VSIS3HandleHelper *>(poHandleHelper);
     goMapBucketsToS3Params[ poS3HandleHelper->GetBucket() ] =
         VSIS3UpdateParams ( poS3HandleHelper );
 }
@@ -1629,10 +1975,7 @@ void VSIS3UpdateParams::UpdateHandleFromMap( IVSIS3LikeHandleHelper* poHandleHel
     std::lock_guard<std::mutex> guard(gsMutex);
 
     VSIS3HandleHelper * poS3HandleHelper =
-        dynamic_cast<VSIS3HandleHelper *>(poHandleHelper);
-    CPLAssert( poS3HandleHelper );
-    if( !poS3HandleHelper )
-        return;
+        cpl::down_cast<VSIS3HandleHelper *>(poHandleHelper);
     std::map< CPLString, VSIS3UpdateParams>::iterator oIter =
         goMapBucketsToS3Params.find(poS3HandleHelper->GetBucket());
     if( oIter != goMapBucketsToS3Params.end() )

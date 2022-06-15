@@ -36,19 +36,83 @@
 #include "FGdbUtils.h"
 #include "cpl_multiproc.h"
 
+#include "filegdb_fielddomain.h"
+
 CPL_CVSID("$Id$")
 
 using std::vector;
 using std::wstring;
 
+/***********************************************************************/
+/*                         OGRFileGDBGroup                             */
+/***********************************************************************/
+
+class OGRFileGDBGroup final: public GDALGroup
+{
+protected:
+    friend class FGdbDataSource;
+    std::vector<std::shared_ptr<GDALGroup>> m_apoSubGroups{};
+    std::vector<OGRLayer*> m_apoLayers{};
+
+public:
+    OGRFileGDBGroup(const std::string& osParentName, const char* pszName):
+        GDALGroup(osParentName, pszName) {}
+
+    std::vector<std::string> GetGroupNames(CSLConstList papszOptions) const override;
+    std::shared_ptr<GDALGroup> OpenGroup(const std::string& osName,
+                                         CSLConstList papszOptions) const override;
+
+    std::vector<std::string> GetVectorLayerNames(CSLConstList papszOptions) const override;
+    OGRLayer* OpenVectorLayer(const std::string& osName,
+                              CSLConstList papszOptions) const override;
+};
+
+std::vector<std::string> OGRFileGDBGroup::GetGroupNames(CSLConstList) const
+{
+    std::vector<std::string> ret;
+    for( const auto& poSubGroup: m_apoSubGroups )
+        ret.emplace_back(poSubGroup->GetName());
+    return ret;
+}
+
+std::shared_ptr<GDALGroup> OGRFileGDBGroup::OpenGroup(const std::string& osName,
+                                                          CSLConstList) const
+{
+    for( const auto& poSubGroup: m_apoSubGroups )
+    {
+        if( poSubGroup->GetName() == osName )
+            return poSubGroup;
+    }
+    return nullptr;
+}
+
+std::vector<std::string> OGRFileGDBGroup::GetVectorLayerNames(CSLConstList) const
+{
+    std::vector<std::string> ret;
+    for( const auto& poLayer: m_apoLayers )
+        ret.emplace_back(poLayer->GetName());
+    return ret;
+}
+
+OGRLayer* OGRFileGDBGroup::OpenVectorLayer(const std::string& osName,
+                                               CSLConstList) const
+{
+    for( const auto& poLayer: m_apoLayers )
+    {
+        if( poLayer->GetName() == osName )
+            return poLayer;
+    }
+    return nullptr;
+}
+
 /************************************************************************/
 /*                          FGdbDataSource()                           */
 /************************************************************************/
 
-FGdbDataSource::FGdbDataSource(FGdbDriver* poDriverIn,
+FGdbDataSource::FGdbDataSource(bool bUseDriverMutex,
                                FGdbDatabaseConnection* pConnection):
 OGRDataSource(),
-m_poDriver(poDriverIn), m_pConnection(pConnection), m_pGeodatabase(nullptr), m_bUpdate(false),
+m_bUseDriverMutex(bUseDriverMutex), m_pConnection(pConnection), m_pGeodatabase(nullptr), m_bUpdate(false),
 m_poOpenFileGDBDrv(nullptr)
 {
     bPerLayerCopyingForTransaction = -1;
@@ -60,7 +124,7 @@ m_poOpenFileGDBDrv(nullptr)
 
 FGdbDataSource::~FGdbDataSource()
 {
-    CPLMutexHolderOptionalLockD(m_poDriver ? m_poDriver->GetMutex() : nullptr);
+    CPLMutexHolderOptionalLockD( m_bUseDriverMutex ? FGdbDriver::hMutex : nullptr );
 
     if( m_pConnection && m_pConnection->IsLocked() )
         CommitTransaction();
@@ -69,18 +133,26 @@ FGdbDataSource::~FGdbDataSource()
     size_t count = m_layers.size();
     for(size_t i = 0; i < count; ++i )
     {
-        m_layers[i]->CloseGDBObjects();
+        if (FGdbLayer* poFgdbLayer = dynamic_cast<FGdbLayer*>(m_layers[i]))
+        {
+           poFgdbLayer->CloseGDBObjects();
+        }
     }
 
     FixIndexes();
 
-    if( m_poDriver )
-        m_poDriver->Release( m_osPublicName );
+    if ( m_bUseDriverMutex )
+      FGdbDriver::Release( m_osPublicName );
 
     //size_t count = m_layers.size();
     for(size_t i = 0; i < count; ++i )
     {
-        delete m_layers[i];
+        // only delete layers coming from this driver -- the tables opened by the OpenFileGDB driver will
+        // be deleted when we close the OpenFileGDB datasource
+        if (FGdbLayer* poFgdbLayer = dynamic_cast<FGdbLayer*>(m_layers[i]))
+        {
+          delete poFgdbLayer;
+        }
     }
 }
 
@@ -95,13 +167,11 @@ int FGdbDataSource::FixIndexes()
     {
         m_pConnection->CloseGeodatabase();
 
-        char* apszDrivers[2];
-        apszDrivers[0] = (char*) "OpenFileGDB";
-        apszDrivers[1] = nullptr;
+        const char* const apszDrivers[2] = { "OpenFileGDB", nullptr };
         const char* pszSystemCatalog = CPLFormFilename(m_osFSName, "a00000001.gdbtable", nullptr);
-        GDALDataset* poOpenFileGDBDS = (GDALDataset*)
-            GDALOpenEx(pszSystemCatalog, GDAL_OF_VECTOR,
-                       apszDrivers, nullptr, nullptr);
+        auto poOpenFileGDBDS = std::unique_ptr<GDALDataset>(
+            GDALDataset::Open(pszSystemCatalog, GDAL_OF_VECTOR,
+                              apszDrivers, nullptr, nullptr));
         if( poOpenFileGDBDS == nullptr || poOpenFileGDBDS->GetLayer(0) == nullptr )
         {
             CPLError(CE_Failure, CPLE_AppDefined,
@@ -116,7 +186,11 @@ int FGdbDataSource::FixIndexes()
             size_t count = m_layers.size();
             for(size_t i = 0; i < count; ++i )
             {
-                if( m_layers[i]->m_oMapOGRFIDToFGDBFID.empty())
+                FGdbLayer* poFgdbLayer = dynamic_cast<FGdbLayer*>(m_layers[i]);
+                if ( !poFgdbLayer )
+                    continue;
+
+                if( poFgdbLayer->m_oMapOGRFIDToFGDBFID.empty())
                     continue;
                 CPLString osFilter = "name = '";
                 osFilter += m_layers[i]->GetName();
@@ -133,7 +207,7 @@ int FGdbDataSource::FixIndexes()
                 }
                 else
                 {
-                    if( !m_layers[i]->EditIndexesForFIDHack(CPLFormFilename(m_osFSName,
+                    if( !poFgdbLayer->EditIndexesForFIDHack(CPLFormFilename(m_osFSName,
                                         CPLSPrintf("a%08x", (int)poF->GetFID()), nullptr)) )
                     {
                         bRet = FALSE;
@@ -142,7 +216,6 @@ int FGdbDataSource::FixIndexes()
                 delete poF;
             }
         }
-        GDALClose(poOpenFileGDBDS);
 
         m_pConnection->SetFIDHackInProgress(FALSE);
     }
@@ -162,16 +235,7 @@ int FGdbDataSource::Open(const char * pszNewName, int bUpdate,
     m_bUpdate = CPL_TO_BOOL(bUpdate);
     m_poOpenFileGDBDrv = (GDALDriver*) GDALGetDriverByName("OpenFileGDB");
 
-    std::vector<std::wstring> typesRequested;
-
-    // We're only interested in Tables, Feature Datasets and Feature Classes
-    typesRequested.push_back(L"Feature Class");
-    typesRequested.push_back(L"Table");
-    typesRequested.push_back(L"Feature Dataset");
-
-    bool rv = LoadLayers(L"\\");
-
-    return rv;
+    return LoadLayers(L"\\");
 }
 
 /************************************************************************/
@@ -183,7 +247,10 @@ int FGdbDataSource::Close(int bCloseGeodatabase)
     size_t count = m_layers.size();
     for(size_t i = 0; i < count; ++i )
     {
-        m_layers[i]->CloseGDBObjects();
+        if (FGdbLayer* poFgdbLayer = dynamic_cast<FGdbLayer*>(m_layers[i]))
+        {
+            poFgdbLayer->CloseGDBObjects();
+        }
     }
 
     int bRet = FixIndexes();
@@ -209,11 +276,11 @@ int FGdbDataSource::ReOpen()
         return FALSE;
     }
 
-    FGdbDataSource* pDS = new FGdbDataSource(m_poDriver, m_pConnection);
+    FGdbDataSource* pDS = new FGdbDataSource(m_bUseDriverMutex, m_pConnection);
     if( EQUAL(CPLGetConfigOption("FGDB_SIMUL_FAIL_REOPEN", ""), "CASE2") ||
         !pDS->Open(m_osPublicName, TRUE, m_osFSName) )
     {
-        pDS->m_poDriver = nullptr;
+        pDS->m_bUseDriverMutex = false;
         delete pDS;
         CPLError(CE_Failure, CPLE_AppDefined, "Cannot reopen %s",
                  m_osFSName.c_str());
@@ -225,12 +292,19 @@ int FGdbDataSource::ReOpen()
     for(size_t i = 0; i < count; ++i )
     {
         FGdbLayer* pNewLayer = (FGdbLayer*)pDS->GetLayerByName(m_layers[i]->GetName());
+        FGdbLayer* poFgdbLayer = dynamic_cast<FGdbLayer*>(m_layers[i]);
         if( pNewLayer &&
             !EQUAL(CPLGetConfigOption("FGDB_SIMUL_FAIL_REOPEN", ""), "CASE3") )
         {
-            m_layers[i]->m_pTable = pNewLayer->m_pTable;
+            if ( poFgdbLayer )
+            {
+                poFgdbLayer->m_pTable = pNewLayer->m_pTable;
+            }
             pNewLayer->m_pTable = nullptr;
-            m_layers[i]->m_pEnumRows = pNewLayer->m_pEnumRows;
+            if ( poFgdbLayer )
+            {
+                poFgdbLayer->m_pEnumRows = pNewLayer->m_pEnumRows;
+            }
             pNewLayer->m_pEnumRows = nullptr;
         }
         else
@@ -239,14 +313,17 @@ int FGdbDataSource::ReOpen()
                      m_layers[i]->GetName());
             bRet = FALSE;
         }
-        m_layers[i]->m_oMapOGRFIDToFGDBFID.clear();
-        m_layers[i]->m_oMapFGDBFIDToOGRFID.clear();
+        if ( poFgdbLayer )
+        {
+            poFgdbLayer->m_oMapOGRFIDToFGDBFID.clear();
+            poFgdbLayer->m_oMapFGDBFIDToOGRFID.clear();
+        }
     }
 
     m_pGeodatabase = pDS->m_pGeodatabase;
     pDS->m_pGeodatabase = nullptr;
 
-    pDS->m_poDriver = nullptr;
+    pDS->m_bUseDriverMutex = false;
     pDS->m_pConnection = nullptr;
     delete pDS;
 
@@ -257,7 +334,8 @@ int FGdbDataSource::ReOpen()
 /*                          OpenFGDBTables()                            */
 /************************************************************************/
 
-bool FGdbDataSource::OpenFGDBTables(const std::wstring &type,
+bool FGdbDataSource::OpenFGDBTables(OGRFileGDBGroup* group,
+                                    const std::wstring &type,
                                     const std::vector<std::wstring> &layers)
 {
 #ifdef DISPLAY_RELATED_DATASETS
@@ -339,6 +417,7 @@ bool FGdbDataSource::OpenFGDBTables(const std::wstring &type,
         }
 
         m_layers.push_back(pLayer);
+        group->m_apoLayers.emplace_back(pLayer);
     }
     return true;
 }
@@ -354,13 +433,16 @@ bool FGdbDataSource::LoadLayers(const std::wstring &root)
     std::vector<wstring> featuredatasets;
     fgdbError hr;
 
+    auto poRootGroup = std::make_shared<OGRFileGDBGroup>(std::string(), "");
+    m_poRootGroup = poRootGroup;
+
     /* Find all the Tables in the root */
     if ( FAILED(hr = m_pGeodatabase->GetChildDatasets(root, L"Table", tables)) )
     {
         return GDBErr(hr, "Error reading Tables in " + WStringToString(root));
     }
     /* Open the tables we found */
-    if ( !tables.empty() && ! OpenFGDBTables(L"Table", tables) )
+    if ( !tables.empty() && ! OpenFGDBTables(poRootGroup.get(), L"Table", tables) )
         return false;
 
     /* Find all the Feature Classes in the root */
@@ -369,7 +451,7 @@ bool FGdbDataSource::LoadLayers(const std::wstring &root)
         return GDBErr(hr, "Error reading Feature Classes in " + WStringToString(root));
     }
     /* Open the tables we found */
-    if ( !featureclasses.empty() && ! OpenFGDBTables(L"Feature Class", featureclasses) )
+    if ( !featureclasses.empty() && ! OpenFGDBTables(poRootGroup.get(), L"Feature Class", featureclasses) )
         return false;
 
     /* Find all the Feature Datasets in the root */
@@ -380,93 +462,55 @@ bool FGdbDataSource::LoadLayers(const std::wstring &root)
     /* Look for Feature Classes inside the Feature Dataset */
     for ( unsigned int i = 0; i < featuredatasets.size(); i++ )
     {
+        const std::string featureDatasetPath(WStringToString(featuredatasets[i]));
         if ( FAILED(hr = m_pGeodatabase->GetChildDatasets(featuredatasets[i], L"Feature Class", featureclasses)) )
         {
-            return GDBErr(hr, "Error reading Feature Classes in " + WStringToString(featuredatasets[i]));
+            return GDBErr(hr, "Error reading Feature Classes in " + featureDatasetPath);
         }
-        if ( !featureclasses.empty() && ! OpenFGDBTables(L"Feature Class", featureclasses) )
+        std::string featureDatasetName(featureDatasetPath);
+        if( !featureDatasetName.empty() && featureDatasetPath[0] == '\\' )
+            featureDatasetName = featureDatasetName.substr(1);
+        auto poFeatureDatasetGroup = std::make_shared<OGRFileGDBGroup>(
+            poRootGroup->GetName(), featureDatasetName.c_str());
+        poRootGroup->m_apoSubGroups.emplace_back(poFeatureDatasetGroup);
+        if ( !featureclasses.empty() && !
+            OpenFGDBTables(poFeatureDatasetGroup.get(), L"Feature Class", featureclasses) )
             return false;
     }
 
-    return true;
-}
-
-#if 0
-/************************************************************************/
-/*                            LoadLayersOld()                              */
-/************************************************************************/
-
-/* Old recursive LoadLayers. Removed in favor of simple one that only
-   looks at FeatureClasses and Tables. */
-
-// Flattens out hierarchical GDB structure.
-bool FGdbDataSource::LoadLayersOld(const std::vector<wstring> & datasetTypes,
-                                const wstring & parent)
-{
-    long hr = S_OK;
-
-    // I didn't find an API to give me the type of the dataset based on name - I am *not*
-    // parsing XML for something like this - in the meantime I can use this hack to see
-    // if the dataset had any children whatsoever - if so, then I won't attempt to open it
-    // otherwise, do attempt to do that
-
-    bool childrenFound = false;
-    bool errorsEncountered = false;
-
-    for (size_t dsTypeIndex = 0; dsTypeIndex < datasetTypes.size(); dsTypeIndex++)
+    // Look for items which aren't present in the GDB_Items table (see https://github.com/OSGeo/gdal/issues/4463)
+    // We do this by browsing the catalog table (using the OpenFileGDB driver) and looking for items we haven't yet found.
+    // If we find any, we have no choice but to load these using the OpenFileGDB driver, as the ESRI SDK refuses to acknowledge that they
+    // exist (despite ArcGIS itself showing them!)
+    const char* const apszDrivers[2] = { "OpenFileGDB", nullptr };
+    const char* pszSystemCatalog = CPLFormFilename(m_osFSName, "a00000001", "gdbtable");
+    m_poOpenFileGDBDS.reset(
+        GDALDataset::Open(pszSystemCatalog, GDAL_OF_VECTOR, apszDrivers, nullptr, nullptr) );
+    if( m_poOpenFileGDBDS != nullptr && m_poOpenFileGDBDS->GetLayer(0) != nullptr )
     {
-        std::vector<wstring> childDatasets;
-        m_pGeodatabase->GetChildDatasets( parent, datasetTypes[dsTypeIndex], childDatasets);
-
-        if (!childDatasets.empty())
+        OGRLayer* poCatalogLayer = m_poOpenFileGDBDS->GetLayer(0);
+        const int iNameIndex = poCatalogLayer->GetLayerDefn()->GetFieldIndex( "Name" );
+        for( auto& poFeat: poCatalogLayer )
         {
-            //it is a container of other datasets
+            const std::string osTableName = poFeat->GetFieldAsString( iNameIndex );
 
-            for (size_t childDatasetIndex = 0;
-                 childDatasetIndex < childDatasets.size();
-                 childDatasetIndex++)
+            // test if layer is already added
+            if ( GDALDataset::GetLayerByName( osTableName.c_str() ) )
+                continue;
+
+            const CPLString osLCTableName(CPLString(osTableName).tolower());
+            const bool bIsPrivateLayer = osLCTableName.size() >= 4 && osLCTableName.substr(0, 4) == "gdb_";
+            if ( !bIsPrivateLayer )
             {
-                childrenFound = true;
-
-                // do something with it
-                // For now, we just ignore dataset containers and only open the children
-                // std::wcout << datasetTypes[dsTypeIndex] << L" " << childDatasets[childDatasetIndex] << std::endl;
-
-                if (!LoadLayersOld(datasetTypes, childDatasets[childDatasetIndex]))
-                    errorsEncountered = true;
+                OGRLayer* poLayer = m_poOpenFileGDBDS->GetLayerByName( osTableName.c_str() );
+                m_layers.push_back(poLayer);
+                poRootGroup->m_apoLayers.emplace_back(poLayer);
             }
         }
     }
 
-    //it is a full fledged dataset itself without children - open it (except the root)
-
-    if ((!childrenFound) && parent != L"\\")
-    {
-        // wcout << "Opening " << parent << "...";
-        Table* pTable = new Table;
-        if (FAILED(hr = m_pGeodatabase->OpenTable(parent,*pTable)))
-        {
-            delete pTable;
-            return GDBErr(hr, "Error opening " + WStringToString(parent));
-        }
-
-        FGdbLayer* pLayer = new FGdbLayer;
-
-        //pLayer has ownership of the table pointer as soon Initialize is called
-        if (!pLayer->Initialize(this, pTable, parent))
-        {
-            delete pLayer;
-
-            return GDBErr(hr, "Error initializing OGRLayer for " +
-                          WStringToString(parent));
-        }
-
-        m_layers.push_back(pLayer);
-    }
-
-    return !errorsEncountered;
+    return true;
 }
-#endif
 
 /************************************************************************/
 /*                            DeleteLayer()                             */
@@ -480,7 +524,9 @@ OGRErr FGdbDataSource::DeleteLayer( int iLayer )
     if( iLayer < 0 || iLayer >= static_cast<int>(m_layers.size()) )
         return OGRERR_FAILURE;
 
-    FGdbLayer* poBaseLayer = m_layers[iLayer];
+    FGdbLayer* poBaseLayer = dynamic_cast< FGdbLayer* >( m_layers[iLayer] );
+    if ( !poBaseLayer )
+        return OGRERR_FAILURE;
 
     // Fetch FGDBAPI Table before deleting OGR layer object
 
@@ -522,6 +568,10 @@ int FGdbDataSource::TestCapability( const char * pszCap )
     else if( EQUAL(pszCap,ODsCDeleteLayer) )
         return m_bUpdate;
     else if( EQUAL(pszCap,ODsCRandomLayerWrite) )
+        return m_bUpdate;
+    else if( EQUAL(pszCap, ODsCAddFieldDomain) ||
+             EQUAL(pszCap, ODsCDeleteFieldDomain) ||
+             EQUAL(pszCap, ODsCUpdateFieldDomain) )
         return m_bUpdate;
 
     return FALSE;
@@ -654,7 +704,8 @@ OGRLayer * FGdbDataSource::ExecuteSQL( const char *pszSQLCommand,
     size_t count = m_layers.size();
     for(size_t i = 0; i < count; ++i )
     {
-        m_layers[i]->EndBulkLoad();
+        if (FGdbLayer* poFgdbLayer = dynamic_cast<FGdbLayer*>(m_layers[i]))
+            poFgdbLayer->EndBulkLoad();
     }
 
 /* -------------------------------------------------------------------- */
@@ -700,6 +751,21 @@ OGRLayer * FGdbDataSource::ExecuteSQL( const char *pszSQLCommand,
         else
             return nullptr;
     }
+
+/* -------------------------------------------------------------------- */
+/*      Special case REPACK                                             */
+/* -------------------------------------------------------------------- */
+    if (EQUAL(pszSQLCommand, "REPACK"))
+    {
+        auto hr = m_pGeodatabase->CompactDatabase();
+        if (FAILED(hr))
+        {
+            GDBErr(hr, "CompactDatabase failed");
+            return new OGRFGdbSingleFeatureLayer( "result", "false" );
+        }
+        return new OGRFGdbSingleFeatureLayer( "result", "true" );
+    }
+
 
     /* TODO: remove that workaround when the SDK has finally a decent */
     /* SQL support ! */
@@ -795,6 +861,163 @@ void FGdbDataSource::SetSymlinkFlagOnAllLayers()
     size_t count = m_layers.size();
     for(size_t i = 0; i < count; ++i )
     {
-        m_layers[i]->SetSymlinkFlag();
+        if (FGdbLayer* poFgdbLayer = dynamic_cast<FGdbLayer*>(m_layers[i]))
+            poFgdbLayer->SetSymlinkFlag();
     }
+}
+
+/************************************************************************/
+/*                        GetFieldDomain()                              */
+/************************************************************************/
+
+const OGRFieldDomain* FGdbDataSource::GetFieldDomain(const std::string& name) const
+{
+    const auto baseRet = GDALDataset::GetFieldDomain(name);
+    if( baseRet )
+        return baseRet;
+
+    std::string domainDef;
+    const auto hr = m_pGeodatabase->GetDomainDefinition(StringToWString(name), domainDef);
+    if (FAILED(hr))
+    {
+        // GDBErr(hr, "Failed in GetDomainDefinition()");
+        return nullptr;
+    }
+
+    auto poDomain = ParseXMLFieldDomainDef(domainDef);
+    if( !poDomain )
+        return nullptr;
+    const auto domainName = poDomain->GetName();
+    m_oMapFieldDomains[domainName] = std::move(poDomain);
+    return GDALDataset::GetFieldDomain(name);
+}
+
+
+/************************************************************************/
+/*                        GetFieldDomainNames()                         */
+/************************************************************************/
+
+std::vector<std::string> FGdbDataSource::GetFieldDomainNames(CSLConstList) const
+{
+    std::vector<std::wstring> oDomainNamesWList;
+    const auto hr = m_pGeodatabase->GetDomains(oDomainNamesWList);
+    if (FAILED(hr))
+    {
+        GDBErr(hr, "Failed in GetDomains()");
+        return std::vector<std::string>();
+    }
+
+    std::vector<std::string> oDomainNamesList;
+    oDomainNamesList.reserve(oDomainNamesWList.size());
+    for ( const auto& osNameW : oDomainNamesWList )
+    {
+        oDomainNamesList.emplace_back(WStringToString(osNameW));
+    }
+    return oDomainNamesList;
+}
+
+/************************************************************************/
+/*                          AddFieldDomain()                            */
+/************************************************************************/
+
+bool FGdbDataSource::AddFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain,
+                                    std::string& failureReason)
+{
+    const auto domainName = domain->GetName();
+    if( !m_bUpdate )
+    {
+        CPLError(CE_Failure, CPLE_NotSupported,
+                 "AddFieldDomain() not supported on read-only dataset");
+        return false;
+    }
+
+    if( GetFieldDomain(domainName) != nullptr )
+    {
+        failureReason = "A domain of identical name already exists";
+        return false;
+    }
+
+    std::string osXML = BuildXMLFieldDomainDef(domain.get(), true, failureReason);
+    if( osXML.empty() )
+    {
+        return false;
+    }
+
+    const auto hr = m_pGeodatabase->CreateDomain(osXML);
+    if (FAILED(hr))
+    {
+        GDBErr(hr, "Failed in CreateDomain()");
+        CPLDebug("FileGDB", "XML of domain: %s", osXML.c_str());
+        return false;
+    }
+
+    m_oMapFieldDomains[domainName] = std::move(domain);
+
+    return true;
+}
+
+/************************************************************************/
+/*                         DeleteFieldDomain()                          */
+/************************************************************************/
+
+bool FGdbDataSource::DeleteFieldDomain(const std::string& name,
+                                       std::string& /*failureReason*/)
+{
+    if( !m_bUpdate )
+    {
+        CPLError(CE_Failure, CPLE_NotSupported,
+                 "DeleteFieldDomain() not supported on read-only dataset");
+        return false;
+    }
+
+    const auto hr = m_pGeodatabase->DeleteDomain(StringToWString(name));
+    if (FAILED(hr))
+    {
+        GDBErr(hr, "Failed in DeleteDomain()");
+        return false;
+    }
+
+    m_oMapFieldDomains.erase(name);
+
+    return true;
+}
+
+/************************************************************************/
+/*                        UpdateFieldDomain()                           */
+/************************************************************************/
+
+bool FGdbDataSource::UpdateFieldDomain(std::unique_ptr<OGRFieldDomain>&& domain,
+                                       std::string& failureReason)
+{
+    const auto domainName = domain->GetName();
+    if( !m_bUpdate )
+    {
+        CPLError(CE_Failure, CPLE_NotSupported,
+                 "AddFieldDomain() not supported on read-only dataset");
+        return false;
+    }
+
+    if( GetFieldDomain(domainName) == nullptr )
+    {
+        failureReason = "The domain should already exist to be updated";
+        return false;
+    }
+
+    std::string osXML = BuildXMLFieldDomainDef(domain.get(), true, failureReason);
+    if( osXML.empty() )
+    {
+        return false;
+    }
+
+    const auto hr = m_pGeodatabase->AlterDomain(osXML);
+    if (FAILED(hr))
+    {
+        GDBErr(hr, "Failed in AlterDomain()");
+        CPLDebug("FileGDB", "XML of domain: %s", osXML.c_str());
+        return false;
+    }
+
+    m_oMapFieldDomains[domainName] = std::move(domain);
+
+    return true;
 }

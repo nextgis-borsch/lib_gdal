@@ -41,6 +41,7 @@
 #include "gdal.h"
 #include "cpl_minixml.h"
 #include "ogr_api.h"
+#include <stdint.h>
 #endif
 
 CPL_C_START
@@ -212,15 +213,35 @@ int CPL_DLL GDALTPSTransform(
     double *x, double *y, double *z, int *panSuccess );
 
 /*! @cond Doxygen_Suppress */
-char CPL_DLL ** RPCInfoToMD( GDALRPCInfo *psRPCInfo );
+#ifdef GDAL_COMPILATION
+#define RPCInfoV1ToMD RPCInfoToMD
+#else
+#define RPCInfoToMD RPCInfoV2ToMD
+#endif
+char CPL_DLL ** RPCInfoV1ToMD( GDALRPCInfoV1 *psRPCInfo );
+char CPL_DLL ** RPCInfoV2ToMD( GDALRPCInfoV2 *psRPCInfo );
 /*! @endcond */
 
 /* RPC based transformer ... src is pixel/line/elev, dst is long/lat/elev */
 
+/*! @cond Doxygen_Suppress */
+#ifdef GDAL_COMPILATION
+#define GDALCreateRPCTransformerV1 GDALCreateRPCTransformer
+#else
+#define GDALCreateRPCTransformer GDALCreateRPCTransformerV2
+#endif
+
 void CPL_DLL *
-GDALCreateRPCTransformer( GDALRPCInfo *psRPC, int bReversed,
+GDALCreateRPCTransformerV1( GDALRPCInfoV1 *psRPC, int bReversed,
                           double dfPixErrThreshold,
                           char **papszOptions );
+/*! @endcond */
+
+void CPL_DLL *
+GDALCreateRPCTransformerV2( const GDALRPCInfoV2 *psRPC, int bReversed,
+                          double dfPixErrThreshold,
+                          char **papszOptions );
+
 void CPL_DLL GDALDestroyRPCTransformer( void *pTransformArg );
 int CPL_DLL GDALRPCTransform(
     void *pTransformArg, int bDstToSrc, int nPointCount,
@@ -379,14 +400,26 @@ GDALViewshedGenerate(GDALRasterBandH hBand,
 
 CPLErr CPL_DLL
 GDALRasterizeGeometries( GDALDatasetH hDS,
-                         int nBandCount, int *panBandList,
-                         int nGeomCount, OGRGeometryH *pahGeometries,
+                         int nBandCount, const int *panBandList,
+                         int nGeomCount, const OGRGeometryH *pahGeometries,
                          GDALTransformerFunc pfnTransformer,
                          void *pTransformArg,
-                         double *padfGeomBurnValue,
-                         char **papszOptions,
+                         const double *padfGeomBurnValues,
+                         CSLConstList papszOptions,
                          GDALProgressFunc pfnProgress,
                          void * pProgressArg );
+
+CPLErr CPL_DLL
+GDALRasterizeGeometriesInt64( GDALDatasetH hDS,
+                         int nBandCount, const int *panBandList,
+                         int nGeomCount, const OGRGeometryH *pahGeometries,
+                         GDALTransformerFunc pfnTransformer,
+                         void *pTransformArg,
+                         const int64_t *panGeomBurnValues,
+                         CSLConstList papszOptions,
+                         GDALProgressFunc pfnProgress,
+                         void * pProgressArg );
+
 CPLErr CPL_DLL
 GDALRasterizeLayers( GDALDatasetH hDS,
                      int nBandCount, int *panBandList,
@@ -664,20 +697,35 @@ int CPL_DLL GDALTriangulationFindFacetDirected( const GDALTriangulation* psDT,
 void CPL_DLL GDALTriangulationFree(GDALTriangulation* psDT);
 
 /*! @cond Doxygen_Suppress */
-// GDAL internal use only
-void GDALTriangulationTerminate(void);
+#ifndef CPL_WARN_DEPRECATED_GDALOpenVerticalShiftGrid
+#define CPL_WARN_DEPRECATED_GDALOpenVerticalShiftGrid CPL_WARN_DEPRECATED
+#endif
 /*! @endcond */
 
 GDALDatasetH CPL_DLL GDALOpenVerticalShiftGrid(
                                         const char* pszProj4Geoidgrids,
-                                        int* pbError );
+                                        int* pbError )
+/*! @cond Doxygen_Suppress */
+    CPL_WARN_DEPRECATED_GDALOpenVerticalShiftGrid("GDALOpenVerticalShiftGrid() will be removed in GDAL 4.0")
+/*! @endcond */
+    ;
+
+/*! @cond Doxygen_Suppress */
+#ifndef CPL_WARN_DEPRECATED_GDALApplyVerticalShiftGrid
+#define CPL_WARN_DEPRECATED_GDALApplyVerticalShiftGrid CPL_WARN_DEPRECATED
+#endif
+/*! @endcond */
 
 GDALDatasetH CPL_DLL GDALApplyVerticalShiftGrid( GDALDatasetH hSrcDataset,
                                          GDALDatasetH hGridDataset,
                                          int bInverse,
                                          double dfSrcUnitToMeter,
                                          double dfDstUnitToMeter,
-                                         const char* const* papszOptions );
+                                         const char* const* papszOptions )
+/*! @cond Doxygen_Suppress */
+    CPL_WARN_DEPRECATED_GDALApplyVerticalShiftGrid("GDALApplyVerticalShiftGrid() will be removed in GDAL 4.0")
+/*! @endcond */
+    ;
 
 CPL_C_END
 

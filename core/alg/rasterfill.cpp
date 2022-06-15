@@ -44,6 +44,7 @@
 #include "cpl_string.h"
 #include "cpl_vsi.h"
 #include "gdal.h"
+#include "gdal_priv.h"
 
 CPL_CVSID("$Id$")
 
@@ -56,10 +57,10 @@ CPL_CVSID("$Id$")
 /************************************************************************/
 
 static void
-GDALFilterLine( float *pafLastLine, float *pafThisLine, float *pafNextLine,
+GDALFilterLine( const float *pafLastLine, const float *pafThisLine, const float *pafNextLine,
                 float *pafOutLine,
-                GByte *pabyLastTMask, GByte *pabyThisTMask, GByte*pabyNextTMask,
-                GByte *pabyThisFMask, int nXSize )
+                const GByte *pabyLastTMask, const GByte *pabyThisTMask, const GByte *pabyNextTMask,
+                const GByte *pabyThisFMask, int nXSize )
 
 {
     for( int iX = 0; iX < nXSize; iX++ )
@@ -147,7 +148,7 @@ GDALFilterLine( float *pafLastLine, float *pafThisLine, float *pafNextLine,
 /*                                                                      */
 /*      This implementation attempts to apply many iterations in        */
 /*      one IO pass by managing the filtering over a rolling buffer     */
-/*      of nIternations+2 scanlines.  While possibly clever this        */
+/*      of nIterations+2 scanlines.  While possibly clever this        */
 /*      makes the algorithm implementation largely                      */
 /*      incomprehensible.                                               */
 /************************************************************************/
@@ -513,6 +514,7 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
             "Could not create Y index work file. Check driver capabilities.");
         return CE_Failure;
     }
+    GDALDataset::FromHandle(hYDS)->MarkSuppressOnClose();
 
     GDALRasterBandH hYBand = GDALGetRasterBand( hYDS, 1 );
 
@@ -533,6 +535,7 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
             "Could not create XY value work file. Check driver capabilities.");
         return CE_Failure;
     }
+    GDALDataset::FromHandle(hValDS)->MarkSuppressOnClose();
 
     GDALRasterBandH hValBand = GDALGetRasterBand( hValDS, 1 );
 
@@ -552,6 +555,7 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
             "Could not create mask work file. Check driver capabilities.");
         return CE_Failure;
     }
+    GDALDataset::FromHandle(hFiltMaskDS)->MarkSuppressOnClose();
 
     GDALRasterBandH hFiltMaskBand = GDALGetRasterBand( hFiltMaskDS, 1 );
 
@@ -804,11 +808,10 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
             {
                 if( adfQuadDist[iQuad] <= dfMaxSearchDist )
                 {
-                    const double dfWeight = 1.0 / adfQuadDist[iQuad];
-
-                    bHasSrcValues = dfWeight != 0;
+                    bHasSrcValues = true;
                     if( !bHasNoData || fQuadValue[iQuad] != fNoData )
                     {
+                        const double dfWeight = 1.0 / adfQuadDist[iQuad];
                         dfWeightSum += dfWeight;
                         dfValueSum += fQuadValue[iQuad] * dfWeight;
                     }
@@ -817,7 +820,6 @@ GDALFillNodata( GDALRasterBandH hTargetBand,
 
             if( bHasSrcValues )
             {
-                pabyMask[iX] = 255;
                 pabyFiltMask[iX] = 255;
                 if( dfWeightSum > 0.0 )
                     pafScanline[iX] = static_cast<float>(dfValueSum / dfWeightSum);
@@ -901,10 +903,6 @@ end:
     GDALClose( hFiltMaskDS );
 
     CSLDestroy(papszWorkFileOptions);
-
-    GDALDeleteDataset( hDriver, osYTmpFile );
-    GDALDeleteDataset( hDriver, osValTmpFile );
-    GDALDeleteDataset( hDriver, osFiltMaskTmpFile );
 
     return eErr;
 }

@@ -18,7 +18,7 @@
 * STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
 * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
-* Copyright 2014-2015 Esri
+* Copyright 2014-2021 Esri
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -34,7 +34,6 @@
 */
 
 /******************************************************************************
- * $Id$
  *
  * Project:  Meta Raster Format
  * Purpose:  MRF structures
@@ -49,15 +48,18 @@
 #ifndef GDAL_FRMTS_MRF_MARFA_H_INCLUDED
 #define GDAL_FRMTS_MRF_MARFA_H_INCLUDED
 
-#include <gdal_pam.h>
-#include <ogr_srs_api.h>
-#include <ogr_spatialref.h>
+#include "gdal_pam.h"
+#include "ogr_srs_api.h"
+#include "ogr_spatialref.h"
 
 #include <limits>
 // For printing values
 #include <ostream>
 #include <iostream>
 #include <sstream>
+#if defined(ZSTD_SUPPORT)
+#include <zstd.h>
+#endif
 
 #define NAMESPACE_MRF_START namespace GDAL_MRF {
 #define NAMESPACE_MRF_END   }
@@ -95,6 +97,9 @@ enum ILCompression {
 #if defined(LERC)
     IL_LERC,
 #endif
+#if defined(ZSTD_SUPPORT)
+    IL_ZSTD,
+#endif
     IL_ERR_COMP
 };
 
@@ -123,13 +128,11 @@ struct ILSize {
     GInt32 x, y, z, c;
     GIntBig l; // Dual use, sometimes it holds the number of pages
     ILSize(const int x_ = -1, const int y_ = -1, const int z_ = -1,
-        const int c_ = -1, const int l_ = -1)
-    {
-        x = x_; y = y_; z = z_; c = c_; l = l_;
-    }
+        const int c_ = -1, const int l_ = -1):
+        x(x_), y(y_), z(z_), c(c_), l(l_)
+    {}
 
-    bool operator==(const ILSize& other) const
-    {
+    bool operator==(const ILSize& other) const {
         return ((x == other.x) && (y == other.y) && (z == other.z) &&
             (c == other.c) && (l == other.l));
     }
@@ -182,19 +185,16 @@ typedef struct ILImage {
  *  Call netXX() to guarantee big endian
  *
  */
-static inline unsigned short int swab16(const unsigned short int val)
-{
+static inline unsigned short int swab16(const unsigned short int val) {
     return (val << 8) | (val >> 8);
 }
 
-static inline unsigned int swab32(unsigned int val)
-{
+static inline unsigned int swab32(unsigned int val) {
     return (unsigned int)(swab16((unsigned short int) val)) << 16
         | swab16((unsigned short int) (val >> 16));
 }
 
-static inline unsigned long long int swab64(const unsigned long long int val)
-{
+static inline unsigned long long int swab64(const unsigned long long int val) {
     return (unsigned long long int) (swab32((unsigned int)val)) << 32
         | swab32((unsigned int)(val >> 32));
 }
@@ -205,18 +205,17 @@ static inline unsigned long long int swab64(const unsigned long long int val)
 #ifdef CPL_MSB
 #define NET_ORDER true
 // These could be macros, but for the side effects related to type
-static inline unsigned short net16(const unsigned short x)
-{
+static inline unsigned short net16(const unsigned short x) {
     return (x);
 }
-static inline unsigned int net32(const unsigned int x)
-{
+static inline unsigned int net32(const unsigned int x) {
     return (x);
 }
-static inline unsigned long long net64(const unsigned long long x)
-{
+
+static inline unsigned long long net64(const unsigned long long x) {
     return (x);
 }
+
 #else
 #define NET_ORDER false
 #define net16(x) swab16(x)
@@ -245,27 +244,15 @@ double logbase(double val, double base);
 int IsPower(double value, double base);
 CPLXMLNode *SearchXMLSiblings(CPLXMLNode *psRoot, const char *pszElement);
 CPLString PrintDouble(double d, const char *frmt = "%12.8f");
+void XMLSetAttributeVal(CPLXMLNode* parent, const char* pszName, const char* pszValue);
 void XMLSetAttributeVal(CPLXMLNode *parent, const char* pszName,
     const double val, const char *frmt = "%12.8f");
 CPLXMLNode *XMLSetAttributeVal(CPLXMLNode *parent,
     const char*pszName, const ILSize &sz, const char *frmt = nullptr);
 void XMLSetAttributeVal(CPLXMLNode *parent,
     const char*pszName, std::vector<double> const &values);
-//
-// Extension to CSL, set an entry only if it doesn't already exist
-//
-char **CSLAddIfMissing(char **papszList,
-    const char *pszName, const char *pszValue);
 
-GDALColorEntry GetXMLColorEntry(CPLXMLNode *p);
 GIntBig IdxSize(const ILImage &full, const int scale = 0);
-// Similar to uncompress() from zlib, accepts the ZFLAG_RAW
-// Return true if it worked
-int ZUnPack(const buf_mgr &src, buf_mgr &dst, int flags);
-// Similar to compress2() but with flags to control zlib features
-// Returns true if it worked
-int ZPack(const buf_mgr &src, buf_mgr &dst, int flags);
-// checks that the file exists and is at least sz, if access is update it extends it
 int CheckFileSize(const char *fname, GIntBig sz, GDALAccess eAccess);
 
 // Number of pages of size psz needed to hold n elements
@@ -283,16 +270,13 @@ static inline const ILSize pcount(const ILSize &size, const ILSize &psz) {
     pcnt.c = pcount(size.c, psz.c);
     auto xy = static_cast<GIntBig>(pcnt.x) * pcnt.y;
     auto zc = static_cast<GIntBig>(pcnt.z) * pcnt.c;
-    if( zc != 0 && xy > std::numeric_limits<GIntBig>::max() / zc )
-    {
+    if( zc != 0 && xy > std::numeric_limits<GIntBig>::max() / zc ) {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Integer overflow in page count computation");
         pcnt.l = -1;
+        return pcnt;
     }
-    else
-    {
-        pcnt.l = xy * zc;
-    }
+    pcnt.l = xy * zc;
     return pcnt;
 }
 
@@ -329,9 +313,7 @@ public:
         GDALDataType eType, char ** papszOptions);
 
     // Stub for delete, GDAL should only overwrite the XML
-    static CPLErr Delete(const char *) {
-        return CE_None;
-    }
+    static CPLErr Delete(const char *) { return CE_None; }
 
     virtual const char *_GetProjectionRef() override { return projection; }
     virtual CPLErr _SetProjection(const char *proj) override {
@@ -371,12 +353,8 @@ public:
     // Creates an XML tree from the current MRF.  If written to a file it becomes an MRF
     CPLXMLNode *BuildConfig();
 
-    void SetPBufferSize(unsigned int sz) {
-        pbsize = sz;
-    }
-    unsigned int GetPBufferSize() {
-        return pbsize;
-    }
+    void SetPBufferSize(unsigned int sz) { pbsize = sz; }
+    unsigned int GetPBufferSize() { return pbsize; }
 
 protected:
     // False if it failed
@@ -416,15 +394,9 @@ protected:
         return pbuffer;
     }
 
-#if GDAL_VERSION_MAJOR >= 2
     virtual CPLErr IRasterIO(GDALRWFlag, int, int, int, int,
         void *, int, int, GDALDataType,
         int, int *, GSpacing, GSpacing, GSpacing, GDALRasterIOExtraArg*) override;
-#else
-    virtual CPLErr IRasterIO(GDALRWFlag, int, int, int, int,
-        void *, int, int, GDALDataType,
-        int, int *, int, int, int);
-#endif
 
     virtual CPLErr IBuildOverviews(const char*, int, int*, int, int*,
         GDALProgressFunc, void*) override;
@@ -526,6 +498,20 @@ protected:
 
     // statistical values
     std::vector<double> vNoData, vMin, vMax;
+    // Sticky context for zstd compress and decompress
+    void* pzscctx, * pzsdctx;
+#if defined(ZSTD_SUPPORT)
+    ZSTD_CCtx* getzsc() {
+        if (!pzscctx)
+            pzscctx = ZSTD_createCCtx();
+        return static_cast<ZSTD_CCtx*>(pzscctx);
+    }
+    ZSTD_DCtx* getzsd() {
+        if (!pzsdctx)
+            pzsdctx = ZSTD_createDCtx();
+        return static_cast<ZSTD_DCtx *>(pzsdctx);
+    }
+#endif
 };
 
 class MRFRasterBand CPL_NON_FINAL: public GDALPamRasterBand {
@@ -539,7 +525,7 @@ public:
     // Check that the respective block has data, without reading it
     virtual bool TestBlock(int xblk, int yblk);
 
-    virtual GDALColorTable *GetColorTable() override { return poDS->poColorTable; }
+    virtual GDALColorTable *GetColorTable() override { return poMRFDS->poColorTable; }
 
     CPLErr SetColorInterpretation(GDALColorInterp ci) override { img.ci = ci; return CE_None; }
     virtual GDALColorInterp GetColorInterpretation() override { return img.ci; }
@@ -568,32 +554,35 @@ public:
 
     const char *GetOptionValue(const char *opt, const char *def) const;
     void SetAccess(GDALAccess eA) { eAccess = eA; }
-    void SetDeflate(int v) { deflatep = (v != 0); }
+    void SetDeflate(int v) { dodeflate = (v != 0); }
+    void SetZstd(int v) { dozstd = (v != 0); }
 
 protected:
     // Pointer to the GDALMRFDataset
-    MRFDataset *poDS;
+    MRFDataset *poMRFDS;
     // Deflate page requested, named to avoid conflict with libz deflate()
-    int deflatep;
+    int dodeflate;
     int deflate_flags;
+    int dozstd;
+    int zstd_level;
     // Level count of this band
     GInt32 m_l;
     // The info about the current image, to enable R-sets
     ILImage img;
     std::vector<MRFRasterBand *> overviews;
 
-    VSILFILE *IdxFP() { return poDS->IdxFP(); }
-    GDALRWFlag IdxMode() { return poDS->IdxMode(); }
-    VSILFILE *DataFP() { return poDS->DataFP(); }
-    GDALRWFlag DataMode() { return poDS->DataMode(); }
+    VSILFILE *IdxFP() { return poMRFDS->IdxFP(); }
+    GDALRWFlag IdxMode() { return poMRFDS->IdxMode(); }
+    VSILFILE *DataFP() { return poMRFDS->DataFP(); }
+    GDALRWFlag DataMode() { return poMRFDS->DataMode(); }
 
     // How many bytes are in a band block (not a page, a single band block)
     // Easiest is to calculate it from the pageSizeBytes
     GUInt32 blockSizeBytes() {
-        return poDS->current.pageSizeBytes / poDS->current.pagesize.c;
+        return poMRFDS->current.pageSizeBytes / poMRFDS->current.pagesize.c;
     }
 
-    const CPLStringList & GetOptlist() const { return poDS->optlist; }
+    const CPLStringList & GetOptlist() const { return poMRFDS->optlist; }
 
     // Compression and decompression functions.  To be overwritten by specific implementations
     virtual CPLErr Compress(buf_mgr &dst, buf_mgr &src) = 0;
@@ -604,7 +593,7 @@ protected:
 
     GIntBig bandbit(int b) { return ((GIntBig)1) << b; }
     GIntBig bandbit() { return bandbit(nBand - 1); }
-    GIntBig AllBandMask() { return bandbit(poDS->nBands) - 1; }
+    GIntBig AllBandMask() { return bandbit(poMRFDS->nBands) - 1; }
 
     // Overview Support
     // Inherited from GDALRasterBand
@@ -642,7 +631,8 @@ public:
     int PalSize, TransSize, deflate_flags;
 
 private:
-    PNG_Codec& operator= (const PNG_Codec& src); // not implemented. but suppress MSVC warning about 'assignment operator could not be generated'
+    // not implemented. but suppress MSVC warning about 'assignment operator could not be generated'
+    PNG_Codec& operator= (const PNG_Codec& src);
 };
 
 class PNG_Band final: public MRFRasterBand {
@@ -663,12 +653,16 @@ protected:
 
 class JPEG_Codec {
 public:
-    explicit JPEG_Codec(const ILImage &image) : img(image), sameres(FALSE), rgb(FALSE), optimize(false) {}
+    explicit JPEG_Codec(const ILImage &image) : img(image), sameres(FALSE), rgb(FALSE), optimize(false), JFIF(false) {}
 
     CPLErr CompressJPEG(buf_mgr &dst, buf_mgr &src);
     CPLErr DecompressJPEG(buf_mgr &dst, buf_mgr &src);
 
+    // Returns true for both JPEG and JPEG-XL (brunsli)
+    static bool IsJPEG(const buf_mgr& src);
+
 #if defined(JPEG12_SUPPORTED) // Internal only
+#define LIBJPEG_12_H "../jpeg/libjpeg12/jpeglib.h"
     CPLErr CompressJPEG12(buf_mgr &dst, buf_mgr &src);
     CPLErr DecompressJPEG12(buf_mgr &dst, buf_mgr &src);
 #endif
@@ -676,12 +670,14 @@ public:
     const ILImage img;
 
     // JPEG specific flags
-    bool sameres;
-    bool rgb;
-    bool optimize;
+    bool sameres;  // No color space subsample
+    bool rgb;      // No conversion to YCbCr
+    bool optimize; // Optimize Huffman tables
+    bool JFIF;     // Write JFIF only
 
 private:
-    JPEG_Codec& operator= (const JPEG_Codec& src); // not implemented. but suppress MSVC warning about 'assignment operator could not be generated'
+    // not implemented. but suppress MSVC warning about 'assignment operator could not be generated'
+    JPEG_Codec& operator= (const JPEG_Codec& src); 
 };
 
 class JPEG_Band final: public MRFRasterBand {
@@ -709,7 +705,7 @@ protected:
 
     CPLErr CompressJPNG(buf_mgr &dst, buf_mgr &src);
     CPLErr DecompressJPNG(buf_mgr &dst, buf_mgr &src);
-    bool rgb, sameres, optimize;
+    bool rgb, sameres, optimize, JFIF;
 };
 
 class Raw_Band final: public MRFRasterBand {
@@ -719,8 +715,16 @@ public:
         MRFRasterBand(pDS, image, b, int(level)) {}
     virtual ~Raw_Band() {}
 protected:
-    virtual CPLErr Decompress(buf_mgr &dst, buf_mgr &src) override;
-    virtual CPLErr Compress(buf_mgr &dst, buf_mgr &src) override;
+    virtual CPLErr Decompress(buf_mgr& dst, buf_mgr& src) override {
+        if (src.size > dst.size)
+            return CE_Failure;
+        memcpy(dst.buffer, src.buffer, src.size);
+        dst.size = src.size;
+        return CE_None;
+    }
+    virtual CPLErr Compress(buf_mgr& dst, buf_mgr& src) override {
+        return Decompress(dst, src);
+    }
 };
 
 class TIF_Band final: public MRFRasterBand {
@@ -746,13 +750,21 @@ protected:
     virtual CPLErr Decompress(buf_mgr &dst, buf_mgr &src) override;
     virtual CPLErr Compress(buf_mgr &dst, buf_mgr &src) override;
     double precision;
+    // L1 or L2
     int version;
-    static bool IsLerc(CPLString &s) {
-        return (STARTS_WITH(s, "Lerc2 ") || STARTS_WITH(s, "CntZImage "));
-    }
-
+    // L2 version
+    int l2ver;
     // Build a MRF header for a single LERC tile
     static CPLXMLNode *GetMRFConfig(GDALOpenInfo *poOpenInfo);
+private:
+    static bool IsLerc1(const char* s) {
+        static const char L1sig[] = "CntZImage ";
+        return !strncmp(s, L1sig, sizeof(L1sig) - 1);
+    }
+    static bool IsLerc2(const char* s) {
+        static const char L2sig[] = "Lerc2 ";
+        return !strncmp(s, L2sig, sizeof(L2sig) - 1);
+    }
 };
 #endif
 

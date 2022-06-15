@@ -334,7 +334,7 @@ PCRasterDataset::PCRasterDataset( MAP* mapIn, GDALAccess eAccessIn ) :
 */
 PCRasterDataset::~PCRasterDataset()
 {
-    FlushCache();
+    FlushCache(true);
     Mclose(d_map);
 }
 
@@ -407,7 +407,7 @@ GDALDataset* PCRasterDataset::create(
      int nr_rows,
      int nrBands,
      GDALDataType gdalType,
-     char** papszParmList)
+     char** papszParamList)
 {
   // Checks
   if(nrBands != 1){
@@ -449,7 +449,7 @@ GDALDataset* PCRasterDataset::create(
   // value scale must be specified by the user,
   // determines cell representation
   const char *valueScale = CSLFetchNameValue(
-    papszParmList,"PCRASTER_VALUESCALE");
+    papszParamList,"PCRASTER_VALUESCALE");
 
   if(valueScale == nullptr){
     CPLError(CE_Failure, CPLE_AppDefined,

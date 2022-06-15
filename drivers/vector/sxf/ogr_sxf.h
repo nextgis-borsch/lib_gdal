@@ -277,7 +277,7 @@ public:
     virtual int GetLayerCount() override;
     virtual OGRLayer *GetLayer( int ) override;
     virtual int TestCapability( const char * ) override;
-    virtual void FlushCache(void) override;
+    virtual void FlushCache(bool bAtClosing = false) override;
     virtual const OGRSpatialReference *GetSpatialRef() const override;
     virtual CPLErr SetSpatialRef(const OGRSpatialReference *poSRS) override;
     virtual char **GetFileList(void) override; 

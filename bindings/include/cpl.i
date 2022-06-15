@@ -92,7 +92,7 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
     SWIG_PYTHON_THREAD_BEGIN_BLOCK;
 
     psArgs = Py_BuildValue("(iis)", eErrClass, err_no, pszErrorMsg );
-    PyEval_CallObject( (PyObject*)user_data, psArgs);
+    PyObject_CallObject( (PyObject*)user_data, psArgs);
     Py_XDECREF(psArgs);
 
     SWIG_PYTHON_THREAD_END_BLOCK;
@@ -176,6 +176,7 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
 %rename (MkdirRecursive) VSIMkdirRecursive;
 %rename (Rmdir) VSIRmdir;
 %rename (RmdirRecursive) VSIRmdirRecursive;
+%rename (AbortPendingUploads) VSIAbortPendingUploads;
 %rename (Rename) VSIRename;
 %rename (GetActualURL) VSIGetActualURL;
 %rename (GetSignedURL) wrapper_VSIGetSignedURL;
@@ -183,6 +184,11 @@ void CPL_STDCALL PyCPLErrorHandler(CPLErr eErrClass, int err_no, const char* psz
 %rename (GetFileSystemOptions) VSIGetFileSystemOptions;
 %rename (SetConfigOption) CPLSetConfigOption;
 %rename (GetConfigOption) wrapper_CPLGetConfigOption;
+%rename (SetThreadLocalConfigOption) CPLSetThreadLocalConfigOption;
+%rename (GetThreadLocalConfigOption) wrapper_CPLGetThreadLocalConfigOption;
+%rename (SetCredential) VSISetCredential;
+%rename (GetCredential) wrapper_VSIGetCredential;
+%rename (ClearCredentials) wrapper_VSIClearCredentials;
 %rename (CPLBinaryToHex) CPLBinaryToHex;
 %rename (CPLHexToBinary) CPLHexToBinary;
 %rename (FileFromMemBuffer) wrapper_VSIFileFromMemBuffer;
@@ -242,14 +248,29 @@ retStringAndCPLFree* EscapeString(int len, char *bin_string , int scheme) {
 retStringAndCPLFree* EscapeString(int len, char *bin_string , int scheme=CPLES_SQL) {
     return CPLEscapeString(bin_string, len, scheme);
 }
-#elif defined(SWIGPYTHON) || defined(SWIGPERL)
+#elif defined(SWIGPYTHON)
+
+%feature( "kwargs" ) wrapper_EscapeString;
 %apply (int nLen, char *pBuf ) { (int len, char *bin_string)};
 %inline %{
-retStringAndCPLFree* EscapeString(int len, char *bin_string , int scheme=CPLES_SQL) {
+retStringAndCPLFree* wrapper_EscapeString(int len, char *bin_string , int scheme=CPLES_SQL) {
     return CPLEscapeString(bin_string, len, scheme);
 }
 %}
 %clear (int len, char *bin_string);
+
+%feature( "kwargs" ) EscapeBinary;
+%apply (int nLen, char *pBuf ) { (int len, char *bin_string)};
+%apply (size_t *nLen, char **pBuf) { (size_t *pnLenOut, char** pOut) };
+%inline %{
+void EscapeBinary(int len, char *bin_string, size_t *pnLenOut, char** pOut, int scheme=CPLES_SQL) {
+    *pOut = CPLEscapeString(bin_string, len, scheme);
+    *pnLenOut = *pOut ? strlen(*pOut) : 0;
+}
+%}
+%clear (int len, char *bin_string);
+%clean  (size_t *pnLenOut, char* pOut);
+
 #else
 %apply (int nLen, char *pBuf ) { (int len, char *bin_string)};
 %inline %{
@@ -449,17 +470,42 @@ void VSICloseDir(VSIDIR* dir);
 
 %apply Pointer NONNULL {const char * pszKey};
 void CPLSetConfigOption( const char * pszKey, const char * pszValue );
+void CPLSetThreadLocalConfigOption( const char * pszKey, const char * pszValue );
 
 %inline {
 const char *wrapper_CPLGetConfigOption( const char * pszKey, const char * pszDefault = NULL )
 {
     return CPLGetConfigOption( pszKey, pszDefault );
 }
+const char *wrapper_CPLGetThreadLocalConfigOption( const char * pszKey, const char * pszDefault = NULL )
+{
+    return CPLGetThreadLocalConfigOption( pszKey, pszDefault );
 }
+}
+
+%apply Pointer NONNULL {const char * pszPathPrefix};
+void VSISetCredential( const char* pszPathPrefix, const char * pszKey, const char * pszValue );
+
+%inline {
+const char *wrapper_VSIGetCredential( const char* pszPathPrefix, const char * pszKey, const char * pszDefault = NULL )
+{
+    return VSIGetCredential( pszPathPrefix, pszKey, pszDefault );
+}
+}
+
+%clear const char * pszPathPrefix;
 %clear const char * pszKey;
 
+
+%inline {
+void wrapper_VSIClearCredentials(const char * pszPathPrefix = NULL)
+{
+    VSIClearCredentials( pszPathPrefix );
+}
+}
+
 /* Provide hooks to hex encoding methods */
-#if defined(SWIGJAVA) || defined(SWIGPERL)
+#if defined(SWIGJAVA)
 %apply (int nLen, unsigned char *pBuf ) {( int nBytes, const GByte *pabyData )};
 retStringAndCPLFree* CPLBinaryToHex( int nBytes, const GByte *pabyData );
 %clear ( int nBytes, const GByte *pabyData );
@@ -487,12 +533,12 @@ GByte *CPLHexToBinary( const char *pszHex, int *pnBytes );
 
 #if defined(SWIGPYTHON)
 
-%apply (GIntBig nLen, char *pBuf) {( GIntBig nBytes, const GByte *pabyData )};
+%apply (GIntBig nLen, char *pBuf) {( GIntBig nBytes, const char *pabyData )};
 %inline {
-void wrapper_VSIFileFromMemBuffer( const char* utf8_path, GIntBig nBytes, const GByte *pabyData)
+void wrapper_VSIFileFromMemBuffer( const char* utf8_path, GIntBig nBytes, const char *pabyData)
 {
     const size_t nSize = static_cast<size_t>(nBytes);
-    GByte* pabyDataDup = (GByte*)VSIMalloc(nSize);
+    void* pabyDataDup = VSIMalloc(nSize);
     if (pabyDataDup == NULL)
             return;
     memcpy(pabyDataDup, pabyData, nSize);
@@ -590,6 +636,8 @@ bool wrapper_VSISync(const char* pszSource,
 %clear (const char* pszSource);
 %clear (const char* pszTarget);
 
+bool VSIAbortPendingUploads(const char *utf8_path );
+
 #endif
 
 const char* VSIGetActualURL(const char * utf8_path);
@@ -626,10 +674,7 @@ class VSILFILE
 };
 #endif
 
-#if defined(SWIGPERL)
-VSI_RETVAL VSIStatL( const char * utf8_path, VSIStatBufL *psStatBuf );
-
-#elif defined(SWIGPYTHON)
+#if defined(SWIGPYTHON)
 
 %{
 typedef struct
@@ -643,6 +688,8 @@ typedef struct
 #define VSI_STAT_EXISTS_FLAG    0x1
 #define VSI_STAT_NATURE_FLAG    0x2
 #define VSI_STAT_SIZE_FLAG      0x4
+#define VSI_STAT_SET_ERROR_FLAG 0x8
+#define VSI_STAT_CACHE_ONLY     0x10
 
 struct StatBuf
 {
@@ -717,14 +764,16 @@ VSILFILE   *wrapper_VSIFOpenL( const char *utf8_path, const char *pszMode )
 %}
 
 %rename (VSIFOpenExL) wrapper_VSIFOpenExL;
+%apply (char **dict) { char ** };
 %inline %{
-VSILFILE   *wrapper_VSIFOpenExL( const char *utf8_path, const char *pszMode, int bSetError )
+VSILFILE   *wrapper_VSIFOpenExL( const char *utf8_path, const char *pszMode, int bSetError = FALSE, char** options = NULL )
 {
     if (!pszMode) /* would lead to segfault */
         pszMode = "r";
-    return VSIFOpenExL( utf8_path, pszMode, bSetError );
+    return VSIFOpenEx2L( utf8_path, pszMode, bSetError, options );
 }
 %}
+%clear char **;
 
 int VSIFEofL( VSILFILE* fp );
 int VSIFFlushL( VSILFILE* fp );
@@ -762,26 +811,11 @@ int wrapper_VSIFWriteL( int nLen, char *pBuf, int size, int memb, VSILFILE* fp)
     return static_cast<int>(VSIFWriteL(pBuf, size, memb, fp));
 }
 }
-#elif defined(SWIGPERL)
-size_t VSIFWriteL(const void *pBuffer, size_t nSize, size_t nCount, VSILFILE *fp);
 #else
 int     VSIFWriteL( const char *, int, int, VSILFILE *fp );
 #endif
 
-#if defined(SWIGPERL)
-size_t VSIFReadL(void *pBuffer, size_t nSize, size_t nCount, VSILFILE *fp);
-#endif
 /* VSIFReadL() handled specially in python/gdal_python.i */
-
-#if defined(SWIGPERL)
-void VSIStdoutSetRedirection( VSIWriteFunction pFct, FILE* stream );
-%inline {
-void VSIStdoutUnsetRedirection()
-{
-    VSIStdoutSetRedirection( fwrite, stdout );
-}
-}
-#endif
 
 void VSICurlClearCache();
 void VSICurlPartialClearCache( const char* utf8_path );

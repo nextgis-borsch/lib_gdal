@@ -11,6 +11,7 @@
 # ******************************************************************************
 #  Copyright (c) 2001, Frank Warmerdam
 #  Copyright (c) 2009-2010, 2019, Even Rouault <even dot rouault at spatialys.com>
+#  Copyright (c) 2021, Idan Miara <idan@miara.com>
 #
 #  Permission is hereby granted, free of charge, to any person obtaining a
 #  copy of this software and associated documentation files (the "Software"),
@@ -32,24 +33,15 @@
 # ******************************************************************************
 
 import sys
+from typing import Optional
 
 from osgeo import osr
 from osgeo import gdal
 
-# =============================================================================
-
-
-def Usage():
-
-    print('Usage: epsg_tr.py [-wkt] [-pretty_wkt] [-proj4] [-xml] [-postgis]')
-    print('                  [-authority name]')
-    sys.exit(1)
-
-# =============================================================================
+from osgeo_utils.auxiliary.gdal_argparse import GDALArgumentParser, GDALScript
 
 
 def trHandleCode(set_srid, srs, auth_name, code, deprecated, output_format):
-
     if output_format == '-pretty_wkt':
         print('%s:%s' % (auth_name, str(code)))
         print(srs.ExportToPrettyWkt())
@@ -58,7 +50,7 @@ def trHandleCode(set_srid, srs, auth_name, code, deprecated, output_format):
         print(srs.ExportToXML())
 
     if output_format == '-wkt':
-        print('EPSG:%d' % code)
+        print(f'EPSG:{code}')
         print(srs.ExportToWkt())
 
     if output_format == '-proj4':
@@ -71,7 +63,7 @@ def trHandleCode(set_srid, srs, auth_name, code, deprecated, output_format):
             print('<%s> %s <>' % (str(code), out_string))
         else:
             print('# Unable to translate coordinate system '
-                    '%s:%s into PROJ.4 format.' % (auth_name, str(code)))
+                  '%s:%s into PROJ.4 format.' % (auth_name, str(code)))
             print('#')
 
     if output_format == '-postgis':
@@ -98,8 +90,9 @@ def trHandleCode(set_srid, srs, auth_name, code, deprecated, output_format):
         else:
             wkt = gdal.EscapeString(wkt, scheme=gdal.CPLES_SQL)
             proj4text = gdal.EscapeString(proj4text, scheme=gdal.CPLES_SQL)
-            print('INSERT INTO "spatial_ref_sys" ("srid","auth_name","auth_srid","srtext","proj4text") VALUES (%d,\'%s\',%d,\'%s\',\'%s\');' %
-                    (int(code), auth_name, int(code), wkt, proj4text))
+            print(
+                'INSERT INTO "spatial_ref_sys" ("srid","auth_name","auth_srid","srtext","proj4text") VALUES (%d,\'%s\',%d,\'%s\',\'%s\');' %
+                (int(code), auth_name, int(code), wkt, proj4text))
 
     # INGRES COPY command input.
     if output_format == '-copy':
@@ -109,43 +102,13 @@ def trHandleCode(set_srid, srs, auth_name, code, deprecated, output_format):
             proj4text = srs.ExportToProj4()
 
             print('%s\t%d%s\t%s\t%d%s\t%d%s\n'
-                    % (str(code), 4, auth_name, str(code), len(wkt), wkt,
-                        len(proj4text), proj4text))
+                  % (str(code), 4, auth_name, str(code), len(wkt), wkt,
+                     len(proj4text), proj4text))
         except:
             pass
 
-# =============================================================================
 
-def main(argv):
-    output_format = '-pretty_wkt'
-    authority = None
-
-    argv = gdal.GeneralCmdLineProcessor(argv)
-    if argv is None:
-        sys.exit(0)
-
-    # Parse command line arguments.
-
-    i = 1
-    while i < len(argv):
-        arg = argv[i]
-
-        if arg == '-wkt' or arg == '-pretty_wkt' or arg == '-proj4' \
-           or arg == '-postgis' or arg == '-xml' or arg == '-copy':
-            output_format = arg
-
-        elif arg == '-authority':
-            i = i + 1
-            authority = argv[i]
-
-        elif arg[0] == '-':
-            Usage()
-
-        else:
-            Usage()
-
-        i = i + 1
-
+def epsg_tr(output_format: str = '-pretty_wkt', authority: Optional[str] = None):
     # Output BEGIN transaction for PostGIS
     if output_format == '-postgis':
         print('BEGIN;')
@@ -153,11 +116,11 @@ def main(argv):
     # loop over all codes to generate output
 
     if authority:
-        authorities = [ authority ]
-    elif output_format == '-postgis' :
-        authorities = [ 'EPSG', 'ESRI' ]
+        authorities = [authority]
+    elif output_format == '-postgis':
+        authorities = ['EPSG', 'ESRI']
     else:
-        authorities = [ 'EPSG', 'ESRI', 'IGNF' ]
+        authorities = ['EPSG', 'ESRI', 'IGNF']
 
     set_srid = set()
     for authority in authorities:
@@ -218,8 +181,44 @@ def main(argv):
     if output_format == '-postgis':
         print('COMMIT;')
         print('VACUUM ANALYZE spatial_ref_sys;')
+    return 0
+
+
+class EPSG_Table(GDALScript):
+    def __init__(self):
+        super().__init__()
+        self.title = 'Create WKT and PROJ.4 dictionaries for EPSG GCS/PCS codes'
+
+    def get_parser(self, argv) -> GDALArgumentParser:
+        parser = self.parser
+
+        parser.add_argument("-authority", dest="authority", metavar='name', type=str,
+                            help="Authority name")
+
+        group = parser.add_mutually_exclusive_group()
+        group.add_argument("-wkt", const='wkt', dest="output_format", action='store_const', help='Well Known Text')
+        group.add_argument("-pretty_wkt", const='pretty_wkt', dest="output_format", action='store_const',
+                           help='Pretty Well Known Text')
+        group.add_argument("-proj4", const='proj4', dest="output_format", action='store_const', help='proj string')
+        group.add_argument("-postgis", const='postgis', dest="output_format", action='store_const', help='postgis')
+        group.add_argument("-xml", const='xml', dest="output_format", action='store_const', help='XML')
+        group.add_argument("-copy", const='copy', dest="output_format", action='store_const', help='Table')
+
+        return parser
+
+    def augment_kwargs(self, kwargs) -> dict:
+        if not kwargs.get('output_format'):
+            kwargs['output_format'] = 'pretty_wkt'
+        kwargs['output_format'] = '-'+kwargs['output_format']
+        return kwargs
+
+    def doit(self, **kwargs):
+        return epsg_tr(**kwargs)
+
+
+def main(argv=sys.argv):
+    return EPSG_Table().main(argv)
 
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-

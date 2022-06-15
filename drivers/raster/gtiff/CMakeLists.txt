@@ -43,11 +43,11 @@ set(LIB_HHEADERS_PRIV
     gt_overview.h
     gt_wkt_srs_for_gdal.h
     gt_wkt_srs_priv.h
-    tif_float.h
     tifvsi.h
     gt_citation.h
     gt_wkt_srs.h
     cogdriver.h
+
 )
 
 set(LIB_CSOURCES
@@ -56,15 +56,13 @@ set(LIB_CSOURCES
     gt_jpeg_copy.cpp
     gt_overview.cpp
     gt_wkt_srs.cpp
-    tif_float.c
     tifvsi.cpp
     cogdriver.cpp
+
 )
 
 # TODO: Only support internal libtiff now
 # if(WITH_LERC)
-#     set(LIB_HHEADERS_PRIV ${LIB_HHEADERS_PRIV} tif_lerc.h)
-#     set(LIB_CSOURCES ${LIB_CSOURCES} tif_lerc.c)
 #     add_definitions(-DHAVE_LERC)
 #     include_directories(${CMAKE_SOURCE_DIR}/core/lib/LercLib)
 # endif()

@@ -122,12 +122,12 @@ class NTv2Dataset final: public RawDataset
         return GetSpatialRefFromOldGetProjectionRef();
     }
 
-    void FlushCache(void) override;
+    void FlushCache(bool bAtClosing) override;
 
     static GDALDataset *Open( GDALOpenInfo * );
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
-                                int nXSize, int nYSize, int nBands,
+                                int nXSize, int nYSize, int nBandsIn,
                                 GDALDataType eType, char ** papszOptions );
 };
 
@@ -161,7 +161,7 @@ NTv2Dataset::NTv2Dataset() :
 NTv2Dataset::~NTv2Dataset()
 
 {
-    NTv2Dataset::FlushCache();
+    NTv2Dataset::FlushCache(true);
 
     if( fpImage != nullptr )
     {
@@ -200,7 +200,7 @@ static void SwapPtr64IfNecessary( bool bMustSwap, void* ptr )
 /*                             FlushCache()                             */
 /************************************************************************/
 
-void NTv2Dataset::FlushCache()
+void NTv2Dataset::FlushCache(bool bAtClosing)
 
 {
 /* -------------------------------------------------------------------- */
@@ -209,7 +209,7 @@ void NTv2Dataset::FlushCache()
 /* -------------------------------------------------------------------- */
     if( eAccess != GA_Update || !(GetPamFlags() & GPF_DIRTY) )
     {
-        RawDataset::FlushCache();
+        RawDataset::FlushCache(bAtClosing);
         return;
     }
 
@@ -350,7 +350,7 @@ void NTv2Dataset::FlushCache()
     if( !bSomeLeftOver )
         SetPamFlags( GetPamFlags() & (~GPF_DIRTY) );
 
-    RawDataset::FlushCache();
+    RawDataset::FlushCache(bAtClosing);
 }
 
 /************************************************************************/
@@ -800,7 +800,7 @@ const char *NTv2Dataset::_GetProjectionRef()
 
 GDALDataset *NTv2Dataset::Create( const char * pszFilename,
                                   int nXSize, int nYSize,
-                                  int nBands,
+                                  int nBandsIn,
                                   GDALDataType eType,
                                   char ** papszOptions )
 {
@@ -811,12 +811,12 @@ GDALDataset *NTv2Dataset::Create( const char * pszFilename,
                   GDALGetDataTypeName( eType ) );
         return nullptr;
     }
-    if( nBands != 4 )
+    if( nBandsIn != 4 )
     {
         CPLError( CE_Failure, CPLE_AppDefined,
                   "Attempt to create NTv2 file with unsupported "
                   "band number '%d'.",
-                  nBands);
+                  nBandsIn);
         return nullptr;
     }
 

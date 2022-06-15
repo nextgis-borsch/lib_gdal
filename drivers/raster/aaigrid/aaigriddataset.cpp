@@ -34,6 +34,7 @@
 #include "aaigriddataset.h"
 #include "gdal_frmts.h"
 
+#include <cassert>
 #include <cctype>
 #include <climits>
 #include <cmath>
@@ -193,11 +194,25 @@ CPLErr AAIGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
         if( pImage != nullptr )
         {
+            // "null" seems to be specific of D12 software
+            // See https://github.com/OSGeo/gdal/issues/5095
             if( eDataType == GDT_Float64 )
-                reinterpret_cast<double *>(pImage)[iPixel] = CPLAtofM(szToken);
+            {
+                if( strcmp(szToken, "null") == 0 )
+                    reinterpret_cast<double *>(pImage)[iPixel] =
+                        -std::numeric_limits<double>::max();
+                else
+                    reinterpret_cast<double *>(pImage)[iPixel] = CPLAtofM(szToken);
+            }
             else if( eDataType == GDT_Float32 )
-                reinterpret_cast<float *>(pImage)[iPixel] =
-                    DoubleToFloatClamp(CPLAtofM(szToken));
+            {
+                if( strcmp(szToken, "null") == 0 )
+                    reinterpret_cast<float *>(pImage)[iPixel] =
+                        -std::numeric_limits<float>::max();
+                else
+                    reinterpret_cast<float *>(pImage)[iPixel] =
+                        DoubleToFloatClamp(CPLAtofM(szToken));
+            }
             else
                 reinterpret_cast<GInt32 *>(pImage)[iPixel] =
                     static_cast<GInt32>(atoi(szToken));
@@ -278,7 +293,7 @@ AAIGDataset::AAIGDataset() :
 AAIGDataset::~AAIGDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
 
     if( fp != nullptr )
     {
@@ -552,24 +567,42 @@ int AAIGDataset::ParseHeader(const char *pszHeader, const char *pszDataType)
         const char *pszNoData = papszTokens[i + 1];
 
         bNoDataSet = true;
-        dfNoDataValue = CPLAtofM(pszNoData);
-        if( pszDataType == nullptr &&
-            (strchr(pszNoData, '.') != nullptr ||
-             strchr(pszNoData, ',') != nullptr ||
-             std::numeric_limits<int>::min() > dfNoDataValue ||
-             dfNoDataValue > std::numeric_limits<int>::max()) )
+        if( strcmp(pszNoData, "null") == 0 )
         {
-            eDataType = GDT_Float32;
-            if( !CPLIsInf(dfNoDataValue) &&
-                (fabs(dfNoDataValue) < std::numeric_limits<float>::min() ||
-                 fabs(dfNoDataValue) > std::numeric_limits<float>::max()) )
+            // "null" seems to be specific of D12 software
+            // See https://github.com/OSGeo/gdal/issues/5095
+            if( pszDataType == nullptr || eDataType == GDT_Float32 )
             {
+                dfNoDataValue = -std::numeric_limits<float>::max();
+                eDataType = GDT_Float32;
+            }
+            else
+            {
+                dfNoDataValue = -std::numeric_limits<double>::max();
                 eDataType = GDT_Float64;
             }
         }
-        if( eDataType == GDT_Float32 )
+        else
         {
-            dfNoDataValue = MapNoDataToFloat(dfNoDataValue);
+            dfNoDataValue = CPLAtofM(pszNoData);
+            if( pszDataType == nullptr &&
+                (strchr(pszNoData, '.') != nullptr ||
+                 strchr(pszNoData, ',') != nullptr ||
+                 std::numeric_limits<int>::min() > dfNoDataValue ||
+                 dfNoDataValue > std::numeric_limits<int>::max()) )
+            {
+                eDataType = GDT_Float32;
+                if( !CPLIsInf(dfNoDataValue) &&
+                    (fabs(dfNoDataValue) < std::numeric_limits<float>::min() ||
+                     fabs(dfNoDataValue) > std::numeric_limits<float>::max()) )
+                {
+                    eDataType = GDT_Float64;
+                }
+            }
+            if( eDataType == GDT_Float32 )
+            {
+                dfNoDataValue = MapNoDataToFloat(dfNoDataValue);
+            }
         }
     }
 
@@ -999,7 +1032,11 @@ GDALDataset *AAIGDataset::CommonOpen( GDALOpenInfo *poOpenInfo,
                 poOpenInfo->pabyHeader[i - 1] == '\r' ||
                 poOpenInfo->pabyHeader[i - 2] == '\r' )
             {
-                if( !isalpha(poOpenInfo->pabyHeader[i]) &&
+                if( (!isalpha(poOpenInfo->pabyHeader[i]) ||
+                    // null seems to be specific of D12 software
+                    // See https://github.com/OSGeo/gdal/issues/5095
+                     (i + 5 < poOpenInfo->nHeaderBytes &&
+                      memcmp(poOpenInfo->pabyHeader + i, "null ", 5) == 0)) &&
                     poOpenInfo->pabyHeader[i] != '\n' &&
                     poOpenInfo->pabyHeader[i] != '\r')
                 {
@@ -1317,8 +1354,8 @@ GDALDataset * AAIGDataset::CreateCopy(
         CPLString osBuf;
         eErr = poBand->RasterIO(
             GF_Read, 0, iLine, nXSize, 1,
-            bReadAsInt ? reinterpret_cast<void *>(panScanline) :
-            reinterpret_cast<void *>(padfScanline),
+            bReadAsInt ? static_cast<void *>(panScanline) :
+                         static_cast<void *>(padfScanline),
             nXSize, 1, bReadAsInt ? GDT_Int32 : GDT_Float64,
             0, 0, nullptr);
 
@@ -1345,6 +1382,8 @@ GDALDataset * AAIGDataset::CreateCopy(
         }
         else
         {
+            assert(padfScanline);
+
             for ( int iPixel = 0; iPixel < nXSize; iPixel++ )
             {
                 CPLsnprintf(szHeader, sizeof(szHeader),

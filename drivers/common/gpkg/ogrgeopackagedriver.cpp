@@ -116,8 +116,12 @@ static int OGRGeoPackageDriverIdentify( GDALOpenInfo* poOpenInfo, bool bEmitWarn
     }
     else if(nApplicationId == GPKG_APPLICATION_ID &&
             // Accept any 102XX version
-            !(nUserVersion >= GPKG_1_2_VERSION &&
-              nUserVersion < GPKG_1_2_VERSION + 99))
+            !((nUserVersion >= GPKG_1_2_VERSION &&
+               nUserVersion < GPKG_1_2_VERSION + 99) ||
+            // Accept any 103XX version
+              (nUserVersion >= GPKG_1_3_VERSION &&
+               nUserVersion < GPKG_1_3_VERSION + 99)
+              ))
     {
 #ifdef DEBUG
         if( EQUAL(CPLGetFilename(poOpenInfo->pszFilename), ".cur_input")  )
@@ -138,7 +142,7 @@ static int OGRGeoPackageDriverIdentify( GDALOpenInfo* poOpenInfo, bool bEmitWarn
                             "GPKG_WARN_UNRECOGNIZED_APPLICATION_ID", "YES"));
             if( bWarn )
             {
-                if( nUserVersion > GPKG_1_2_VERSION )
+                if( nUserVersion > GPKG_1_3_VERSION )
                 {
                     CPLError( CE_Warning, CPLE_AppDefined,
                               "This version of GeoPackage "
@@ -166,7 +170,7 @@ static int OGRGeoPackageDriverIdentify( GDALOpenInfo* poOpenInfo, bool bEmitWarn
             }
             else
             {
-                if( nUserVersion > GPKG_1_2_VERSION )
+                if( nUserVersion > GPKG_1_3_VERSION )
                 {
                     CPLDebug( "GPKG",
                               "This version of GeoPackage "
@@ -379,6 +383,7 @@ COMPRESSION_OPTIONS
 "     <Value>1.0</Value>"
 "     <Value>1.1</Value>"
 "     <Value>1.2</Value>"
+"     <Value>1.3</Value>"
 "  </Option>"
 "  <Option name='DATETIME_FORMAT' type='string-select' description='How to encode DateTime not in UTC' default='WITH_TZ'>"
 "     <Value>WITH_TZ</Value>"
@@ -425,7 +430,7 @@ void RegisterOGRGeoPackage()
 
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME, "GeoPackage" );
     poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "gpkg" );
-    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/vector/geopackage.html" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/vector/gpkg.html" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES, "Byte Int16 UInt16 Float32" );
 
     poDriver->SetMetadataItem( GDAL_DMD_OPENOPTIONLIST, "<OpenOptionList>"
@@ -445,6 +450,7 @@ void RegisterOGRGeoPackage()
 "  <Option name='WHERE' type='string' scope='raster' description='SQL WHERE clause to be appended to tile requests'/>"
 COMPRESSION_OPTIONS
 "  <Option name='PRELUDE_STATEMENTS' type='string' scope='raster,vector' description='SQL statement(s) to send on the SQLite connection before any other ones'/>"
+"  <Option name='NOLOCK' type='boolean' description='Whether the database should be opened in nolock mode'/>"
 "</OpenOptionList>");
 
     poDriver->SetMetadataItem( GDAL_DS_LAYER_CREATIONOPTIONLIST,
@@ -460,7 +466,6 @@ COMPRESSION_OPTIONS
 "  <Option name='DESCRIPTION' type='string' description='Description of the layer, as put in the contents table'/>"
 "  <Option name='ASPATIAL_VARIANT' type='string-select' description='How to register non spatial tables' default='GPKG_ATTRIBUTES'>"
 "     <Value>GPKG_ATTRIBUTES</Value>"
-"     <Value>OGR_ASPATIAL</Value>"
 "     <Value>NOT_REGISTERED</Value>"
 "  </Option>"
 "</LayerCreationOptionList>");
@@ -473,6 +478,10 @@ COMPRESSION_OPTIONS
     poDriver->SetMetadataItem( GDAL_DCAP_DEFAULT_FIELDS, "YES" );
     poDriver->SetMetadataItem( GDAL_DCAP_UNIQUE_FIELDS, "YES" );
     poDriver->SetMetadataItem( GDAL_DCAP_NOTNULL_GEOMFIELDS, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_MULTIPLE_VECTOR_LAYERS, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_FIELD_DOMAINS, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_RENAME_LAYERS, "YES" );
+    poDriver->SetMetadataItem( GDAL_DMD_CREATION_FIELD_DOMAIN_TYPES, "Coded Range Glob" );
 
 #ifdef ENABLE_SQL_GPKG_FORMAT
     poDriver->SetMetadataItem("ENABLE_SQL_GPKG_FORMAT", "YES");

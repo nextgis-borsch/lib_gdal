@@ -77,9 +77,9 @@ class GS7BGDataset final: public GDALPamDataset
     static int          Identify( GDALOpenInfo * );
     static GDALDataset *Open( GDALOpenInfo * );
     static GDALDataset *Create( const char * pszFilename,
-                    int nXSize, int nYSize, int nBands,
+                    int nXSize, int nYSize, int nBandsIn,
                     GDALDataType eType,
-                    char **papszParmList );
+                    char **papszParamList );
     static GDALDataset *CreateCopy( const char *pszFilename,
                     GDALDataset *poSrcDS,
                     int bStrict, char **papszOptions,
@@ -493,7 +493,7 @@ double GS7BGRasterBand::GetMaximum( int *pbSuccess )
 GS7BGDataset::~GS7BGDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
     if( fp != nullptr )
         VSIFCloseL( fp );
 }
@@ -861,9 +861,9 @@ CPLErr GS7BGDataset::SetGeoTransform( double *padfGeoTransform )
         return CE_Failure;
     }
 
-    GS7BGRasterBand *poGRB = dynamic_cast<GS7BGRasterBand *>(GetRasterBand( 1 ));
+    GS7BGRasterBand *poGRB = cpl::down_cast<GS7BGRasterBand *>(GetRasterBand( 1 ));
 
-    if( poGRB == nullptr || padfGeoTransform == nullptr)
+    if( padfGeoTransform == nullptr)
         return CE_Failure;
 
     /* non-zero transform 2 or 4 or negative 1 or 5 not supported natively */
@@ -1069,9 +1069,9 @@ CPLErr GS7BGDataset::WriteHeader( VSILFILE *fp, GInt32 nXSize, GInt32 nYSize,
 GDALDataset *GS7BGDataset::Create( const char * pszFilename,
                                    int nXSize,
                                    int nYSize,
-                                   int nBands,
+                                   int nBandsIn,
                                    GDALDataType eType,
-                                   CPL_UNUSED char **papszParmList )
+                                   CPL_UNUSED char **papszParamList )
 
 {
     if( nXSize <= 0 || nYSize <= 0 )
@@ -1094,7 +1094,7 @@ GDALDataset *GS7BGDataset::Create( const char * pszFilename,
         return nullptr;
     }
 
-    if (nBands > 1)
+    if (nBandsIn > 1)
     {
         CPLError( CE_Failure, CPLE_NotSupported,
             "Unable to create copy, "

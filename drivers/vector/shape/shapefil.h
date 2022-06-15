@@ -36,13 +36,10 @@
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
  * DEALINGS IN THE SOFTWARE.
  ******************************************************************************
+ *
  */
 
 #include <stdio.h>
-
-#ifdef USE_DBMALLOC
-#include <dbmalloc.h>
-#endif
 
 #ifdef USE_CPL
 #include "cpl_conv.h"

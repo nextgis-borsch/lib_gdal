@@ -137,7 +137,6 @@ void VRTDriver::AddSourceParser( const char *pszElementName,
 /************************************************************************/
 
 VRTSource *VRTDriver::ParseSource( CPLXMLNode *psSrc, const char *pszVRTPath,
-                                   void* pUniqueHandle,
                                    std::map<CPLString, GDALDataset*>& oMapSharedSources )
 
 {
@@ -163,7 +162,7 @@ VRTSource *VRTDriver::ParseSource( CPLXMLNode *psSrc, const char *pszVRTPath,
     if( pfnParser == nullptr )
         return nullptr;
 
-    return pfnParser( psSrc, pszVRTPath, pUniqueHandle, oMapSharedSources );
+    return pfnParser( psSrc, pszVRTPath, oMapSharedSources );
 }
 
 /************************************************************************/
@@ -404,12 +403,15 @@ VRTCreateCopy( const char * pszFilename,
         poVRTDS->SetMaskBand( poVRTMaskBand );
     }
 
-    CPLErrorReset();
-    poVRTDS->FlushCache();
-    if( CPLGetLastErrorType() != CE_None )
+    if( strcmp(pszFilename, "") != 0 )
     {
-        delete poVRTDS;
-        poVRTDS = nullptr;
+        CPLErrorReset();
+        poVRTDS->FlushCache(true);
+        if( CPLGetLastErrorType() != CE_None )
+        {
+            delete poVRTDS;
+            poVRTDS = nullptr;
+        }
     }
 
     return poVRTDS;
@@ -437,7 +439,8 @@ void GDALRegister_VRT()
     poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "vrt" );
     poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/raster/vrt.html" );
     poDriver->SetMetadataItem( GDAL_DMD_CREATIONDATATYPES,
-                               "Byte Int16 UInt16 Int32 UInt32 Float32 Float64 "
+                               "Byte Int16 UInt16 Int32 UInt32 Int64 UInt64 "
+                               "Float32 Float64 "
                                "CInt16 CInt32 CFloat32 CFloat64" );
 
     poDriver->pfnOpen = VRTDataset::Open;
@@ -455,6 +458,7 @@ void GDALRegister_VRT()
 "</OpenOptionList>" );
 
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+    poDriver->SetMetadataItem( GDAL_DCAP_COORDINATE_EPOCH, "YES" );
 
     poDriver->AddSourceParser( "SimpleSource", VRTParseCoreSources );
     poDriver->AddSourceParser( "ComplexSource", VRTParseCoreSources );

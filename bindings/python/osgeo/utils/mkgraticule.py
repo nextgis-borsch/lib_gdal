@@ -62,11 +62,10 @@ def Usage():
     print('Usage: mkgraticule [-connected] [-s stepsize] [-substep substepsize]')
     print('         [-t_srs srs] [-range xmin ymin xmax ymax] outfile')
     print('')
-    sys.exit(1)
+    return 1
 
-#############################################################################
 
-def main(argv):
+def main(argv=sys.argv):
     # Argument processing.
     t_srs = None
     stepsize = 5.0
@@ -99,11 +98,11 @@ def main(argv):
             ymax = float(argv[i + 4])
             i = i + 4
         elif argv[i][0] == '-':
-            Usage()
+            return Usage()
         elif outfile is None:
             outfile = argv[i]
         else:
-            Usage()
+            return Usage()
 
         i = i + 1
 
@@ -238,6 +237,8 @@ def main(argv):
 
     ds.Destroy()
     ds = None
+
+    return 0
 
 
 if __name__ == '__main__':

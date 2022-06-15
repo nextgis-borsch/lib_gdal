@@ -33,9 +33,7 @@
 
 %include constraints.i
 
-#ifdef PERL_CPAN_NAMESPACE
-%module "Geo::OSR"
-#elif defined(SWIGCSHARP)
+#if defined(SWIGCSHARP)
 %module Osr
 #elif defined(SWIGPYTHON)
 %module (package="osgeo") osr
@@ -169,8 +167,6 @@ typedef int OGRErr;
 %include osr_csharp.i
 #elif defined(SWIGJAVA)
 %include osr_java.i
-#elif defined(SWIGPERL)
-%include osr_perl.i
 #else
 %include gdal_typemaps.i
 #endif
@@ -328,10 +324,6 @@ public:
     OSRExportToPrettyWkt( self, &buf, 0 );
     return buf;
   }
-/* Adding __str__ to Perl bindings makes Swig to use overloading,
-   which is undesirable since it is not used elsewhere in these
-   bindings, and causes side effects. */
-#elif defined(SWIGPERL)
 #else
 %newobject __str__;
   char *__str__() {
@@ -387,6 +379,18 @@ public:
 
   int IsVertical() {
     return OSRIsVertical(self);
+  }
+
+  bool IsDynamic() {
+    return OSRIsDynamic(self);
+  }
+
+  double GetCoordinateEpoch() {
+    return OSRGetCoordinateEpoch(self);
+  }
+
+  void SetCoordinateEpoch(double coordinateEpoch) {
+    OSRSetCoordinateEpoch(self, coordinateEpoch);
   }
 
   int EPSGTreatsAsLatLong() {
@@ -1079,20 +1083,20 @@ public:
   }
 
 %apply (char **argout) { (char **) };
-%apply (double *argout[ANY]) { (double *parms[17] ) };
-  OGRErr ExportToPCI( char **proj, char **units, double *parms[17] ) {
-    return OSRExportToPCI( self, proj, units, parms );
+%apply (double *argout[ANY]) { (double *params[17] ) };
+  OGRErr ExportToPCI( char **proj, char **units, double *params[17] ) {
+    return OSRExportToPCI( self, proj, units, params );
   }
 %clear (char **);
-%clear (double *parms[17]);
+%clear (double *params[17]);
 
 %apply (long *OUTPUT) { (long*) };
-%apply (double *argout[ANY]) { (double *parms[15]) }
-  OGRErr ExportToUSGS( long *code, long *zone, double *parms[15], long *datum ) {
-    return OSRExportToUSGS( self, code, zone, parms, datum );
+%apply (double *argout[ANY]) { (double *params[15]) }
+  OGRErr ExportToUSGS( long *code, long *zone, double *params[15], long *datum ) {
+    return OSRExportToUSGS( self, code, zone, params, datum );
   }
 %clear (long*);
-%clear (double *parms[15]);
+%clear (double *params[15]);
 
   OGRErr ExportToXML( char **argout, const char *dialect = "" ) {
     return OSRExportToXML( self, argout, dialect );
@@ -1148,7 +1152,7 @@ public:
  *  CoordinateTransformation Object
  *
  */
- 
+
 %rename (CoordinateTransformationOptions) OGRCoordinateTransformationOptions;
 class OGRCoordinateTransformationOptions {
 private:
@@ -1163,7 +1167,7 @@ public:
   ~OGRCoordinateTransformationOptions() {
     OCTDestroyCoordinateTransformationOptions( self );
   }
-  
+
   bool SetAreaOfInterest( double westLongitudeDeg,
                           double southLatitudeDeg,
                           double eastLongitudeDeg,
@@ -1203,7 +1207,7 @@ public:
   }
 
   OSRCoordinateTransformationShadow( OSRSpatialReferenceShadow *src, OSRSpatialReferenceShadow *dst, OGRCoordinateTransformationOptions* options ) {
-    return (OSRCoordinateTransformationShadow*) 
+    return (OSRCoordinateTransformationShadow*)
         options ? OCTNewCoordinateTransformationEx( src, dst, options ) : OCTNewCoordinateTransformation(src, dst);
   }
 
@@ -1319,6 +1323,23 @@ public:
   %clear (double*);
 #endif
 
+void TransformBounds(
+    double argout[4], double minx, double miny, double maxx, double maxy, int densify_pts
+) {
+    argout[0] = HUGE_VAL;
+    argout[1] = HUGE_VAL;
+    argout[2] = HUGE_VAL;
+    argout[3] = HUGE_VAL;
+    if (self == NULL)
+        return;
+    OCTTransformBounds(
+        self,
+        minx, miny, maxx, maxy,
+        &argout[0], &argout[1], &argout[2], &argout[3],
+        densify_pts
+    );
+}
+
 } /*extend */
 };
 
@@ -1326,7 +1347,7 @@ public:
 %newobject CreateCoordinateTransformation;
 %inline %{
   OSRCoordinateTransformationShadow *CreateCoordinateTransformation( OSRSpatialReferenceShadow *src, OSRSpatialReferenceShadow *dst, OGRCoordinateTransformationOptions* options = NULL ) {
-    return (OSRCoordinateTransformationShadow*) 
+    return (OSRCoordinateTransformationShadow*)
         options ? OCTNewCoordinateTransformationEx( src, dst, options ) : OCTNewCoordinateTransformation(src, dst);
 }
 %}
@@ -1542,7 +1563,43 @@ int GetPROJVersionMicro()
     OSRGetPROJVersion(NULL, NULL, &num);
     return num;
 }
+
+bool GetPROJEnableNetwork()
+{
+    return OSRGetPROJEnableNetwork();
+}
+
+void SetPROJEnableNetwork(bool enabled)
+{
+    OSRSetPROJEnableNetwork(enabled);
+}
 %}
+
+%inline %{
+void SetPROJAuxDbPath( const char *utf8_path )
+{
+    const char* const apszPaths[2] = { utf8_path, NULL };
+    OSRSetPROJAuxDbPaths(apszPaths);
+}
+%}
+
+%apply (char **options) { (char **) };
+%inline %{
+void SetPROJAuxDbPaths( char** paths )
+{
+    OSRSetPROJAuxDbPaths(paths);
+}
+%}
+%clear (char **);
+
+%apply (char **CSL) {(char **)};
+%inline %{
+char** GetPROJAuxDbPaths()
+{
+    return OSRGetPROJAuxDbPaths();
+}
+%}
+%clear (char **);
 
 #ifdef SWIGPYTHON
 %thread;

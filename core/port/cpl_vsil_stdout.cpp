@@ -84,7 +84,8 @@ class VSIStdoutFilesystemHandler final : public VSIFilesystemHandler
 
     VSIVirtualHandle *Open( const char *pszFilename,
                             const char *pszAccess,
-                            bool bSetError ) override;
+                            bool bSetError,
+                            CSLConstList /* papszOptions */ ) override;
     int Stat( const char *pszFilename, VSIStatBufL *pStatBuf,
               int nFlags ) override;
 };
@@ -209,7 +210,8 @@ int VSIStdoutHandle::Close()
 VSIVirtualHandle *
 VSIStdoutFilesystemHandler::Open( const char * /* pszFilename */,
                                   const char *pszAccess,
-                                  bool /* bSetError */ )
+                                  bool /* bSetError */,
+                                  CSLConstList /* papszOptions */ )
 {
     if ( strchr(pszAccess, 'r') != nullptr ||
          strchr(pszAccess, '+') != nullptr )
@@ -252,7 +254,8 @@ class VSIStdoutRedirectFilesystemHandler final : public VSIFilesystemHandler
   public:
     VSIVirtualHandle *Open( const char *pszFilename,
                             const char *pszAccess,
-                            bool bSetError ) override;
+                            bool bSetError,
+                            CSLConstList /* papszOptions */ ) override;
     int Stat( const char *pszFilename, VSIStatBufL *pStatBuf,
               int nFlags ) override;
 };
@@ -388,7 +391,8 @@ int VSIStdoutRedirectHandle::Close()
 VSIVirtualHandle *
 VSIStdoutRedirectFilesystemHandler::Open( const char *pszFilename,
                                           const char *pszAccess,
-                                          bool /* bSetError */ )
+                                          bool /* bSetError */,
+                                          CSLConstList /* papszOptions */ )
 
 {
     if ( strchr(pszAccess, 'r') != nullptr ||
@@ -426,19 +430,23 @@ int VSIStdoutRedirectFilesystemHandler::Stat( const char * /* pszFilename */,
 /*                       VSIInstallStdoutHandler()                      */
 /************************************************************************/
 
-/**
- * \brief Install /vsistdout/ file system handler
- *
- * A special file handler is installed that allows writing to the standard
- * output stream.
- *
- * The file operations available are of course limited to Write().
- *
- * A variation of this file system exists as the /vsistdout_redirect/ file
- * system handler, where the output function can be defined with
- * VSIStdoutSetRedirection().
- *
- * @since GDAL 1.8.0
+/*!
+ \brief Install /vsistdout/ file system handler
+
+ A special file handler is installed that allows writing to the standard
+ output stream.
+
+ The file operations available are of course limited to Write().
+
+ A variation of this file system exists as the /vsistdout_redirect/ file
+ system handler, where the output function can be defined with
+ VSIStdoutSetRedirection().
+
+ \verbatim embed:rst
+ See :ref:`/vsistdout/ documentation <vsistdout>`
+ \endverbatim
+
+ @since GDAL 1.8.0
  */
 
 void VSIInstallStdoutHandler()

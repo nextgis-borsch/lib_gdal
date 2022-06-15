@@ -71,7 +71,7 @@ class GSBGDataset final: public GDALPamDataset
     static GDALDataset *Create( const char * pszFilename,
                                 int nXSize, int nYSize, int nBands,
                                 GDALDataType eType,
-                                char **papszParmList );
+                                char **papszParamList );
     static GDALDataset *CreateCopy( const char *pszFilename,
                                     GDALDataset *poSrcDS,
                                     int bStrict, char **papszOptions,
@@ -307,8 +307,7 @@ CPLErr GSBGRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
     if( nBlockYOff < 0 || nBlockYOff > nRasterYSize - 1 || nBlockXOff != 0 )
         return CE_Failure;
 
-    GSBGDataset *poGDS = dynamic_cast<GSBGDataset *>(poDS);
-    assert( poGDS != nullptr );
+    GSBGDataset *poGDS = cpl::down_cast<GSBGDataset *>(poDS);
 
     if( pafRowMinZ == nullptr || pafRowMaxZ == nullptr
         || nMinZRow < 0 || nMaxZRow < 0 )
@@ -483,7 +482,7 @@ double GSBGRasterBand::GetMaximum( int *pbSuccess )
 GSBGDataset::~GSBGDataset()
 
 {
-    FlushCache();
+    FlushCache(true);
     if( fp != nullptr )
         VSIFCloseL( fp );
 }
@@ -520,7 +519,7 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Create a corresponding GDALDataset.                             */
 /* -------------------------------------------------------------------- */
-    GSBGDataset *poDS = new GSBGDataset();
+    auto poDS = cpl::make_unique<GSBGDataset>();
 
     poDS->eAccess = poOpenInfo->eAccess;
     poDS->fp = poOpenInfo->fpL;
@@ -531,7 +530,6 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
     if( VSIFSeekL( poDS->fp, 4, SEEK_SET ) != 0 )
     {
-        delete poDS;
         CPLError( CE_Failure, CPLE_FileIO,
                   "Unable to seek to start of grid file header.\n" );
         return nullptr;
@@ -541,7 +539,6 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
     GInt16 nTemp;
     if( VSIFReadL( (void *)&nTemp, 2, 1, poDS->fp ) != 1 )
     {
-        delete poDS;
         CPLError( CE_Failure, CPLE_FileIO, "Unable to read raster X size.\n" );
         return nullptr;
     }
@@ -549,7 +546,6 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( VSIFReadL( (void *)&nTemp, 2, 1, poDS->fp ) != 1 )
     {
-        delete poDS;
         CPLError( CE_Failure, CPLE_FileIO, "Unable to read raster Y size.\n" );
         return nullptr;
     }
@@ -557,20 +553,18 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if (!GDALCheckDatasetDimensions(poDS->nRasterXSize, poDS->nRasterYSize))
     {
-        delete poDS;
         return nullptr;
     }
 
 /* -------------------------------------------------------------------- */
 /*      Create band information objects.                                */
 /* -------------------------------------------------------------------- */
-    GSBGRasterBand *poBand = new GSBGRasterBand( poDS, 1 );
+    GSBGRasterBand *poBand = new GSBGRasterBand( poDS.get(), 1 );
+    poDS->SetBand( 1, poBand );
 
     double dfTemp;
     if( VSIFReadL( (void *)&dfTemp, 8, 1, poDS->fp ) != 1 )
     {
-        delete poDS;
-        delete poBand;
         CPLError( CE_Failure, CPLE_FileIO,
                   "Unable to read minimum X value.\n" );
         return nullptr;
@@ -580,8 +574,6 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( VSIFReadL( (void *)&dfTemp, 8, 1, poDS->fp ) != 1 )
     {
-        delete poDS;
-        delete poBand;
         CPLError( CE_Failure, CPLE_FileIO,
                   "Unable to read maximum X value.\n" );
         return nullptr;
@@ -591,8 +583,6 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( VSIFReadL( (void *)&dfTemp, 8, 1, poDS->fp ) != 1 )
     {
-        delete poDS;
-        delete poBand;
         CPLError( CE_Failure, CPLE_FileIO,
                   "Unable to read minimum Y value.\n" );
         return nullptr;
@@ -602,8 +592,6 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( VSIFReadL( (void *)&dfTemp, 8, 1, poDS->fp ) != 1 )
     {
-        delete poDS;
-        delete poBand;
         CPLError( CE_Failure, CPLE_FileIO,
                   "Unable to read maximum Y value.\n" );
         return nullptr;
@@ -613,8 +601,6 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( VSIFReadL( (void *)&dfTemp, 8, 1, poDS->fp ) != 1 )
     {
-        delete poDS;
-        delete poBand;
         CPLError( CE_Failure, CPLE_FileIO,
                   "Unable to read minimum Z value.\n" );
         return nullptr;
@@ -624,16 +610,12 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 
     if( VSIFReadL( (void *)&dfTemp, 8, 1, poDS->fp ) != 1 )
     {
-        delete poDS;
-        delete poBand;
         CPLError( CE_Failure, CPLE_FileIO,
                   "Unable to read maximum Z value.\n" );
         return nullptr;
     }
     CPL_LSBPTR64( &dfTemp );
     poBand->dfMaxZ = dfTemp;
-
-    poDS->SetBand( 1, poBand );
 
 /* -------------------------------------------------------------------- */
 /*      Initialize any PAM information.                                 */
@@ -644,9 +626,9 @@ GDALDataset *GSBGDataset::Open( GDALOpenInfo * poOpenInfo )
 /* -------------------------------------------------------------------- */
 /*      Check for external overviews.                                   */
 /* -------------------------------------------------------------------- */
-    poDS->oOvManager.Initialize( poDS, poOpenInfo->pszFilename, poOpenInfo->GetSiblingFiles() );
+    poDS->oOvManager.Initialize( poDS.get(), poOpenInfo->pszFilename, poOpenInfo->GetSiblingFiles() );
 
-    return poDS;
+    return poDS.release();
 }
 
 /************************************************************************/
@@ -658,18 +640,7 @@ CPLErr GSBGDataset::GetGeoTransform( double *padfGeoTransform )
     if( padfGeoTransform == nullptr )
         return CE_Failure;
 
-    GSBGRasterBand *poGRB = dynamic_cast<GSBGRasterBand *>(GetRasterBand( 1 ));
-
-    if( poGRB == nullptr )
-    {
-        padfGeoTransform[0] = 0;
-        padfGeoTransform[1] = 1;
-        padfGeoTransform[2] = 0;
-        padfGeoTransform[3] = 0;
-        padfGeoTransform[4] = 0;
-        padfGeoTransform[5] = 1;
-        return CE_Failure;
-    }
+    GSBGRasterBand *poGRB = cpl::down_cast<GSBGRasterBand *>(GetRasterBand( 1 ));
 
     /* check if we have a PAM GeoTransform stored */
     CPLPushErrorHandler( CPLQuietErrorHandler );
@@ -710,9 +681,9 @@ CPLErr GSBGDataset::SetGeoTransform( double *padfGeoTransform )
         return CE_Failure;
     }
 
-    GSBGRasterBand *poGRB = dynamic_cast<GSBGRasterBand *>(GetRasterBand( 1 ));
+    GSBGRasterBand *poGRB = cpl::down_cast<GSBGRasterBand *>(GetRasterBand( 1 ));
 
-    if( poGRB == nullptr || padfGeoTransform == nullptr)
+    if( padfGeoTransform == nullptr)
         return CE_Failure;
 
     /* non-zero transform 2 or 4 or negative 1 or 5 not supported natively */
@@ -852,9 +823,9 @@ CPLErr GSBGDataset::WriteHeader( VSILFILE *fp, GInt16 nXSize, GInt16 nYSize,
 GDALDataset *GSBGDataset::Create( const char * pszFilename,
                                   int nXSize,
                                   int nYSize,
-                                  CPL_UNUSED int nBands,
+                                  int /* nBands */,
                                   GDALDataType eType,
-                                  CPL_UNUSED char **papszParmList )
+                                  CPL_UNUSED char **papszParamList )
 {
     if( nXSize <= 0 || nYSize <= 0 )
     {

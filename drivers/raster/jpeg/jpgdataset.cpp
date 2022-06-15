@@ -30,8 +30,6 @@
  * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
-#undef ENABLE_LIBJPEG_NO_RETURN
-
 #include "cpl_port.h"
 #include "jpgdataset.h"
 
@@ -39,6 +37,7 @@
 #include <climits>
 #include <cstddef>
 #include <cstdio>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #if HAVE_FCNTL_H
@@ -53,6 +52,7 @@
 #include "cpl_error.h"
 #include "cpl_progress.h"
 #include "cpl_string.h"
+#include "cpl_time.h"
 #include "cpl_vsi.h"
 #include "gdal.h"
 #include "gdal_frmts.h"
@@ -67,6 +67,7 @@ CPL_C_START
 #endif
 CPL_C_END
 #include "memdataset.h"
+#include "rawdataset.h"
 #include "vsidataio.h"
 
 CPL_CVSID("$Id$")
@@ -97,6 +98,23 @@ constexpr int JPEG_EXIF_JPEGIFBYTECOUNT = 0x202;
 #  define JPEG_LIB_MK1_OR_12BIT 1
 #endif
 
+/************************************************************************/
+/*                     SetMaxMemoryToUse()                              */
+/************************************************************************/
+
+static void SetMaxMemoryToUse(struct jpeg_decompress_struct* psDInfo)
+{
+    // This is to address bug related in ticket #1795.
+    if( CPLGetConfigOption("JPEGMEM", nullptr) == nullptr )
+    {
+        // If the user doesn't provide a value for JPEGMEM, we want to be sure
+        // that at least 500 MB will be used before creating the temporary file.
+        const long nMinMemory = 500 * 1024 * 1024;
+        psDInfo->mem->max_memory_to_use =
+            std::max(psDInfo->mem->max_memory_to_use, nMinMemory);
+    }
+}
+
 
 #if !defined(JPGDataset)
 
@@ -111,30 +129,30 @@ void JPGDatasetCommon::ReadEXIFMetadata()
     CPLAssert(papszMetadata == nullptr);
 
     // Save current position to avoid disturbing JPEG stream decoding.
-    const vsi_l_offset nCurOffset = VSIFTellL(fpImage);
+    const vsi_l_offset nCurOffset = VSIFTellL(m_fpImage);
 
-    if(EXIFInit(fpImage))
+    if(EXIFInit(m_fpImage))
     {
         EXIFExtractMetadata(papszMetadata,
-                            fpImage, nTiffDirStart,
+                            m_fpImage, nTiffDirStart,
                             bSwabflag, nTIFFHEADER,
                             nExifOffset, nInterOffset, nGPSOffset);
 
         if(nExifOffset  > 0){
             EXIFExtractMetadata(papszMetadata,
-                                fpImage, nExifOffset,
+                                m_fpImage, nExifOffset,
                                 bSwabflag, nTIFFHEADER,
                                 nExifOffset, nInterOffset, nGPSOffset);
         }
         if(nInterOffset > 0) {
             EXIFExtractMetadata(papszMetadata,
-                                fpImage, nInterOffset,
+                                m_fpImage, nInterOffset,
                                 bSwabflag, nTIFFHEADER,
                                 nExifOffset, nInterOffset, nGPSOffset);
         }
         if(nGPSOffset > 0) {
             EXIFExtractMetadata(papszMetadata,
-                                fpImage, nGPSOffset,
+                                m_fpImage, nGPSOffset,
                                 bSwabflag, nTIFFHEADER,
                                 nExifOffset, nInterOffset, nGPSOffset);
         }
@@ -144,12 +162,27 @@ void JPGDatasetCommon::ReadEXIFMetadata()
 
         // Append metadata from PAM after EXIF metadata.
         papszMetadata = CSLMerge(papszMetadata, GDALPamDataset::GetMetadata());
+
+        // Expose XMP in EXIF in xml:XMP metadata domain
+        if( GDALDataset::GetMetadata("xml:XMP") == nullptr )
+        {
+            const char* pszXMP = CSLFetchNameValue(papszMetadata, "EXIF_XmlPacket");
+            if( pszXMP )
+            {
+                CPLDebug("JPEG", "Read XMP metadata from EXIF tag");
+                const char * const apszMDList[2] = { pszXMP, nullptr };
+                SetMetadata(const_cast<char**>(apszMDList), "xml:XMP");
+
+                papszMetadata = CSLSetNameValue(papszMetadata, "EXIF_XmlPacket", nullptr);
+            }
+        }
+
         SetMetadata(papszMetadata);
 
         nPamFlags = nOldPamFlags;
     }
 
-    VSIFSeekL(fpImage, nCurOffset, SEEK_SET);
+    VSIFSeekL(m_fpImage, nCurOffset, SEEK_SET);
 
     bHasReadEXIFMetadata = true;
 }
@@ -167,20 +200,23 @@ void JPGDatasetCommon::ReadXMPMetadata()
         return;
 
     // Save current position to avoid disturbing JPEG stream decoding.
-    const vsi_l_offset nCurOffset = VSIFTellL(fpImage);
+    const vsi_l_offset nCurOffset = VSIFTellL(m_fpImage);
 
     // Search for APP1 chunk.
-    // TODO(schwehr): What are these constants?
-    GByte abyChunkHeader[2 + 2 + 29] = {};
+    constexpr int APP1_BYTE = 0xe1;
+    constexpr int JFIF_MARKER_SIZE = 2 + 2; // ID + size
+    constexpr const char APP1_XMP_SIGNATURE[] = "http://ns.adobe.com/xap/1.0/";
+    constexpr int APP1_XMP_SIGNATURE_LEN = static_cast<int>(sizeof(APP1_XMP_SIGNATURE));
+    GByte abyChunkHeader[JFIF_MARKER_SIZE + APP1_XMP_SIGNATURE_LEN] = {};
     int nChunkLoc = 2;
     bool bFoundXMP = false;
 
     while(true)
     {
-        if( VSIFSeekL(fpImage, nChunkLoc, SEEK_SET) != 0 )
+        if( VSIFSeekL(m_fpImage, nChunkLoc, SEEK_SET) != 0 )
             break;
 
-        if( VSIFReadL(abyChunkHeader, sizeof(abyChunkHeader), 1, fpImage) != 1 )
+        if( VSIFReadL(abyChunkHeader, sizeof(abyChunkHeader), 1, m_fpImage) != 1 )
             break;
 
         nChunkLoc += 2 + abyChunkHeader[2] * 256 + abyChunkHeader[3];
@@ -192,9 +228,9 @@ void JPGDatasetCommon::ReadXMPMetadata()
             || (abyChunkHeader[1] & 0xf0) != 0xe0 )
             break;  // Not an APP chunk.
 
-        if( abyChunkHeader[1] == 0xe1 &&
-            STARTS_WITH(reinterpret_cast<char *>(abyChunkHeader) + 4,
-                        "http://ns.adobe.com/xap/1.0/") )
+        if( abyChunkHeader[1] == APP1_BYTE &&
+            memcmp(reinterpret_cast<char *>(abyChunkHeader) + JFIF_MARKER_SIZE,
+                   APP1_XMP_SIGNATURE, APP1_XMP_SIGNATURE_LEN) == 0 )
         {
             bFoundXMP = true;
             break;  // APP1 - XMP.
@@ -203,16 +239,16 @@ void JPGDatasetCommon::ReadXMPMetadata()
 
     if (bFoundXMP)
     {
-        const int nXMPLength = abyChunkHeader[2] * 256 + abyChunkHeader[3];
-        if (nXMPLength > 2 + 29)
+        const int nXMPLength = abyChunkHeader[2] * 256 + abyChunkHeader[3] - 2 - APP1_XMP_SIGNATURE_LEN;
+        if (nXMPLength > 0)
         {
             char *pszXMP =
-                static_cast<char *>(VSIMalloc(nXMPLength - 2 - 29 + 1));
+                static_cast<char *>(VSIMalloc(nXMPLength + 1));
             if (pszXMP)
             {
-                if (VSIFReadL(pszXMP, nXMPLength - 2 - 29, 1, fpImage) == 1)
+                if (VSIFReadL(pszXMP, nXMPLength, 1, m_fpImage) == 1)
                 {
-                    pszXMP[nXMPLength - 2 - 29] = '\0';
+                    pszXMP[nXMPLength] = '\0';
 
                     // Avoid setting the PAM dirty bit just for that.
                     const int nOldPamFlags = nPamFlags;
@@ -227,9 +263,504 @@ void JPGDatasetCommon::ReadXMPMetadata()
         }
     }
 
-    VSIFSeekL(fpImage, nCurOffset, SEEK_SET);
+    VSIFSeekL(m_fpImage, nCurOffset, SEEK_SET);
 
     bHasReadXMPMetadata = true;
+}
+
+/************************************************************************/
+/*                        ReadFLIRMetadata()                            */
+/************************************************************************/
+
+// See https://exiftool.org/TagNames/FLIR.html
+
+void JPGDatasetCommon::ReadFLIRMetadata()
+{
+    if (bHasReadFLIRMetadata)
+        return;
+    bHasReadFLIRMetadata = true;
+
+    // Save current position to avoid disturbing JPEG stream decoding.
+    const vsi_l_offset nCurOffset = VSIFTellL(m_fpImage);
+
+    int nChunkLoc = 2;
+    // size of APP1 segment marker + size of "FLIR\0"
+    GByte abyChunkHeader[4 + 5];
+    std::vector<GByte> abyFLIR;
+
+    while(true)
+    {
+        if( VSIFSeekL(m_fpImage, nChunkLoc, SEEK_SET) != 0 )
+            break;
+
+        if( VSIFReadL(abyChunkHeader, sizeof(abyChunkHeader), 1, m_fpImage) != 1 )
+            break;
+
+        int nMarkerLength = abyChunkHeader[2] * 256 + abyChunkHeader[3] - 2;
+        nChunkLoc += 4 + nMarkerLength;
+
+        if( abyChunkHeader[1] == 0xe1 &&
+            memcmp(abyChunkHeader + 4, "FLIR\0", 5) == 0 )
+        {
+            // Somewhat arbitrary limit
+            if( abyFLIR.size() > 10 * 1024 * 1024 )
+            {
+                CPLError(CE_Warning, CPLE_AppDefined,
+                         "Too large FLIR data compared to hardcoded limit");
+                abyFLIR.clear();
+                break;
+            }
+
+            // 8 = sizeof("FLIR\0") + '\1' + chunk_idx + chunk_count
+            if( nMarkerLength < 8 )
+            {
+                abyFLIR.clear();
+                break;
+            }
+            size_t nOldSize = abyFLIR.size();
+            abyFLIR.resize(nOldSize + nMarkerLength - 8);
+            GByte abyIgnored[3]; // skip '\1' + chunk_idx + chunk_count
+            if( VSIFReadL(abyIgnored, 3, 1, m_fpImage) != 1 ||
+                VSIFReadL(&abyFLIR[nOldSize], nMarkerLength - 8, 1, m_fpImage) != 1 )
+            {
+                abyFLIR.clear();
+                break;
+            }
+        }
+    }
+    // Restore file pointer
+    VSIFSeekL(m_fpImage, nCurOffset, SEEK_SET);
+
+    constexpr size_t FLIR_HEADER_SIZE = 64;
+    if(abyFLIR.size() < FLIR_HEADER_SIZE )
+        return;
+    if( memcmp(&abyFLIR[0], "FFF\0", 4) != 0 )
+        return;
+
+    const auto ReadString = [&abyFLIR](size_t nOffset, size_t nLen)
+    {
+        std::string osStr( reinterpret_cast<const char*>(abyFLIR.data()) + nOffset, nLen );
+        osStr.resize( strlen(osStr.c_str() ) );
+        return osStr;
+    };
+
+    bool bLittleEndian = false;
+
+    const auto ReadUInt16 = [&abyFLIR, &bLittleEndian](size_t nOffset)
+    {
+        std::uint16_t nVal;
+        memcpy(&nVal, &abyFLIR[nOffset], sizeof(nVal));
+        if( bLittleEndian )
+            CPL_LSBPTR16(&nVal);
+        else
+            CPL_MSBPTR16(&nVal);
+        return nVal;
+    };
+
+    const auto ReadInt16 = [&abyFLIR, &bLittleEndian](size_t nOffset)
+    {
+        std::int16_t nVal;
+        memcpy(&nVal, &abyFLIR[nOffset], sizeof(nVal));
+        if( bLittleEndian )
+            CPL_LSBPTR16(&nVal);
+        else
+            CPL_MSBPTR16(&nVal);
+        return nVal;
+    };
+
+    const auto ReadUInt32 = [&abyFLIR, &bLittleEndian](size_t nOffset)
+    {
+        std::uint32_t nVal;
+        memcpy(&nVal, &abyFLIR[nOffset], sizeof(nVal));
+        if( bLittleEndian )
+            CPL_LSBPTR32(&nVal);
+        else
+            CPL_MSBPTR32(&nVal);
+        return nVal;
+    };
+
+    const auto ReadInt32 = [&abyFLIR, &bLittleEndian](size_t nOffset)
+    {
+        std::int32_t nVal;
+        memcpy(&nVal, &abyFLIR[nOffset], sizeof(nVal));
+        if( bLittleEndian )
+            CPL_LSBPTR32(&nVal);
+        else
+            CPL_MSBPTR32(&nVal);
+        return nVal;
+    };
+
+    const auto ReadFloat32 = [&abyFLIR, &bLittleEndian](size_t nOffset)
+    {
+        float fVal;
+        memcpy(&fVal, &abyFLIR[nOffset], sizeof(fVal));
+        if( bLittleEndian )
+            CPL_LSBPTR32(&fVal);
+        else
+            CPL_MSBPTR32(&fVal);
+        return fVal;
+    };
+
+    const auto ReadFloat64 = [&abyFLIR, &bLittleEndian](size_t nOffset)
+    {
+        double fVal;
+        memcpy(&fVal, &abyFLIR[nOffset], sizeof(fVal));
+        if( bLittleEndian )
+            CPL_LSBPTR64(&fVal);
+        else
+            CPL_MSBPTR64(&fVal);
+        return fVal;
+    };
+
+    // Avoid setting the PAM dirty bit just for that.
+    struct PamFlagKeeper
+    {
+        int& m_nPamFlagsRef;
+        int m_nOldPamFlags;
+        explicit PamFlagKeeper(int& nPamFlagsRef): m_nPamFlagsRef(nPamFlagsRef), m_nOldPamFlags(nPamFlagsRef) {}
+        ~PamFlagKeeper() { m_nPamFlagsRef = m_nOldPamFlags; }
+    };
+    PamFlagKeeper oKeeper(nPamFlags);
+
+    const auto SetStringIfNotEmpty = [&](const char* pszItemName, int nOffset, int nLength)
+    {
+        const auto str = ReadString(nOffset, nLength);
+        if( !str.empty() )
+            SetMetadataItem(pszItemName, str.c_str(), "FLIR");
+    };
+    SetStringIfNotEmpty("CreatorSoftware", 4, 16);
+
+    // Check file format version (big endian most of the time)
+    const auto nFileFormatVersion = ReadUInt32(20);
+    if( !(nFileFormatVersion >= 100 && nFileFormatVersion < 200) )
+    {
+        bLittleEndian = true; // retry with little-endian
+        const auto nFileFormatVersionOtherEndianness = ReadUInt32(20);
+        if( !(nFileFormatVersionOtherEndianness >= 100 && nFileFormatVersionOtherEndianness < 200) )
+        {
+            CPLDebug("JPEG", "FLIR: Unknown file format version: %u", nFileFormatVersion);
+            return;
+        }
+    }
+
+    const auto nOffsetRecordDirectory = ReadUInt32(24);
+    const auto nEntryCountRecordDirectory = ReadUInt32(28);
+
+    CPLDebugOnly("JPEG", "FLIR: record offset %u, entry count %u",
+                 nOffsetRecordDirectory, nEntryCountRecordDirectory);
+    constexpr size_t SIZE_RECORD_DIRECTORY = 32;
+    if( nOffsetRecordDirectory < FLIR_HEADER_SIZE ||
+        nOffsetRecordDirectory +
+            SIZE_RECORD_DIRECTORY * nEntryCountRecordDirectory > abyFLIR.size() )
+    {
+        CPLDebug("JPEG", "Invalid FLIR FFF directory");
+        return;
+    }
+
+    // Read the RawData record
+    const auto ReadRawData = [&](std::uint32_t nRecOffset, std::uint32_t nRecLength)
+    {
+        if( !(nRecLength >= 32 &&
+              nRecOffset + nRecLength <= abyFLIR.size()) )
+            return;
+
+        const int nByteOrder = ReadUInt16(nRecOffset);
+        if( nByteOrder == 512 )
+            bLittleEndian = !bLittleEndian;
+        else if( nByteOrder != 2 )
+            return;
+        const auto nImageWidth = ReadUInt16(nRecOffset + 2);
+        SetMetadataItem("RawThermalImageWidth",
+                        CPLSPrintf("%d", nImageWidth), "FLIR");
+        const auto nImageHeight = ReadUInt16(nRecOffset + 4);
+        SetMetadataItem("RawThermalImageHeight",
+                        CPLSPrintf("%d", nImageHeight), "FLIR");
+        m_bRawThermalLittleEndian = bLittleEndian;
+        m_nRawThermalImageWidth = nImageWidth;
+        m_nRawThermalImageHeight = nImageHeight;
+        m_abyRawThermalImage.clear();
+        m_abyRawThermalImage.insert(m_abyRawThermalImage.end(),
+                                    abyFLIR.begin() + nRecOffset + 32,
+                                    abyFLIR.begin() + nRecOffset + nRecLength);
+
+        if( !STARTS_WITH(GetDescription(), "JPEG:") )
+        {
+            m_nSubdatasetCount ++;
+            SetMetadataItem(CPLSPrintf("SUBDATASET_%d_NAME", m_nSubdatasetCount),
+                            CPLSPrintf("JPEG:\"%s\":FLIR_RAW_THERMAL_IMAGE", GetDescription()),
+                            "SUBDATASETS");
+            SetMetadataItem(CPLSPrintf("SUBDATASET_%d_DESC", m_nSubdatasetCount),
+                            "FLIR raw thermal image",
+                            "SUBDATASETS");
+        }
+    };
+
+    // Read the Camera Info record
+    const auto ReadCameraInfo = [&](std::uint32_t nRecOffset, std::uint32_t nRecLength)
+    {
+        if( !(nRecLength >= 1126 &&
+              nRecOffset + nRecLength <= abyFLIR.size()) )
+            return;
+
+        const int nByteOrder = ReadUInt16(nRecOffset);
+        if( nByteOrder == 512 )
+            bLittleEndian = !bLittleEndian;
+        else if( nByteOrder != 2 )
+            return;
+
+        const auto ReadFloat32FromKelvin = [=](std::uint32_t nOffset)
+        {
+            constexpr float ZERO_CELCIUS_IN_KELVIN = 273.15f;
+            return ReadFloat32(nOffset) - ZERO_CELCIUS_IN_KELVIN;
+        };
+        SetMetadataItem("Emissivity",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 32)), "FLIR");
+        SetMetadataItem("ObjectDistance",
+                        CPLSPrintf("%f m", ReadFloat32(nRecOffset + 36)), "FLIR");
+        SetMetadataItem("ReflectedApparentTemperature",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 40)), "FLIR");
+        SetMetadataItem("AtmosphericTemperature",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 44)), "FLIR");
+        SetMetadataItem("IRWindowTemperature",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 48)), "FLIR");
+        SetMetadataItem("IRWindowTemperature",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 52)), "FLIR");
+        auto fRelativeHumidity = ReadFloat32(nRecOffset + 60);
+        if( fRelativeHumidity > 2 )
+            fRelativeHumidity /= 100.0f; // Sometimes expressed in percentage
+        SetMetadataItem("RelativeHumidity",
+                        CPLSPrintf("%f %%", 100.0f * fRelativeHumidity));
+        SetMetadataItem("PlanckR1",
+                        CPLSPrintf("%.8g", ReadFloat32(nRecOffset + 88)), "FLIR");
+        SetMetadataItem("PlanckB",
+                        CPLSPrintf("%.8g", ReadFloat32(nRecOffset + 92)), "FLIR");
+        SetMetadataItem("PlanckF",
+                        CPLSPrintf("%.8g", ReadFloat32(nRecOffset + 96)), "FLIR");
+        SetMetadataItem("AtmosphericTransAlpha1",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 112)), "FLIR");
+        SetMetadataItem("AtmosphericTransAlpha2",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 116)), "FLIR");
+        SetMetadataItem("AtmosphericTransBeta1",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 120)), "FLIR");
+        SetMetadataItem("AtmosphericTransBeta2",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 124)), "FLIR");
+        SetMetadataItem("AtmosphericTransX",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 128)), "FLIR");
+        SetMetadataItem("CameraTemperatureRangeMax",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 144)), "FLIR");
+        SetMetadataItem("CameraTemperatureRangeMin",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 148)), "FLIR");
+        SetMetadataItem("CameraTemperatureMaxClip",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 152)), "FLIR");
+        SetMetadataItem("CameraTemperatureMinClip",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 156)), "FLIR");
+        SetMetadataItem("CameraTemperatureMaxWarn",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 160)), "FLIR");
+        SetMetadataItem("CameraTemperatureMinWarn",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 164)), "FLIR");
+        SetMetadataItem("CameraTemperatureMaxSaturated",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 168)), "FLIR");
+        SetMetadataItem("CameraTemperatureMinSaturated",
+                        CPLSPrintf("%f C", ReadFloat32FromKelvin(nRecOffset + 172)), "FLIR");
+
+        SetStringIfNotEmpty("CameraModel", nRecOffset + 212, 32);
+        SetStringIfNotEmpty("CameraPartNumber", nRecOffset + 244, 16);
+        SetStringIfNotEmpty("CameraSerialNumber", nRecOffset + 260, 16);
+        SetStringIfNotEmpty("CameraSoftware", nRecOffset + 276, 16);
+        SetStringIfNotEmpty("LensModel", nRecOffset + 368, 32);
+        SetStringIfNotEmpty("LensPartNumber", nRecOffset + 400, 16);
+        SetStringIfNotEmpty("LensSerialNumber", nRecOffset + 416, 16);
+        SetMetadataItem("FieldOfView",
+                        CPLSPrintf("%f deg", ReadFloat32(nRecOffset + 436)), "FLIR");
+        SetStringIfNotEmpty("FilterModel", nRecOffset + 492, 16);
+        SetStringIfNotEmpty("FilterPartNumber", nRecOffset + 508, 32);
+        SetStringIfNotEmpty("FilterSerialNumber", nRecOffset + 540, 32);
+        SetMetadataItem("PlanckO",
+                        CPLSPrintf("%d", ReadInt32(nRecOffset + 776)), "FLIR");
+        SetMetadataItem("PlanckR2",
+                        CPLSPrintf("%.8g", ReadFloat32(nRecOffset + 780)), "FLIR");
+        SetMetadataItem("RawValueRangeMin",
+                        CPLSPrintf("%d", ReadUInt16(nRecOffset + 784)), "FLIR");
+        SetMetadataItem("RawValueRangeMax",
+                        CPLSPrintf("%d", ReadUInt16(nRecOffset + 786)), "FLIR");
+        SetMetadataItem("RawValueMedian",
+                        CPLSPrintf("%d", ReadUInt16(nRecOffset + 824)), "FLIR");
+        SetMetadataItem("RawValueRange",
+                        CPLSPrintf("%d", ReadUInt16(nRecOffset + 828)), "FLIR");
+        const auto nUnixTime = ReadUInt32(nRecOffset + 900);
+        const auto nSS = ReadUInt32(nRecOffset + 904) & 0xffff;
+        const auto nTZ = ReadInt16(nRecOffset + 908);
+        struct tm brokenDown;
+        CPLUnixTimeToYMDHMS(static_cast<GIntBig>(nUnixTime) - nTZ * 60, &brokenDown);
+        std::string osDateTime(CPLSPrintf("%04d-%02d-%02dT%02d:%02d:%02d.%03d",
+                               brokenDown.tm_year + 1900,
+                               brokenDown.tm_mon + 1,
+                               brokenDown.tm_mday,
+                               brokenDown.tm_hour,
+                               brokenDown.tm_min,
+                               brokenDown.tm_sec,
+                               nSS));
+        if( nTZ <= 0 )
+            osDateTime += CPLSPrintf("+%02d:%02d", (-nTZ) / 60, (-nTZ) % 60);
+        else
+            osDateTime += CPLSPrintf("-%02d:%02d", nTZ / 60, nTZ % 60);
+        SetMetadataItem("DateTimeOriginal", osDateTime.c_str(), "FLIR");
+        SetMetadataItem("FocusStepCount",
+                        CPLSPrintf("%d", ReadUInt16(nRecOffset + 912)), "FLIR");
+        SetMetadataItem("FocusDistance",
+                        CPLSPrintf("%f m", ReadFloat32(nRecOffset + 1116)), "FLIR");
+        SetMetadataItem("FrameRate",
+                        CPLSPrintf("%d", ReadUInt16(nRecOffset + 1124)), "FLIR");
+    };
+
+    // Read the Palette Info record
+    const auto ReadPaletteInfo = [&](std::uint32_t nRecOffset, std::uint32_t nRecLength)
+    {
+        if( !(nRecLength >= 112 &&
+              nRecOffset + nRecLength <= abyFLIR.size()) )
+            return;
+        const int nPaletteColors = abyFLIR[nRecOffset];
+        SetMetadataItem("PaletteColors",
+                        CPLSPrintf("%d", nPaletteColors), "FLIR");
+
+        const auto SetColorItem = [this, &abyFLIR](const char* pszItem, std::uint32_t nOffset)
+        {
+            SetMetadataItem(pszItem,
+                            CPLSPrintf("%d %d %d",
+                                   abyFLIR[nOffset],
+                                   abyFLIR[nOffset+1],
+                                   abyFLIR[nOffset+2]), "FLIR");
+        };
+        SetColorItem("AboveColor", nRecOffset + 6);
+        SetColorItem("BelowColor", nRecOffset + 9);
+        SetColorItem("OverflowColor", nRecOffset + 12);
+        SetColorItem("UnderflowColor", nRecOffset + 15);
+        SetColorItem("Isotherm1Color", nRecOffset + 18);
+        SetColorItem("Isotherm2Color", nRecOffset + 21);
+        SetMetadataItem("PaletteMethod", CPLSPrintf("%d", abyFLIR[nRecOffset + 26]), "FLIR");
+        SetMetadataItem("PaletteStretch", CPLSPrintf("%d", abyFLIR[nRecOffset + 27]), "FLIR");
+        SetStringIfNotEmpty("PaletteFileName", nRecOffset + 48, 32);
+        SetStringIfNotEmpty("PaletteName", nRecOffset + 80, 32);
+        if( nRecLength < static_cast<std::uint32_t>(112 + nPaletteColors * 3) )
+            return;
+        std::string osPalette;
+        for( int i = 0; i < nPaletteColors; i++ )
+        {
+            if( !osPalette.empty() )
+                osPalette += ", ";
+            osPalette += CPLSPrintf("(%d %d %d)",
+                                    abyFLIR[nRecOffset + 112 + 3 * i + 0],
+                                    abyFLIR[nRecOffset + 112 + 3 * i + 1],
+                                    abyFLIR[nRecOffset + 112 + 3 * i + 2]);
+        }
+        SetMetadataItem("Palette", osPalette.c_str(), "FLIR");
+    };
+
+    // Read the GPS Info record
+    const auto ReadGPSInfo = [&](std::uint32_t nRecOffset, std::uint32_t nRecLength)
+    {
+        if( !(nRecLength >= 104 &&
+              nRecOffset + nRecLength <= abyFLIR.size()) )
+            return;
+        auto nGPSValid = ReadUInt32(nRecOffset);
+        if( nGPSValid == 0x01000000 )
+        {
+            bLittleEndian = !bLittleEndian;
+            nGPSValid = 1;
+        }
+        if( nGPSValid != 1 )
+            return;
+        SetMetadataItem("GPSVersionID",
+                        CPLSPrintf("%c%c%c%c",
+                                   abyFLIR[nRecOffset + 4],
+                                   abyFLIR[nRecOffset + 5],
+                                   abyFLIR[nRecOffset + 6],
+                                   abyFLIR[nRecOffset + 7]),
+                        "FLIR");
+        SetStringIfNotEmpty("GPSLatitudeRef", nRecOffset + 8, 1);
+        SetStringIfNotEmpty("GPSLongitudeRef", nRecOffset + 10, 1);
+        SetMetadataItem("GPSLatitude",
+                        CPLSPrintf("%.10f", ReadFloat64(nRecOffset + 16)), "FLIR");
+        SetMetadataItem("GPSLongitude",
+                        CPLSPrintf("%.10f", ReadFloat64(nRecOffset + 24)), "FLIR");
+        SetMetadataItem("GPSAltitude",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 32)), "FLIR");
+        SetMetadataItem("GPSDOP",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 64)), "FLIR");
+        SetStringIfNotEmpty("GPSSpeedRef", nRecOffset + 68, 1);
+        SetStringIfNotEmpty("GPSTrackRef", nRecOffset + 70, 1);
+        SetMetadataItem("GPSSpeed",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 76)), "FLIR");
+        SetMetadataItem("GPSTrack",
+                        CPLSPrintf("%f", ReadFloat32(nRecOffset + 80)), "FLIR");
+        SetStringIfNotEmpty("GPSMapDatum", nRecOffset + 88, 16);
+    };
+
+    size_t nOffsetDirEntry = nOffsetRecordDirectory;
+    enum FLIRRecordType
+    {
+        FLIR_REC_FREE = 0,
+        FLIR_REC_RAWDATA = 1,
+        FLIR_REC_CAMERA_INFO = 32,
+        FLIR_REC_PALETTE_INFO = 34,
+        FLIR_REC_GPS_INFO = 43,
+    };
+    // Iterate over records
+    for( std::uint32_t iRec = 0; iRec < nEntryCountRecordDirectory; iRec++ )
+    {
+        const auto nRecType = ReadUInt16(nOffsetDirEntry);
+        const auto nRecOffset = ReadUInt32(nOffsetDirEntry + 12);
+        const auto nRecLength = ReadUInt32(nOffsetDirEntry + 16);
+        if( nRecType == FLIR_REC_FREE && nRecLength == 0 )
+            continue; // silently keep empty records of type 0
+        CPLDebugOnly("JPEG", "FLIR: record %u, type %u, offset %u, length %u",
+                     iRec, nRecType, nRecOffset, nRecLength);
+        if( nRecOffset + nRecLength > abyFLIR.size() )
+        {
+            CPLDebug("JPEG", "Invalid record %u, type %u, offset %u, length %u "
+                     "w.r.t total FLIR segment size (%u)",
+                     iRec, nRecType, nRecOffset, nRecLength,
+                     static_cast<unsigned>(abyFLIR.size()));
+            continue;
+        }
+        switch( nRecType )
+        {
+            case FLIR_REC_RAWDATA:
+            {
+                const auto bLittleEndianBackup = bLittleEndian;
+                ReadRawData(nRecOffset, nRecLength);
+                bLittleEndian = bLittleEndianBackup;
+                break;
+            }
+            case FLIR_REC_CAMERA_INFO:
+            {
+                const auto bLittleEndianBackup = bLittleEndian;
+                ReadCameraInfo(nRecOffset, nRecLength);
+                bLittleEndian = bLittleEndianBackup;
+                break;
+            }
+            case FLIR_REC_PALETTE_INFO:
+            {
+                ReadPaletteInfo(nRecOffset, nRecLength);
+                break;
+            }
+            case FLIR_REC_GPS_INFO:
+            {
+                const auto bLittleEndianBackup = bLittleEndian;
+                ReadGPSInfo(nRecOffset, nRecLength);
+                bLittleEndian = bLittleEndianBackup;
+                break;
+            }
+            default:
+            {
+                CPLDebugOnly("JPEG", "FLIR record ignored");
+                break;
+            }
+        }
+        nOffsetDirEntry += SIZE_RECORD_DIRECTORY;
+    }
+
+    CPLDebug("JPEG", "FLIR metadata read");
 }
 
 /************************************************************************/
@@ -238,9 +769,44 @@ void JPGDatasetCommon::ReadXMPMetadata()
 
 char **JPGDatasetCommon::GetMetadataDomainList()
 {
+    ReadFLIRMetadata();
     return BuildMetadataDomainList(GDALPamDataset::GetMetadataDomainList(),
                                    TRUE,
-                                   "xml:XMP", "COLOR_PROFILE", nullptr);
+                                   "xml:XMP", "COLOR_PROFILE", "FLIR", nullptr);
+}
+
+/************************************************************************/
+/*                        LoadForMetadataDomain()                       */
+/************************************************************************/
+void JPGDatasetCommon::LoadForMetadataDomain( const char *pszDomain )
+{
+    if (m_fpImage == nullptr)
+        return;
+    if (eAccess == GA_ReadOnly && !bHasReadEXIFMetadata &&
+        (pszDomain == nullptr || EQUAL(pszDomain, "")))
+        ReadEXIFMetadata();
+    if (eAccess == GA_ReadOnly &&
+        pszDomain != nullptr && EQUAL(pszDomain, "xml:XMP"))
+    {
+        if( !bHasReadXMPMetadata )
+        {
+            ReadXMPMetadata();
+        }
+        if( !bHasReadEXIFMetadata &&
+            GDALPamDataset::GetMetadata("xml:XMP") == nullptr )
+        {
+            // XMP can sometimes be embedded in a EXIF TIFF tag
+            ReadEXIFMetadata();
+        }
+    }
+    if (eAccess == GA_ReadOnly && !bHasReadICCMetadata &&
+        pszDomain != nullptr && EQUAL(pszDomain, "COLOR_PROFILE"))
+        ReadICCProfile();
+    if (eAccess == GA_ReadOnly && !bHasReadFLIRMetadata &&
+        pszDomain != nullptr && EQUAL(pszDomain, "FLIR"))
+        ReadFLIRMetadata();
+    if( pszDomain != nullptr && EQUAL(pszDomain, "SUBDATASETS") )
+        ReadFLIRMetadata();
 }
 
 /************************************************************************/
@@ -248,17 +814,7 @@ char **JPGDatasetCommon::GetMetadataDomainList()
 /************************************************************************/
 char **JPGDatasetCommon::GetMetadata( const char *pszDomain )
 {
-    if (fpImage == nullptr)
-        return nullptr;
-    if (eAccess == GA_ReadOnly && !bHasReadEXIFMetadata &&
-        (pszDomain == nullptr || EQUAL(pszDomain, "")))
-        ReadEXIFMetadata();
-    if (eAccess == GA_ReadOnly && !bHasReadXMPMetadata &&
-        pszDomain != nullptr && EQUAL(pszDomain, "xml:XMP"))
-        ReadXMPMetadata();
-    if (eAccess == GA_ReadOnly && !bHasReadICCMetadata &&
-        pszDomain != nullptr && EQUAL(pszDomain, "COLOR_PROFILE"))
-        ReadICCProfile();
+    LoadForMetadataDomain(pszDomain);
     return GDALPamDataset::GetMetadata(pszDomain);
 }
 
@@ -268,16 +824,7 @@ char **JPGDatasetCommon::GetMetadata( const char *pszDomain )
 const char *JPGDatasetCommon::GetMetadataItem( const char *pszName,
                                                const char *pszDomain )
 {
-    if (fpImage == nullptr)
-        return nullptr;
-    if (eAccess == GA_ReadOnly && !bHasReadEXIFMetadata &&
-        (pszDomain == nullptr || EQUAL(pszDomain, "")) &&
-        pszName != nullptr &&
-        (EQUAL(pszName, "COMMENT") || STARTS_WITH_CI(pszName, "EXIF_")))
-        ReadEXIFMetadata();
-    if (eAccess == GA_ReadOnly && !bHasReadICCMetadata &&
-        pszDomain != nullptr && EQUAL(pszDomain, "COLOR_PROFILE"))
-        ReadICCProfile();
+    LoadForMetadataDomain(pszDomain);
     return GDALPamDataset::GetMetadataItem(pszName, pszDomain);
 }
 
@@ -292,7 +839,7 @@ void JPGDatasetCommon::ReadICCProfile()
         return;
     bHasReadICCMetadata = true;
 
-    const vsi_l_offset nCurOffset = VSIFTellL(fpImage);
+    const vsi_l_offset nCurOffset = VSIFTellL(m_fpImage);
 
     int nChunkCount = -1;
     int anChunkSize[256] = {};
@@ -305,10 +852,10 @@ void JPGDatasetCommon::ReadICCProfile()
 
     while(true)
     {
-        if( VSIFSeekL(fpImage, nChunkLoc, SEEK_SET) != 0 )
+        if( VSIFSeekL(m_fpImage, nChunkLoc, SEEK_SET) != 0 )
             break;
 
-        if( VSIFReadL(abyChunkHeader, sizeof(abyChunkHeader), 1, fpImage) != 1 )
+        if( VSIFReadL(abyChunkHeader, sizeof(abyChunkHeader), 1, m_fpImage) != 1 )
             break;
 
         if( abyChunkHeader[0] != 0xFF )
@@ -384,7 +931,7 @@ void JPGDatasetCommon::ReadICCProfile()
             anChunkSize[nICCChunkID - 1] = nICCChunkLength;
 
             if( VSIFReadL(apChunk[nICCChunkID - 1], nICCChunkLength, 1,
-                         fpImage) != 1 )
+                         m_fpImage) != 1 )
             {
                 bOk = false;
                 break;
@@ -469,7 +1016,7 @@ void JPGDatasetCommon::ReadICCProfile()
             VSIFree(apChunk[i]);
     }
 
-    VSIFSeekL(fpImage, nCurOffset, SEEK_SET);
+    VSIFSeekL(m_fpImage, nCurOffset, SEEK_SET);
 }
 
 /************************************************************************/
@@ -485,9 +1032,11 @@ bool JPGDatasetCommon::EXIFInit(VSILFILE *fp)
         return true;
     nTiffDirStart = 0;
 
-    // TODO(schwehr): Do a compile time endian check.
-    int one = 1;
-    bigendian = *reinterpret_cast<char *>(&one) == 0;
+#ifdef CPL_MSB
+    constexpr bool bigendian = true;
+#else
+    constexpr bool bigendian = false;
+#endif
 
     // Search for APP1 chunk.
     GByte abyChunkHeader[10] = {};
@@ -690,7 +1239,7 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 
     const int nXSize = GetXSize();
     const int nWordSize = GDALGetDataTypeSizeBytes(eDataType);
-    if (poGDS->fpImage == nullptr)
+    if (poGDS->m_fpImage == nullptr)
     {
         memset(pImage, 0, nXSize * nWordSize);
         return CE_None;
@@ -705,17 +1254,17 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
     if( poGDS->GetRasterCount() == 1 )
     {
 #ifdef JPEG_LIB_MK1
-        GDALCopyWords(poGDS->pabyScanline, GDT_UInt16, 2,
+        GDALCopyWords(poGDS->m_pabyScanline, GDT_UInt16, 2,
                       pImage, eDataType, nWordSize,
                       nXSize);
 #else
-        memcpy(pImage, poGDS->pabyScanline, nXSize * nWordSize);
+        memcpy(pImage, poGDS->m_pabyScanline, nXSize * nWordSize);
 #endif
     }
     else
     {
 #ifdef JPEG_LIB_MK1
-        GDALCopyWords(poGDS->pabyScanline + (nBand - 1) * 2,
+        GDALCopyWords(poGDS->m_pabyScanline + (nBand - 1) * 2,
                       GDT_UInt16, 6,
                       pImage, eDataType, nWordSize,
                       nXSize);
@@ -729,8 +1278,8 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             {
                 for( int i=0; i < nXSize; i++ )
                 {
-                    const int C = poGDS->pabyScanline[i * 4 + 0];
-                    const int K = poGDS->pabyScanline[i * 4 + 3];
+                    const int C = poGDS->m_pabyScanline[i * 4 + 0];
+                    const int K = poGDS->m_pabyScanline[i * 4 + 3];
                     pbyImage[i] = static_cast<GByte>((C * K) / 255);
                 }
             }
@@ -738,8 +1287,8 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             {
                 for( int i = 0; i < nXSize; i++ )
                 {
-                    const int M = poGDS->pabyScanline[i * 4 + 1];
-                    const int K = poGDS->pabyScanline[i * 4 + 3];
+                    const int M = poGDS->m_pabyScanline[i * 4 + 1];
+                    const int K = poGDS->m_pabyScanline[i * 4 + 3];
                     pbyImage[i] = static_cast<GByte>((M * K) / 255);
                 }
             }
@@ -747,15 +1296,15 @@ CPLErr JPGRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
             {
                 for( int i = 0; i < nXSize; i++ )
                 {
-                    const int Y = poGDS->pabyScanline[i * 4 + 2];
-                    const int K = poGDS->pabyScanline[i * 4 + 3];
+                    const int Y = poGDS->m_pabyScanline[i * 4 + 2];
+                    const int K = poGDS->m_pabyScanline[i * 4 + 3];
                     pbyImage[i] = static_cast<GByte>((Y * K) / 255);
                 }
             }
         }
         else
         {
-            GDALCopyWords(poGDS->pabyScanline + (nBand - 1) * nWordSize,
+            GDALCopyWords(poGDS->m_pabyScanline + (nBand - 1) * nWordSize,
                           eDataType, nWordSize * poGDS->GetRasterCount(),
                           pImage, eDataType, nWordSize, nXSize);
         }
@@ -835,7 +1384,7 @@ GDALRasterBand *JPGRasterBand::GetMaskBand()
     if (poGDS->nScaleFactor > 1 )
         return GDALPamRasterBand::GetMaskBand();
 
-    if (poGDS->fpImage == nullptr)
+    if (poGDS->m_fpImage == nullptr)
         return nullptr;
 
     if( !poGDS->bHasCheckedForMask)
@@ -866,7 +1415,7 @@ int JPGRasterBand::GetMaskFlags()
     if (poGDS->nScaleFactor > 1 )
         return GDALPamRasterBand::GetMaskFlags();
 
-    if (poGDS->fpImage == nullptr)
+    if (poGDS->m_fpImage == nullptr)
         return 0;
 
     GetMaskBand();
@@ -882,13 +1431,11 @@ int JPGRasterBand::GetMaskFlags()
 
 GDALRasterBand *JPGRasterBand::GetOverview(int i)
 {
-    poGDS->InitInternalOverviews();
+    if( i < 0 || i >= GetOverviewCount() )
+        return nullptr;
 
     if( poGDS->nInternalOverviewsCurrent == 0 )
         return GDALPamRasterBand::GetOverview(i);
-
-    if( i < 0 || i >= poGDS->nInternalOverviewsCurrent )
-        return nullptr;
 
     return poGDS->papoInternalOverviews[i]->GetRasterBand(nBand);
 }
@@ -899,6 +1446,9 @@ GDALRasterBand *JPGRasterBand::GetOverview(int i)
 
 int JPGRasterBand::GetOverviewCount()
 {
+    if( !poGDS->AreOverviewsEnabled() )
+        return 0;
+
     poGDS->InitInternalOverviews();
 
     if( poGDS->nInternalOverviewsCurrent == 0 )
@@ -923,16 +1473,14 @@ JPGDatasetCommon::JPGDatasetCommon() :
     bGeoTransformValid(false),
     nGCPCount(0),
     pasGCPList(nullptr),
-    fpImage(nullptr),
+    m_fpImage(nullptr),
     nSubfileOffset(0),
     nLoadedScanline(-1),
-    pabyScanline(nullptr),
+    m_pabyScanline(nullptr),
     bHasReadEXIFMetadata(false),
     bHasReadXMPMetadata(false),
     bHasReadICCMetadata(false),
     papszMetadata(nullptr),
-    papszSubDatasets(nullptr),
-    bigendian(true),
     nExifOffset(-1),
     nInterOffset(-1),
     nGPSOffset(-1),
@@ -966,11 +1514,11 @@ JPGDatasetCommon::JPGDatasetCommon() :
 JPGDatasetCommon::~JPGDatasetCommon()
 
 {
-    if( fpImage != nullptr )
-        VSIFCloseL(fpImage);
+    if( m_fpImage != nullptr )
+        VSIFCloseL(m_fpImage);
 
-    if( pabyScanline != nullptr )
-        CPLFree(pabyScanline);
+    if( m_pabyScanline != nullptr )
+        CPLFree(m_pabyScanline);
     if( papszMetadata != nullptr )
         CSLDestroy(papszMetadata);
 
@@ -1016,15 +1564,15 @@ int JPGDatasetCommon::CloseDependentDatasets()
 
 GDALDataset* JPGDatasetCommon::InitEXIFOverview()
 {
-    if( !EXIFInit(fpImage) )
+    if( !EXIFInit(m_fpImage) )
         return nullptr;
 
     // Read number of entry in directory.
     GUInt16 nEntryCount = 0;
     if( nTiffDirStart > (INT_MAX - nTIFFHEADER) ||
-        VSIFSeekL(fpImage, nTiffDirStart+nTIFFHEADER, SEEK_SET) != 0 ||
+        VSIFSeekL(m_fpImage, nTiffDirStart+nTIFFHEADER, SEEK_SET) != 0 ||
         VSIFReadL(&nEntryCount, 1,
-                  sizeof(GUInt16), fpImage) != sizeof(GUInt16) )
+                  sizeof(GUInt16), m_fpImage) != sizeof(GUInt16) )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Error reading EXIF Directory count at " CPL_FRMT_GUIB,
@@ -1045,11 +1593,11 @@ GDALDataset* JPGDatasetCommon::InitEXIFOverview()
     }
 
     // Skip EXIF entries.
-    VSIFSeekL(fpImage, nEntryCount * sizeof(GDALEXIFTIFFDirEntry), SEEK_CUR);
+    VSIFSeekL(m_fpImage, nEntryCount * sizeof(GDALEXIFTIFFDirEntry), SEEK_CUR);
 
     // Read offset of next directory (IFD1).
     GUInt32 nNextDirOff = 0;
-    if( VSIFReadL(&nNextDirOff, 1, sizeof(GUInt32), fpImage) !=
+    if( VSIFReadL(&nNextDirOff, 1, sizeof(GUInt32), m_fpImage) !=
         sizeof(GUInt32) )
         return nullptr;
     if( bSwabflag )
@@ -1058,8 +1606,8 @@ GDALDataset* JPGDatasetCommon::InitEXIFOverview()
         return nullptr;
 
     // Seek to IFD1.
-    if( VSIFSeekL(fpImage, nTIFFHEADER + nNextDirOff, SEEK_SET) != 0 ||
-        VSIFReadL(&nEntryCount, 1, sizeof(GUInt16), fpImage) != sizeof(GUInt16) )
+    if( VSIFSeekL(m_fpImage, nTIFFHEADER + nNextDirOff, SEEK_SET) != 0 ||
+        VSIFReadL(&nEntryCount, 1, sizeof(GUInt16), m_fpImage) != sizeof(GUInt16) )
     {
         CPLError(CE_Failure, CPLE_AppDefined,
                  "Error reading IFD1 Directory count at %d.",
@@ -1088,7 +1636,7 @@ GDALDataset* JPGDatasetCommon::InitEXIFOverview()
     for( int i = 0; i < nEntryCount; i ++ )
     {
         GDALEXIFTIFFDirEntry sEntry;
-        if( VSIFReadL(&sEntry, 1, sizeof(sEntry), fpImage) != sizeof(sEntry) )
+        if( VSIFReadL(&sEntry, 1, sizeof(sEntry), m_fpImage) != sizeof(sEntry) )
         {
             CPLError(CE_Warning, CPLE_AppDefined,
                      "Cannot read entry %d of IFD1", i);
@@ -1175,7 +1723,7 @@ void JPGDatasetCommon::InitInternalOverviews()
         GDALDataset *poEXIFOverview = nullptr;
         if( nRasterXSize > 512 || nRasterYSize > 512 )
         {
-            const vsi_l_offset nCurOffset = VSIFTellL(fpImage);
+            const vsi_l_offset nCurOffset = VSIFTellL(m_fpImage);
             poEXIFOverview = InitEXIFOverview();
             if( poEXIFOverview != nullptr )
             {
@@ -1193,7 +1741,7 @@ void JPGDatasetCommon::InitInternalOverviews()
                              poEXIFOverview->GetRasterYSize());
                 }
             }
-            VSIFSeekL(fpImage, nCurOffset, SEEK_SET);
+            VSIFSeekL(m_fpImage, nCurOffset, SEEK_SET);
         }
 
         // libjpeg-6b only supports 2, 4 and 8 scale denominators.
@@ -1289,13 +1837,13 @@ CPLErr JPGDatasetCommon::IBuildOverviews( const char *pszResampling,
 }
 
 /************************************************************************/
-/*                           FlushCache()                               */
+/*                           FlushCache(bool bAtClosing)                               */
 /************************************************************************/
 
-void JPGDatasetCommon::FlushCache()
+void JPGDatasetCommon::FlushCache(bool bAtClosing)
 
 {
-    GDALPamDataset::FlushCache();
+    GDALPamDataset::FlushCache(bAtClosing);
 
     if (bHasDoneJpegStartDecompress)
     {
@@ -1304,7 +1852,7 @@ void JPGDatasetCommon::FlushCache()
 
     // For the needs of the implicit JPEG-in-TIFF overview mechanism.
     for(int i = 0; i < nInternalOverviewsCurrent; i++)
-        papoInternalOverviews[i]->FlushCache();
+        papoInternalOverviews[i]->FlushCache(bAtClosing);
 }
 
 #endif  // !defined(JPGDataset)
@@ -1329,7 +1877,7 @@ JPGDataset::JPGDataset() : nQLevel(0)
 JPGDataset::~JPGDataset()
 
 {
-    GDALPamDataset::FlushCache();
+    GDALPamDataset::FlushCache(true);
     JPGDataset::StopDecompress();
 }
 
@@ -1369,6 +1917,74 @@ bool JPGDataset::ErrorOutOnNonFatalError()
 }
 
 /************************************************************************/
+/*                          StartDecompress()                           */
+/************************************************************************/
+
+CPLErr JPGDataset::StartDecompress()
+{
+    /* In some cases, libjpeg needs to allocate a lot of memory */
+    /* http://www.libjpeg-turbo.org/pmwiki/uploads/About/TwoIssueswiththeJPEGStandard.pdf */
+    if( jpeg_has_multiple_scans(&(sDInfo)) )
+    {
+        /* In this case libjpeg will need to allocate memory or backing */
+        /* store for all coefficients */
+        /* See call to jinit_d_coef_controller() from master_selection() */
+        /* in libjpeg */
+
+        // 1 MB for regular libjpeg usage
+        vsi_l_offset nRequiredMemory = 1024 * 1024;
+
+        for (int ci = 0; ci < sDInfo.num_components; ci++) {
+            const jpeg_component_info *compptr = &(sDInfo.comp_info[ci]);
+            if( compptr->h_samp_factor <= 0 ||
+                compptr->v_samp_factor <= 0 )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined,
+                         "Invalid sampling factor(s)");
+                return CE_Failure;
+            }
+            nRequiredMemory += static_cast<vsi_l_offset>(
+                DIV_ROUND_UP(compptr->width_in_blocks, compptr->h_samp_factor)) *
+                DIV_ROUND_UP(compptr->height_in_blocks, compptr->v_samp_factor) *
+                sizeof(JBLOCK);
+        }
+
+        if( nRequiredMemory > 10 * 1024 * 1024 && ppoActiveDS && *ppoActiveDS != this )
+        {
+            // If another overview was active, stop it to limit memory consumption
+            if( *ppoActiveDS )
+                (*ppoActiveDS)->StopDecompress();
+            *ppoActiveDS = this;
+        }
+
+        if( sDInfo.mem->max_memory_to_use > 0 &&
+            nRequiredMemory > static_cast<vsi_l_offset>(sDInfo.mem->max_memory_to_use) &&
+            CPLGetConfigOption("GDAL_ALLOW_LARGE_LIBJPEG_MEM_ALLOC", nullptr) == nullptr )
+        {
+            CPLError(CE_Failure, CPLE_NotSupported,
+                "Reading this image would require libjpeg to allocate "
+                "at least " CPL_FRMT_GUIB " bytes. "
+                "This is disabled since above the " CPL_FRMT_GUIB " threshold. "
+                "You may override this restriction by defining the "
+                "GDAL_ALLOW_LARGE_LIBJPEG_MEM_ALLOC environment variable, "
+                "or setting the JPEGMEM environment variable to a value greater "
+                "or equal to '" CPL_FRMT_GUIB "M'",
+                static_cast<GUIntBig>(nRequiredMemory),
+                static_cast<GUIntBig>(sDInfo.mem->max_memory_to_use),
+                static_cast<GUIntBig>((nRequiredMemory + 1000000 - 1) / 1000000));
+            return CE_Failure;
+        }
+    }
+
+    sDInfo.progress = &sJProgress;
+    sJProgress.progress_monitor = JPGDataset::ProgressMonitor;
+    jpeg_start_decompress(&sDInfo);
+    bHasDoneJpegStartDecompress = true;
+
+    return CE_None;
+}
+
+/************************************************************************/
 /*                            LoadScanline()                            */
 /************************************************************************/
 
@@ -1387,70 +2003,10 @@ CPLErr JPGDataset::LoadScanline( int iLine, GByte* outBuffer )
     if (setjmp(sUserData.setjmp_buffer))
         return CE_Failure;
 
-    if (!bHasDoneJpegStartDecompress)
-    {
+    if (!bHasDoneJpegStartDecompress && StartDecompress() != CE_None )
+        return CE_Failure;
 
-        /* In some cases, libjpeg needs to allocate a lot of memory */
-        /* http://www.libjpeg-turbo.org/pmwiki/uploads/About/TwoIssueswiththeJPEGStandard.pdf */
-        if( jpeg_has_multiple_scans(&(sDInfo)) )
-        {
-            /* In this case libjpeg will need to allocate memory or backing */
-            /* store for all coefficients */
-            /* See call to jinit_d_coef_controller() from master_selection() */
-            /* in libjpeg */
-
-            // 1 MB for regular libjpeg usage
-            vsi_l_offset nRequiredMemory = 1024 * 1024;
-
-            for (int ci = 0; ci < sDInfo.num_components; ci++) {
-                const jpeg_component_info *compptr = &(sDInfo.comp_info[ci]);
-                if( compptr->h_samp_factor <= 0 ||
-                    compptr->v_samp_factor <= 0 )
-                {
-                    CPLError(CE_Failure, CPLE_AppDefined,
-                             "Invalid sampling factor(s)");
-                    return CE_Failure;
-                }
-                nRequiredMemory += static_cast<vsi_l_offset>(
-                    DIV_ROUND_UP(compptr->width_in_blocks, compptr->h_samp_factor)) *
-                    DIV_ROUND_UP(compptr->height_in_blocks, compptr->v_samp_factor) *
-                    sizeof(JBLOCK);
-            }
-
-            if( nRequiredMemory > 10 * 1024 * 1024 && ppoActiveDS && *ppoActiveDS != this )
-            {
-                // If another overview was active, stop it to limit memory consumption
-                if( *ppoActiveDS )
-                    (*ppoActiveDS)->StopDecompress();
-                *ppoActiveDS = this;
-            }
-
-            if( sDInfo.mem->max_memory_to_use > 0 &&
-                nRequiredMemory > static_cast<vsi_l_offset>(sDInfo.mem->max_memory_to_use) &&
-                CPLGetConfigOption("GDAL_ALLOW_LARGE_LIBJPEG_MEM_ALLOC", nullptr) == nullptr )
-            {
-                CPLError(CE_Failure, CPLE_NotSupported,
-                    "Reading this image would require libjpeg to allocate "
-                    "at least " CPL_FRMT_GUIB " bytes. "
-                    "This is disabled since above the " CPL_FRMT_GUIB " threshold. "
-                    "You may override this restriction by defining the "
-                    "GDAL_ALLOW_LARGE_LIBJPEG_MEM_ALLOC environment variable, "
-                    "or setting the JPEGMEM environment variable to a value greater "
-                    "or equal to '" CPL_FRMT_GUIB "M'",
-                    static_cast<GUIntBig>(nRequiredMemory),
-                    static_cast<GUIntBig>(sDInfo.mem->max_memory_to_use),
-                    static_cast<GUIntBig>((nRequiredMemory + 1000000 - 1) / 1000000));
-                return CE_Failure;
-            }
-        }
-
-        sDInfo.progress = &sJProgress;
-        sJProgress.progress_monitor = JPGDataset::ProgressMonitor;
-        jpeg_start_decompress(&sDInfo);
-        bHasDoneJpegStartDecompress = true;
-    }
-
-    if( outBuffer == nullptr && pabyScanline == nullptr )
+    if( outBuffer == nullptr && m_pabyScanline == nullptr )
     {
         int nJPEGBands = 0;
         switch(sDInfo.out_color_space)
@@ -1471,7 +2027,7 @@ CPLErr JPGDataset::LoadScanline( int iLine, GByte* outBuffer )
             CPLAssert(false);
         }
 
-        pabyScanline =
+        m_pabyScanline =
             static_cast<GByte *>(CPLMalloc(nJPEGBands * GetRasterXSize() * 2));
     }
 
@@ -1484,7 +2040,7 @@ CPLErr JPGDataset::LoadScanline( int iLine, GByte* outBuffer )
     while( nLoadedScanline < iLine )
     {
         JSAMPLE *ppSamples = reinterpret_cast<JSAMPLE *>(
-            outBuffer ? outBuffer : pabyScanline);
+            outBuffer ? outBuffer : m_pabyScanline);
         jpeg_read_scanlines(&sDInfo, &ppSamples, 1);
         if( ErrorOutOnNonFatalError() )
             return CE_Failure;
@@ -1710,6 +2266,8 @@ CPLErr JPGDataset::Restart()
     jpeg_create_decompress(&sDInfo);
     bHasDoneJpegCreateDecompress = true;
 
+    SetMaxMemoryToUse(&sDInfo);
+
 #if !defined(JPGDataset)
     LoadDefaultTables(0);
     LoadDefaultTables(1);
@@ -1718,9 +2276,9 @@ CPLErr JPGDataset::Restart()
 #endif  // !defined(JPGDataset)
 
     // Restart IO.
-    VSIFSeekL(fpImage, nSubfileOffset, SEEK_SET);
+    VSIFSeekL(m_fpImage, nSubfileOffset, SEEK_SET);
 
-    jpeg_vsiio_src(&sDInfo, fpImage);
+    jpeg_vsiio_src(&sDInfo, m_fpImage);
     jpeg_read_header(&sDInfo, TRUE);
 
     sDInfo.out_color_space = colorSpace;
@@ -1756,10 +2314,8 @@ CPLErr JPGDataset::Restart()
     }
     else
     {
-        sDInfo.progress = &sJProgress;
-        sJProgress.progress_monitor = JPGDataset::ProgressMonitor;
-        jpeg_start_decompress(&sDInfo);
-        bHasDoneJpegStartDecompress = true;
+        if( StartDecompress() != CE_None )
+            return CE_Failure;
         if( ppoActiveDS )
             *ppoActiveDS = this;
     }
@@ -1905,7 +2461,7 @@ CPLErr JPGDatasetCommon::IRasterIO( GDALRWFlag eRWFlag,
                     {
                         memcpy(&(((GByte *)pData)[(y * nLineSpace) +
                                                   (x * nPixelSpace)]),
-                               (const GByte *)&(pabyScanline[x * 3]), 3);
+                               (const GByte *)&(m_pabyScanline[x * 3]), 3);
                     }
                 }
             }
@@ -1922,11 +2478,11 @@ CPLErr JPGDatasetCommon::IRasterIO( GDALRWFlag eRWFlag,
                 {
                     static_cast<GByte *>(
                         pData)[(y * nLineSpace) + (x * nPixelSpace)] =
-                        pabyScanline[x * 3];
+                        m_pabyScanline[x * 3];
                     ((GByte *)pData)[(y * nLineSpace) + (x * nPixelSpace) +
-                                     nBandSpace] = pabyScanline[x * 3 + 1];
+                                     nBandSpace] = m_pabyScanline[x * 3 + 1];
                     ((GByte *)pData)[(y * nLineSpace) + (x * nPixelSpace) +
-                                     2 * nBandSpace] = pabyScanline[x * 3 + 2];
+                                     2 * nBandSpace] = m_pabyScanline[x * 3 + 2];
                 }
             }
         }
@@ -1995,6 +2551,8 @@ int JPGDatasetCommon::Identify( GDALOpenInfo *poOpenInfo )
     // If it is a subfile, read the JPEG header.
     if( STARTS_WITH_CI(poOpenInfo->pszFilename, "JPEG_SUBFILE:") )
         return TRUE;
+    if( STARTS_WITH(poOpenInfo->pszFilename, "JPEG:") )
+        return TRUE;
 
     // First we check to see if the file has the expected header bytes.
     const int nHeaderBytes = poOpenInfo->nHeaderBytes;
@@ -2049,11 +2607,25 @@ GDALDataset *JPGDatasetCommon::Open( GDALOpenInfo *poOpenInfo )
         return nullptr;
     }
 
+    CPLString osFilename(poOpenInfo->pszFilename);
+    bool bFLIRRawThermalImage = false;
+    if( STARTS_WITH(poOpenInfo->pszFilename, "JPEG:") )
+    {
+        CPLStringList aosTokens(CSLTokenizeString2(poOpenInfo->pszFilename, ":", CSLT_HONOURSTRINGS));
+        if( aosTokens.size() != 3 )
+            return nullptr;
+
+        osFilename = aosTokens[1];
+        if( std::string(aosTokens[2]) != "FLIR_RAW_THERMAL_IMAGE" )
+            return nullptr;
+        bFLIRRawThermalImage = true;
+    }
+
     VSILFILE *fpL = poOpenInfo->fpL;
     poOpenInfo->fpL = nullptr;
 
     JPGDatasetOpenArgs sArgs;
-    sArgs.pszFilename = poOpenInfo->pszFilename;
+    sArgs.pszFilename = osFilename.c_str();
     sArgs.fpLin = fpL;
     sArgs.papszSiblingFiles = poOpenInfo->GetSiblingFiles();
     sArgs.nScaleFactor = 1;
@@ -2062,7 +2634,106 @@ GDALDataset *JPGDatasetCommon::Open( GDALOpenInfo *poOpenInfo )
         CPLFetchBool(poOpenInfo->papszOpenOptions,
                      "USE_INTERNAL_OVERVIEWS", true);
 
-    return JPGDataset::Open(&sArgs);
+    auto poDS = std::unique_ptr<JPGDatasetCommon>(JPGDataset::Open(&sArgs));
+    if( poDS == nullptr )
+    {
+        return nullptr;
+    }
+    if( bFLIRRawThermalImage )
+    {
+        return poDS->OpenFLIRRawThermalImage();
+    }
+    return poDS.release();
+}
+
+/************************************************************************/
+/*                       OpenFLIRRawThermalImage()                      */
+/************************************************************************/
+
+GDALDataset* JPGDatasetCommon::OpenFLIRRawThermalImage()
+{
+    ReadFLIRMetadata();
+    if( m_abyRawThermalImage.empty() )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                    "Cannot find FLIR raw thermal image");
+        return nullptr;
+    }
+
+    GByte* pabyData = static_cast<GByte*>(CPLMalloc(m_abyRawThermalImage.size()));
+    const std::string osTmpFilename(CPLSPrintf("/vsimem/jpeg/%p", pabyData));
+    memcpy(pabyData, m_abyRawThermalImage.data(),
+            m_abyRawThermalImage.size());
+    VSILFILE* fpRaw = VSIFileFromMemBuffer(
+            osTmpFilename.c_str(),
+            pabyData,
+            m_abyRawThermalImage.size(),
+            true);
+
+    // Termal image as uncompressed data
+    if( m_nRawThermalImageWidth * m_nRawThermalImageHeight * 2 ==
+                            static_cast<int>(m_abyRawThermalImage.size()) )
+    {
+        CPLDebug("JPEG", "Raw thermal image");
+
+        class JPEGRawDataset: public RawDataset
+        {
+            public:
+                JPEGRawDataset(int nXSizeIn, int nYSizeIn)
+                {
+                    nRasterXSize = nXSizeIn;
+                    nRasterYSize = nYSizeIn;
+                }
+                ~JPEGRawDataset() = default;
+
+                void SetBand(int nBand, GDALRasterBand* poBand)
+                {
+                    RawDataset::SetBand(nBand, poBand);
+                }
+        };
+
+        auto poBand = new RawRasterBand(
+            fpRaw,
+            0, // image offset
+            2, // pixel offset
+            2 * m_nRawThermalImageWidth, // line offset
+            GDT_UInt16,
+            m_bRawThermalLittleEndian ?
+                RawRasterBand::ByteOrder::ORDER_LITTLE_ENDIAN :
+                RawRasterBand::ByteOrder::ORDER_BIG_ENDIAN,
+            m_nRawThermalImageWidth,
+            m_nRawThermalImageHeight,
+            RawRasterBand::OwnFP::YES);
+
+        auto poRawDS = new JPEGRawDataset(m_nRawThermalImageWidth,
+                                            m_nRawThermalImageHeight);
+        poRawDS->SetBand(1, poBand);
+        poRawDS->MarkSuppressOnClose();
+        return poRawDS;
+    }
+
+    VSIFCloseL(fpRaw);
+
+    // Termal image as PNG
+    if( m_abyRawThermalImage.size() > 4 &&
+        memcmp(m_abyRawThermalImage.data(), "\x89PNG", 4) == 0 )
+    {
+        auto poRawDS = GDALDataset::Open(osTmpFilename.c_str());
+        if( poRawDS == nullptr )
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                "Invalid raw thermal image");
+            VSIUnlink(osTmpFilename.c_str());
+            return nullptr;
+        }
+        poRawDS->MarkSuppressOnClose();
+        return poRawDS;
+    }
+
+    CPLError(CE_Failure, CPLE_AppDefined,
+                "Unrecognized format for raw thermal image");
+    VSIUnlink(osTmpFilename.c_str());
+    return nullptr;
 }
 
 #endif // !defined(JPGDataset)
@@ -2085,10 +2756,10 @@ JPGDatasetCommon *JPGDataset::OpenStage2( JPGDatasetOpenArgs *psArgs,
     if (setjmp(poDS->sUserData.setjmp_buffer))
     {
 #if defined(JPEG_DUAL_MODE_8_12) && !defined(JPGDataset)
-        if (poDS->sDInfo.data_precision == 12 && poDS->fpImage != nullptr)
+        if (poDS->sDInfo.data_precision == 12 && poDS->m_fpImage != nullptr)
         {
-            VSILFILE *fpImage = poDS->fpImage;
-            poDS->fpImage = nullptr;
+            VSILFILE *fpImage = poDS->m_fpImage;
+            poDS->m_fpImage = nullptr;
             delete poDS;
             psArgs->fpLin = fpImage;
             return JPEGDataset12Open(psArgs);
@@ -2199,11 +2870,11 @@ JPGDatasetCommon *JPGDataset::OpenStage2( JPGDatasetOpenArgs *psArgs,
 
     // Create a corresponding GDALDataset.
     poDS->nQLevel = nQLevel;
-    poDS->fpImage = fpImage;
+    poDS->m_fpImage = fpImage;
 
     // Move to the start of jpeg data.
     poDS->nSubfileOffset = subfile_offset;
-    VSIFSeekL(poDS->fpImage, poDS->nSubfileOffset, SEEK_SET);
+    VSIFSeekL(poDS->m_fpImage, poDS->nSubfileOffset, SEEK_SET);
 
     poDS->eAccess = GA_ReadOnly;
 
@@ -2216,15 +2887,7 @@ JPGDatasetCommon *JPGDataset::OpenStage2( JPGDatasetOpenArgs *psArgs,
     jpeg_create_decompress(&poDS->sDInfo);
     poDS->bHasDoneJpegCreateDecompress = true;
 
-    // This is to address bug related in ticket #1795.
-    if( CPLGetConfigOption("JPEGMEM", nullptr) == nullptr )
-    {
-        // If the user doesn't provide a value for JPEGMEM, we want to be sure
-        // that at least 500 MB will be used before creating the temporary file.
-        const long nMinMemory = 500 * 1024 * 1024;
-        poDS->sDInfo.mem->max_memory_to_use =
-            std::max(poDS->sDInfo.mem->max_memory_to_use, nMinMemory);
-    }
+    SetMaxMemoryToUse(&poDS->sDInfo);
 
 #if !defined(JPGDataset)
     // Preload default NITF JPEG quantization tables.
@@ -2235,9 +2898,9 @@ JPGDatasetCommon *JPGDataset::OpenStage2( JPGDatasetOpenArgs *psArgs,
 #endif  // !defined(JPGDataset)
 
     // Read pre-image data after ensuring the file is rewound.
-    VSIFSeekL(poDS->fpImage, poDS->nSubfileOffset, SEEK_SET);
+    VSIFSeekL(poDS->m_fpImage, poDS->nSubfileOffset, SEEK_SET);
 
-    jpeg_vsiio_src(&poDS->sDInfo, poDS->fpImage);
+    jpeg_vsiio_src(&poDS->sDInfo, poDS->m_fpImage);
     jpeg_read_header(&poDS->sDInfo, TRUE);
 
     if( poDS->sDInfo.data_precision != 8
@@ -2445,16 +3108,16 @@ void JPGDatasetCommon::CheckForMask()
 
 {
     // Save current position to avoid disturbing JPEG stream decoding.
-    const vsi_l_offset nCurOffset = VSIFTellL(fpImage);
+    const vsi_l_offset nCurOffset = VSIFTellL(m_fpImage);
 
     // Go to the end of the file, pull off four bytes, and see if
     // it is plausibly the size of the real image data.
-    VSIFSeekL(fpImage, 0, SEEK_END);
-    GIntBig nFileSize = VSIFTellL(fpImage);
-    VSIFSeekL(fpImage, nFileSize - 4, SEEK_SET);
+    VSIFSeekL(m_fpImage, 0, SEEK_END);
+    GIntBig nFileSize = VSIFTellL(m_fpImage);
+    VSIFSeekL(m_fpImage, nFileSize - 4, SEEK_SET);
 
     GUInt32 nImageSize = 0;
-    VSIFReadL(&nImageSize, 4, 1, fpImage);
+    VSIFReadL(&nImageSize, 4, 1, m_fpImage);
     CPL_LSBPTR32(&nImageSize);
 
     GByte abyEOD[2] = { 0, 0 };
@@ -2464,8 +3127,8 @@ void JPGDatasetCommon::CheckForMask()
 
     // If that seems okay, seek back, and verify that just preceding
     // the bitmask is an apparent end-of-jpeg-data marker.
-    VSIFSeekL(fpImage, nImageSize - 2, SEEK_SET);
-    VSIFReadL(abyEOD, 2, 1, fpImage);
+    VSIFSeekL(m_fpImage, nImageSize - 2, SEEK_SET);
+    VSIFReadL(abyEOD, 2, 1, m_fpImage);
     if( abyEOD[0] != 0xff || abyEOD[1] != 0xd9 )
         goto end;
 
@@ -2476,13 +3139,13 @@ void JPGDatasetCommon::CheckForMask()
     {
         goto end;
     }
-    VSIFReadL(pabyCMask, nCMaskSize, 1, fpImage);
+    VSIFReadL(pabyCMask, nCMaskSize, 1, m_fpImage);
 
     CPLDebug("JPEG", "Got %d byte compressed bitmask.", nCMaskSize);
 
     // TODO(schwehr): Refactor to not use goto.
 end:
-    VSIFSeekL(fpImage, nCurOffset, SEEK_SET);
+    VSIFSeekL(m_fpImage, nCurOffset, SEEK_SET);
 }
 
 /************************************************************************/
@@ -2577,7 +3240,7 @@ void JPGDatasetCommon::DecompressMask()
                 break;
         }
 
-        if( iX == nRasterXSize )
+        if( iX == nRasterXSize && nChangedValBit == 1 )
         {
             CPLDebug("JPEG",
                      "Bit ordering in mask is guessed to be msb (unusual)");
@@ -2848,7 +3511,7 @@ CPLErr JPGAppendMask( const char *pszJPGFilename, GDALRasterBand *poMask,
     size_t nTotalOut = 0;
     if ( eErr == CE_None )
     {
-        if( CPLZLibDeflate(pabyBitBuf, nBitBufSize, 9,
+        if( CPLZLibDeflate(pabyBitBuf, nBitBufSize, -1,
                            pabyCMask, nBitBufSize + 30,
                            &nTotalOut) == nullptr )
         {
@@ -3062,7 +3725,7 @@ JPGDataset::CreateCopy( const char *pszFilename, GDALDataset *poSrcDS,
     {
         CPLError(CE_Failure, CPLE_NotSupported,
                  "JPEG driver doesn't support %d bands.  Must be 1 (grey), "
-                 "3 (RGB) or 4 bands.\n", nBands);
+                 "3 (RGB) or 4 bands (CMYK).\n", nBands);
 
         return nullptr;
     }
@@ -3078,6 +3741,14 @@ JPGDataset::CreateCopy( const char *pszFilename, GDALDataset *poSrcDS,
         if (bStrict)
             return nullptr;
     }
+
+    if( nBands == 4 &&
+        poSrcDS->GetRasterBand(1)->GetColorInterpretation() != GCI_CyanBand )
+    {
+        CPLError(CE_Warning, CPLE_AppDefined,
+                 "4-band JPEGs will be interpreted on reading as in CMYK colorspace");
+    }
+
 
     VSILFILE *fpImage = nullptr;
     GDALJPEGUserData sUserData;
@@ -3450,7 +4121,7 @@ JPGDataset::CreateCopyStage2( const char *pszFilename, GDALDataset *poSrcDS,
         sArgs.bDoPAMInitialize = true;
         sArgs.bUseInternalOverviews = true;
 
-        JPGDataset *poDS = dynamic_cast<JPGDataset *>(Open(&sArgs));
+        auto poDS = Open(&sArgs);
         CPLPopErrorHandler();
         if( poDS )
         {

@@ -41,9 +41,8 @@
 #include <vector>
 #include <utility>
 
-#include <curl/curl.h>
-
 #include "cpl_conv.h"
+#include "cpl_curl_priv.h"
 #include "cpl_http.h"
 #include "gdal_alg.h"
 #include "gdal_pam.h"
@@ -383,6 +382,11 @@ public:
         list2vec(vMax,pszMax);
     }
 
+    // Set open options for tiles
+    // Works like a <set>, only one entry with a give name can exist, last one set wins
+    // If the value is null, the entry is deleted
+    void SetTileOO(const char* pszName, const char* pszValue);
+
     void SetXML(const char *psz) {
         m_osXML.clear();
         if (psz)
@@ -440,6 +444,7 @@ protected:
     CPLString m_osUserAgent;
     CPLString m_osReferer;
     CPLString m_osUserPwd;
+    std::string m_osAccept{}; // HTTP Accept header
 
     GDALWMSDataWindow m_default_data_window;
     int m_default_block_size_x;
@@ -505,7 +510,7 @@ protected:
                               int to_buffer_band, void *buffer, int advise_read);
     CPLErr ReadBlockFromDataset(GDALDataset *ds, int x, int y, int to_buffer_band,
                                                    void *buffer, int advise_read);
-    CPLErr ZeroBlock(int x, int y, int to_buffer_band, void *buffer);
+    CPLErr EmptyBlock(int x, int y, int to_buffer_band, void *buffer);
     static CPLErr ReportWMSException(const char *file_name);
 
 protected:

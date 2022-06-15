@@ -465,6 +465,10 @@ typedef void *OGRCoordinateTransformationH;
 
 void CPL_DLL OSRSetPROJSearchPaths( const char* const * papszPaths );
 char CPL_DLL **OSRGetPROJSearchPaths( void );
+void CPL_DLL OSRSetPROJAuxDbPaths( const char* const * papszPaths );
+char CPL_DLL **OSRGetPROJAuxDbPaths( void );
+void CPL_DLL OSRSetPROJEnableNetwork( int enabled );
+int CPL_DLL OSRGetPROJEnableNetwork( void );
 void CPL_DLL OSRGetPROJVersion( int* pnMajor, int* pnMinor, int* pnPatch );
 
 OGRSpatialReferenceH CPL_DLL CPL_STDCALL
@@ -551,11 +555,15 @@ int CPL_DLL OSRIsProjected( OGRSpatialReferenceH );
 int CPL_DLL OSRIsCompound( OGRSpatialReferenceH );
 int CPL_DLL OSRIsGeocentric( OGRSpatialReferenceH );
 int CPL_DLL OSRIsVertical( OGRSpatialReferenceH );
+int CPL_DLL OSRIsDynamic( OGRSpatialReferenceH );
 int CPL_DLL OSRIsSameGeogCS( OGRSpatialReferenceH, OGRSpatialReferenceH );
 int CPL_DLL OSRIsSameVertCS( OGRSpatialReferenceH, OGRSpatialReferenceH );
 int CPL_DLL OSRIsSame( OGRSpatialReferenceH, OGRSpatialReferenceH );
 int CPL_DLL OSRIsSameEx( OGRSpatialReferenceH, OGRSpatialReferenceH,
                          const char* const *papszOptions );
+
+void CPL_DLL OSRSetCoordinateEpoch( OGRSpatialReferenceH hSRS, double dfCoordinateEpoch );
+double CPL_DLL OSRGetCoordinateEpoch( OGRSpatialReferenceH hSRS );
 
 OGRErr CPL_DLL OSRSetLocalCS( OGRSpatialReferenceH hSRS, const char *pszName );
 OGRErr CPL_DLL OSRSetProjCS( OGRSpatialReferenceH hSRS, const char * pszName );
@@ -617,12 +625,12 @@ int CPL_DLL OSRGetAreaOfUse(  OGRSpatialReferenceH hSRS,
 OGRErr CPL_DLL OSRSetProjection( OGRSpatialReferenceH, const char * );
 OGRErr CPL_DLL OSRSetProjParm( OGRSpatialReferenceH, const char *, double );
 double CPL_DLL OSRGetProjParm( OGRSpatialReferenceH hSRS,
-                        const char * pszParmName,
+                        const char * pszParamName,
                         double dfDefault /* = 0.0 */,
                         OGRErr * /* = NULL */ );
 OGRErr CPL_DLL OSRSetNormProjParm( OGRSpatialReferenceH, const char *, double);
 double CPL_DLL OSRGetNormProjParm( OGRSpatialReferenceH hSRS,
-                                   const char * pszParmName,
+                                   const char * pszParamName,
                                    double dfDefault /* = 0.0 */,
                                    OGRErr * /* = NULL */ );
 
@@ -1018,7 +1026,7 @@ typedef struct
 } OSRCRSInfo;
 
 /** \brief Structure to describe optional parameters to OSRGetCRSInfoListFromDatabase()
- * 
+ *
  * Unused for now.
  */
 typedef struct OSRCRSListParameters OSRCRSListParameters;
@@ -1067,6 +1075,11 @@ OCTNewCoordinateTransformationEx( OGRSpatialReferenceH hSourceSRS,
                                   OGRSpatialReferenceH hTargetSRS,
                                   OGRCoordinateTransformationOptionsH hOptions );
 
+OGRCoordinateTransformationH CPL_DLL OCTClone(OGRCoordinateTransformationH hTransform);
+OGRSpatialReferenceH CPL_DLL OCTGetSourceCS(OGRCoordinateTransformationH hTransform);
+OGRSpatialReferenceH CPL_DLL OCTGetTargetCS(OGRCoordinateTransformationH hTransform);
+OGRCoordinateTransformationH CPL_DLL OCTGetInverse(OGRCoordinateTransformationH hTransform);
+
 void CPL_DLL CPL_STDCALL
       OCTDestroyCoordinateTransformation( OGRCoordinateTransformationH );
 
@@ -1088,6 +1101,18 @@ int CPL_DLL
 OCTTransform4DWithErrorCodes( OGRCoordinateTransformationH hCT,
                   int nCount, double *x, double *y, double *z, double *t,
                   int *panErrorCodes );
+
+int CPL_DLL CPL_STDCALL
+OCTTransformBounds( OGRCoordinateTransformationH hCT,
+                    const double xmin,
+                    const double ymin,
+                    const double xmax,
+                    const double ymax,
+                    double* out_xmin,
+                    double* out_ymin,
+                    double* out_xmax,
+                    double* out_ymax,
+                    const int densify_pts );
 
 
 CPL_C_END

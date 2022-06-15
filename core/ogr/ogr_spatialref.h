@@ -148,9 +148,9 @@ class CPL_DLL OGR_SRSNode
  *
  * See <a href="https://gdal.org/tutorials/osr_api_tut.html">the tutorial
  * </a> for more information on how to use this class.
- * 
+ *
  * Consult also the <a href="https://gdal.org/tutorials/wktproblems.html">
- * OGC WKT Coordinate System Issues</a> page for implementation details of 
+ * OGC WKT Coordinate System Issues</a> page for implementation details of
  * WKT in OGR.
  */
 
@@ -161,6 +161,7 @@ class CPL_DLL OGRSpatialReference
 
     void        GetNormInfo() const;
 
+    // No longer used with PROJ >= 8.1.0
     OGRErr      importFromURNPart(const char* pszAuthority,
                                   const char* pszCode,
                                   const char* pszURN);
@@ -256,7 +257,8 @@ class CPL_DLL OGRSpatialReference
     int         EPSGTreatsAsNorthingEasting() const;
     int         GetAxesCount() const;
     const char *GetAxis( const char *pszTargetKey, int iAxis,
-                         OGRAxisOrientation *peOrientation ) const;
+                         OGRAxisOrientation *peOrientation,
+                         double* pdfConvFactor = nullptr ) const;
     OGRErr      SetAxes( const char *pszTargetKey,
                          const char *pszXAxisName,
                          OGRAxisOrientation eXAxisOrientation,
@@ -346,6 +348,7 @@ class CPL_DLL OGRSpatialReference
     int         IsDerivedGeographic() const;
     int         IsProjected() const;
     int         IsGeocentric() const;
+    bool        IsDynamic() const;
     int         IsLocal() const;
     int         IsVertical() const;
     int         IsCompound() const;
@@ -379,12 +382,20 @@ class CPL_DLL OGRSpatialReference
                                const OGRSpatialReference *poHorizSRS,
                                const OGRSpatialReference *poVertSRS );
 
+    void        SetCoordinateEpoch( double dfCoordinateEpoch );
+    double      GetCoordinateEpoch() const;
+
     // cppcheck-suppress functionStatic
     OGRErr      PromoteTo3D( const char* pszName );
     // cppcheck-suppress functionStatic
     OGRErr      DemoteTo2D( const char* pszName );
 
     OGRErr      SetFromUserInput( const char * );
+
+    static const char* const SET_FROM_USER_INPUT_LIMITATIONS[];
+    static CSLConstList SET_FROM_USER_INPUT_LIMITATIONS_get();
+
+    OGRErr      SetFromUserInput( const char *, CSLConstList papszOptions );
 
     OGRErr      SetTOWGS84( double, double, double,
                             double = 0.0, double = 0.0, double = 0.0,
@@ -411,6 +422,7 @@ class CPL_DLL OGRSpatialReference
 
     const char *GetAuthorityCode( const char * pszTargetKey ) const;
     const char *GetAuthorityName( const char * pszTargetKey ) const;
+    char       *GetOGCURN() const;
 
     bool        GetAreaOfUse( double* pdfWestLongitudeDeg,
                               double* pdfSouthLatitudeDeg,
@@ -679,6 +691,13 @@ class CPL_DLL OGRSpatialReference
                                                double dfSouthPoleLon,
                                                double dfAxisRotation );
 
+    /** Pole rotation (netCDF CF convention) */
+    OGRErr      SetDerivedGeogCRSWithPoleRotationNetCDFCFConvention(
+                                               const char* pszCRSName,
+                                               double dfGridNorthPoleLat,
+                                               double dfGridNorthPoleLon,
+                                               double dfNorthPoleGridLon );
+
     /** State Plane */
     OGRErr      SetStatePlane( int nZone, int bNAD83 = TRUE,
                                const char *pszOverrideUnitName = nullptr,
@@ -815,6 +834,61 @@ public:
                                          double *z, double *t,
                                          int *panErrorCodes );
 
+    /** \brief Transform boundary.
+     *
+     * This method is the same as the C function OCTTransformBounds().
+     *
+     * Transform boundary densifying the edges to account for nonlinear
+     * transformations along these edges and extracting the outermost bounds.
+     *
+     * If the destination CRS is geographic, the first axis is longitude,
+     * and xmax < xmin then the bounds crossed the antimeridian.
+     * In this scenario there are two polygons, one on each side of the antimeridian.
+     * The first polygon should be constructed with (xmin, ymin, 180, ymax)
+     * and the second with (-180, ymin, xmax, ymax).
+     *
+     * If the destination CRS is geographic, the first axis is latitude,
+     * and ymax < ymin then the bounds crossed the antimeridian.
+     * In this scenario there are two polygons, one on each side of the antimeridian.
+     * The first polygon should be constructed with (ymin, xmin, ymax, 180)
+     * and the second with (ymin, -180, ymax, xmax).
+     *
+     * @param xmin Minimum bounding coordinate of the first axis in source CRS.
+     * @param ymin Minimum bounding coordinate of the second axis in source CRS.
+     * @param xmax Maximum bounding coordinate of the first axis in source CRS.
+     * @param ymax Maximum bounding coordinate of the second axis in source CRS.
+     * @param out_xmin Minimum bounding coordinate of the first axis in target CRS
+     * @param out_ymin Minimum bounding coordinate of the second axis in target CRS.
+     * @param out_xmax Maximum bounding coordinate of the first axis in target CRS.
+     * @param out_ymax Maximum bounding coordinate of the second axis in target CRS.
+     * @param densify_pts Recommended to use 21. This is the number of points
+     *     to use to densify the bounding polygon in the transformation.
+     * @return TRUE if successful. FALSE if failures encountered.
+     * @since 3.4
+     */
+    virtual int TransformBounds( const double xmin,
+                                 const double ymin,
+                                 const double xmax,
+                                 const double ymax,
+                                 double* out_xmin,
+                                 double* out_ymin,
+                                 double* out_xmax,
+                                 double* out_ymax,
+                                 const int densify_pts )
+    {
+        (void)xmin;
+        (void)xmax;
+        (void)ymin;
+        (void)ymax;
+        (void)densify_pts;
+        *out_xmin = HUGE_VAL;
+        *out_ymin = HUGE_VAL;
+        *out_xmax = HUGE_VAL;
+        *out_ymax = HUGE_VAL;
+        CPLError(CE_Failure, CPLE_AppDefined, "TransformBounds not implemented.");
+        return false;
+    }
+
     /** Convert a OGRCoordinateTransformation* to a OGRCoordinateTransformationH.
      * @since GDAL 2.3
      */
@@ -831,6 +905,17 @@ public:
      * @since GDAL 3.1
      */
     virtual OGRCoordinateTransformation* Clone() const = 0;
+
+    /** Return a coordinate transformation that performs the inverse transformation
+     * of the current one.
+     *
+     * In some cases, this is not possible, and this method might return nullptr,
+     * or fail to perform the transformations.
+     *
+     * @return the new coordinate transformation, or nullptr in case of error.
+     * @since GDAL 3.3
+     */
+    virtual OGRCoordinateTransformation* GetInverse() const = 0;
 };
 
 OGRCoordinateTransformation CPL_DLL *
@@ -840,7 +925,7 @@ OGRCreateCoordinateTransformation( const OGRSpatialReference *poSource,
 
 /**
  * Context for coordinate transformation.
- * 
+ *
  * @since GDAL 3.0
  */
 

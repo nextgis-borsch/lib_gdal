@@ -180,6 +180,10 @@ GDALDataType HDF5Dataset::GetDataType(hid_t TypeID)
             return GDT_Int32;
         else if( H5Tequal(H5T_NATIVE_UINT,   TypeID) )
             return GDT_UInt32;
+        else if( H5Tequal(H5T_NATIVE_INT64,  TypeID) )
+            return GDT_Int64;
+        else if( H5Tequal(H5T_NATIVE_UINT64, TypeID) )
+            return GDT_UInt64;
         else if( H5Tequal(H5T_NATIVE_LONG,   TypeID) )
         {
 #if SIZEOF_UNSIGNED_LONG == 4
@@ -378,13 +382,14 @@ int HDF5Dataset::Identify( GDALOpenInfo * poOpenInfo )
     {
         if( (EQUAL(osExt, "NC") ||
              EQUAL(osExt, "CDF") ||
-             EQUAL(osExt, "NC4")) &&
+             EQUAL(osExt, "NC4") ||
+             EQUAL(osExt, "gmac")) &&
             GDALGetDriverByName("netCDF") != nullptr )
         {
             const char *const apszAllowedDriver[] = { "netCDF", nullptr };
             CPLPushErrorHandler(CPLQuietErrorHandler);
             GDALDatasetH hDS = GDALOpenEx(poOpenInfo->pszFilename,
-                                          GDAL_OF_RASTER | GDAL_OF_VECTOR,
+                                          GDAL_OF_RASTER | GDAL_OF_MULTIDIM_RASTER | GDAL_OF_VECTOR,
                                           apszAllowedDriver, nullptr, nullptr);
             CPLPopErrorHandler();
             if( hDS )
@@ -396,7 +401,9 @@ int HDF5Dataset::Identify( GDALOpenInfo * poOpenInfo )
         return false;
     };
 
-    if( memcmp(poOpenInfo->pabyHeader, achSignature, 8) == 0 )
+    if( memcmp(poOpenInfo->pabyHeader, achSignature, 8) == 0 ||
+        (poOpenInfo->nHeaderBytes > 512 + 8 &&
+         memcmp(poOpenInfo->pabyHeader + 512, achSignature, 8) == 0) )
     {
         // The tests to avoid opening KEA and BAG drivers are not
         // necessary when drivers are built in the core lib, as they
