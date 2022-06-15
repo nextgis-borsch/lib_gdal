@@ -73,6 +73,7 @@ constexpr long PAN_PROJ_LAEA   = 24L;  // Lambert Azimuthal Equal Area
 constexpr long PAN_PROJ_EQC    = 27L;  // Equirectangular
 constexpr long PAN_PROJ_CEA    = 28L;  // Cylindrical Equal Area (Lambert)
 constexpr long PAN_PROJ_IMWP   = 29L;  // International Map of the World Polyconic
+constexpr long PAN_PROJ_SPHERE = 33L;  // Speher
 constexpr long PAN_PROJ_MILLER = 34L;  // Miller
 /************************************************************************/
 /*  "Panorama" datum codes.                                             */
@@ -80,7 +81,10 @@ constexpr long PAN_PROJ_MILLER = 34L;  // Miller
 
 constexpr long PAN_DATUM_NONE      = -1L;
 constexpr long PAN_DATUM_PULKOVO42 = 1L;  // Pulkovo 1942
-constexpr long PAN_DATUM_WGS84     = 2L;  // WGS84
+constexpr long PAN_DATUM_RECTANGULAR = 6L; // WGS84
+constexpr long PAN_DATUM_WGS84 = 8L;  // WGS84
+constexpr long PAN_DATUM_PULKOVO95 = 9L;  // Pulokovo 1995
+constexpr long PAN_DATUM_GSK2011 = 10L; // GSK2011
 
 /************************************************************************/
 /*  "Panorama" ellipsoid codes.                                         */
@@ -114,10 +118,11 @@ constexpr int aoDatums[] =
     0,
     0,
     0,
-    4200    // Pulkovo, 1995
+    6200,   // Pulkovo, 1995
+    1159 	// GSK 2011
 };
 
-#define NUMBER_OF_DATUMS        static_cast<long>(CPL_ARRAYSIZE(aoDatums))
+constexpr int NUMBER_OF_DATUMS = static_cast<int>(CPL_ARRAYSIZE(aoDatums));
 
 /************************************************************************/
 /*  Correspondence between "Panorama" and EPSG ellipsoid codes.         */
@@ -186,7 +191,7 @@ constexpr int aoVCS[] =
     5714    //27
 };
 
-constexpr int NUMBER_OF_VERTICALCS = (sizeof(aoVCS)/sizeof(aoVCS[0]));
+constexpr int NUMBER_OF_VERTICALCS = static_cast<int>(CPL_ARRAYSIZE(aoVCS));
 
 /************************************************************************/
 /*                        OSRImportFromPanorama()                       */
@@ -470,13 +475,7 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
     if( !IsLocal() )
     {
-        if( iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum] )
-        {
-            OGRSpatialReference oGCS;
-            oGCS.importFromEPSG( aoDatums[iDatum] );
-            CopyGeogCSFrom( &oGCS );
-        }
-        else if( iEllips == PAN_ELLIPSOID_GSK2011 )
+        if (iEllips == PAN_ELLIPSOID_GSK2011 || iDatum == PAN_DATUM_GSK2011)
         {
             OGRSpatialReference oGCS;
             oGCS.importFromEPSG( 7683 );
@@ -484,9 +483,15 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
         }
         else if( iEllips == PAN_ELLIPSOID_PZ90 )
         {
-            SetGeogCS( "PZ-90.11", "Parametry_Zemli_1990_11",
-                       "PZ-90", 6378136, 298.257839303);
-            SetAuthority( "SPHEROID", "EPSG", 7054 );
+            OGRSpatialReference oGCS;
+            oGCS.importFromEPSG(7679);
+            CopyGeogCSFrom(&oGCS);
+        }
+        else if (iDatum == PAN_DATUM_PULKOVO95)
+        {
+            OGRSpatialReference oGCS;
+            oGCS.importFromEPSG(4200);
+            CopyGeogCSFrom(&oGCS);
         }
         else if( iEllips > 0
                  && iEllips < NUMBER_OF_ELLIPSOIDS
@@ -520,10 +525,16 @@ OGRErr OGRSpatialReference::importFromPanorama( long iProjSys, long iDatum,
 
             CPLFree( pszName );
         }
+        else if (iDatum > 0 && iDatum < NUMBER_OF_DATUMS && aoDatums[iDatum])
+        {
+            OGRSpatialReference oGCS;
+            oGCS.importFromEPSG(aoDatums[iDatum]);
+            CopyGeogCSFrom(&oGCS);
+        }
         else
         {
             CPLError( CE_Warning, CPLE_AppDefined,
-                      "Wrong datum code %ld. Supported datums are 1--%ld "
+                      "Wrong datum code %ld. Supported datums are 1 - %ld "
                       "only.  Falling back to use Pulkovo 42.",
                       iDatum, NUMBER_OF_DATUMS - 1 );
             SetWellKnownGeogCS( "EPSG:4284" );
@@ -612,6 +623,32 @@ OGRErr OGRSpatialReference::importVertCSFromPanorama(int iVCS)
     return OGRERR_NONE;
 }
 
+/**
+ * Export vertical coordinate system to "Panorama" GIS projection definition.
+ */
+OGRErr OGRSpatialReference::exportVertCSToPanorama(int *piVert) const
+{
+    const char *pszAuthName = GetAuthorityName("VERTCS");
+
+    if (pszAuthName != nullptr && EQUAL(pszAuthName, "epsg"))
+    {
+        auto nEPSG = atoi(GetAuthorityCode("VERTCS"));
+        if (nEPSG > 0)
+        {
+            for (int i = 0; i < NUMBER_OF_VERTICALCS; i++)
+            {
+                if (aoVCS[i] == nEPSG)
+                {
+                    *piVert = i;
+                    return OGRERR_NONE;
+                }
+            }
+        }
+    }
+    CPLError(CE_Warning, CPLE_None, "Vertical coordinate system get error");
+    return OGRERR_UNSUPPORTED_SRS;
+}
+
 /************************************************************************/
 /*                      OSRExportToPanorama()                           */
 /************************************************************************/
@@ -637,6 +674,11 @@ OGRErr OSRExportToPanorama( OGRSpatialReferenceH hSRS,
                           piDatum, piEllips,
                           piZone,
                           padfPrjParams );
+}
+
+static int GetZoneNumber(double dfCenterLong)
+{
+    return static_cast<int>((dfCenterLong + 3.0) / 6.0 + 0.5);
 }
 
 /************************************************************************/
@@ -691,6 +733,10 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     if( IsLocal() )
     {
         *piProjSys = PAN_PROJ_NONE;
+    }
+    else if (IsGeographic() || IsGeocentric())
+    {
+        *piProjSys = PAN_PROJ_SPHERE;
     }
     else if( pszProjection == nullptr )
     {
@@ -775,8 +821,9 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
         else
         {
             *piProjSys = PAN_PROJ_TM;
+            auto dfCenterLong = GetNormProjParm(SRS_PP_CENTRAL_MERIDIAN, 0.0);
             padfPrjParams[3] =
-                TO_RADIANS * GetNormProjParm( SRS_PP_CENTRAL_MERIDIAN, 0.0 );
+                TO_RADIANS * dfCenterLong;
             padfPrjParams[2] =
                 TO_RADIANS * GetNormProjParm( SRS_PP_LATITUDE_OF_ORIGIN, 0.0 );
             padfPrjParams[4] =
@@ -785,6 +832,7 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
                 GetNormProjParm( SRS_PP_FALSE_EASTING, 0.0 );
             padfPrjParams[6] =
                 GetNormProjParm( SRS_PP_FALSE_NORTHING, 0.0 );
+            *piZone = GetZoneNumber(dfCenterLong);
         }
     }
     else if( EQUAL(pszProjection, SRS_PT_WAGNER_I) )
@@ -898,9 +946,14 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
         *piDatum = PAN_DATUM_PULKOVO42;
         *piEllips = PAN_ELLIPSOID_KRASSOVSKY;
     }
+    else if (EQUAL(pszDatum, "Pulkovo_1995"))
+    {
+        *piDatum = PAN_DATUM_PULKOVO95;
+        *piEllips = PAN_ELLIPSOID_KRASSOVSKY;
+    }
     else if( EQUAL( pszDatum, SRS_DN_WGS84 ) )
     {
-        *piDatum = PAN_DATUM_WGS84;
+        *piDatum = PAN_DATUM_RECTANGULAR; // PAN_DATUM_WGS84;
         *piEllips = PAN_ELLIPSOID_WGS84;
     }
 

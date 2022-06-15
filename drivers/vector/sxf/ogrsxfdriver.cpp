@@ -7,7 +7,7 @@
  *
  ******************************************************************************
  * Copyright (c) 2011, Ben Ahmed Daho Ali
- * Copyright (c) 2013, NextGIS
+ * Copyright (c) 2013-2020, NextGIS <info@nextgis.com>
  * Copyright (c) 2014, Even Rouault <even dot rouault at spatialys.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -48,7 +48,7 @@ OGRSXFDriver::~OGRSXFDriver()
 /*                                Open()                                */
 /************************************************************************/
 
-GDALDataset *OGRSXFDriver::Open(GDALOpenInfo* poOpenInfo)
+GDALDataset *OGRSXFDriver::Open(GDALOpenInfo *poOpenInfo)
 
 {
 /* -------------------------------------------------------------------- */
@@ -61,7 +61,7 @@ GDALDataset *OGRSXFDriver::Open(GDALOpenInfo* poOpenInfo)
         !VSI_ISREG(sStatBuf.st_mode))
         return nullptr;
 
-    OGRSXFDataSource   *poDS = new OGRSXFDataSource();
+    OGRSXFDataSource *poDS = new OGRSXFDataSource();
 
     if( !poDS->Open( poOpenInfo->pszFilename,
                      poOpenInfo->eAccess == GA_Update,
@@ -78,7 +78,7 @@ GDALDataset *OGRSXFDriver::Open(GDALOpenInfo* poOpenInfo)
 /*                              Identify()                              */
 /************************************************************************/
 
-int OGRSXFDriver::Identify(GDALOpenInfo* poOpenInfo)
+int OGRSXFDriver::Identify(GDALOpenInfo *poOpenInfo)
 {
     if (!EQUAL(CPLGetExtension(poOpenInfo->pszFilename), "sxf") ||
         !poOpenInfo->bStatOK || poOpenInfo->bIsDirectory)
@@ -103,10 +103,12 @@ int OGRSXFDriver::Identify(GDALOpenInfo* poOpenInfo)
 /*                           DeleteDataSource()                         */
 /************************************************************************/
 
-CPLErr OGRSXFDriver::DeleteDataSource(const char* pszName)
+CPLErr OGRSXFDriver::DeleteDataSource(const char *pszName)
 {
-    //TODO: add more extensions if aplicable
-    static const char * const apszExtensions[] = { "szf", "rsc", "SZF", "RSC", nullptr };
+    //TODO: add more extensions if applicable
+    static const char * const apszExtensions[] = { 
+        "szf", "rsc", "SZF", "RSC", nullptr 
+    };
 
     VSIStatBufL sStatBuf;
     if (VSIStatL(pszName, &sStatBuf) != 0)
@@ -130,6 +132,29 @@ CPLErr OGRSXFDriver::DeleteDataSource(const char* pszName)
 }
 
 /************************************************************************/
+/*                               Create()                               */
+/************************************************************************/
+
+GDALDataset *OGRSXFDriver::Create(const char *pszName,
+    int /* nBands */,
+    int /* nXSize */,
+    int /* nYSize */,
+    GDALDataType /* eDT */,
+    char **papszOptions)
+{
+    OGRSXFDataSource *poDS = new OGRSXFDataSource();
+
+    if (!poDS->Create(pszName, papszOptions))
+    {
+        delete poDS;
+        poDS = nullptr;
+    }
+
+    return poDS;
+}
+
+
+/************************************************************************/
 /*                        RegisterOGRSXF()                       */
 /************************************************************************/
 void RegisterOGRSXF()
@@ -143,19 +168,37 @@ void RegisterOGRSXF()
     poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
                                "Storage and eXchange Format" );
-    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/vector/sxf.html" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drv_sxf.html" );
     poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "sxf" );
     poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
     poDriver->SetMetadataItem( GDAL_DMD_OPENOPTIONLIST,
         "<OpenOptionList>"
-        "  <Option name='SXF_LAYER_FULLNAME' type='string' description='Use long layer names' default='NO'/>"
+        "  <Option name='SXF_LAYER_FULLNAME' type='boolean' description='Use long layer names' default='NO'/>"
         "  <Option name='SXF_RSC_FILENAME' type='string' description='RSC file name' default=''/>"
-        "  <Option name='SXF_SET_VERTCS' type='string' description='Layers spatial reference will include vertical coordinate system description if exist' default='NO'/>"
+        "  <Option name='SXF_SET_VERTCS' type='boolean' description='Layers spatial reference will include vertical coordinate system description if exist' default='NO'/>"
+        "  <Option name='SXF_NEW_BEHAVIOR' type='boolean' description='New behavior - vector object to lines, empty layers are presence' default='NO'/>"
+        "  <Option name='SXF_ENCODING' type='string' description='Character Encodings (ASCIIZ for format v3 and ANSI code page for format v4)' default=''/>"
+        "  <Option name='SXF_WRITE_RSC' type='boolean' description='Write RSC file. Always write file with same name as SXF but with RSC extension' default='YES'/>"
         "</OpenOptionList>");
+    poDriver->SetMetadataItem(GDAL_DMD_CREATIONFIELDDATATYPES,
+        "Integer Real String IntegerList RealList StringList");
+    poDriver->SetMetadataItem(GDAL_DMD_CREATIONOPTIONLIST,
+        "<CreationOptionList>"
+        "  <Option name='SXF_ENCODING' type='string' description='Character Encodings (Only format v4 and ANSI code page supported)' default='CP1251'/>"
+        "  <Option name='SXF_WRITE_RSC' type='boolean' description='Write RSC file' default='YES'/>"
+        "  <Option name='SXF_MAP_NAME' type='string' description='Override metadata item SHEET_NAME' default=''/>"
+        "  <Option name='SXF_SHEET_KEY' type='string' description='Override metadata item SHEET' default=''/>"
+        "  <Option name='SXF_MAP_SCALE' type='int' description='Override metadata item SCALE' default='1000000'/>"
+        "</CreationOptionList>");
+    poDriver->SetMetadataItem(GDAL_DS_LAYER_CREATIONOPTIONLIST,
+        "<LayerCreationOptionList>"
+        "  <Option name='SXF_NEW_BEHAVIOR' type='boolean' description='New behavior - vector object to lines, empty layers are presence' default='NO'/>"
+        "</LayerCreationOptionList>");
 
     poDriver->pfnOpen = OGRSXFDriver::Open;
     poDriver->pfnDelete = OGRSXFDriver::DeleteDataSource;
     poDriver->pfnIdentify = OGRSXFDriver::Identify;
+    poDriver->pfnCreate = OGRSXFDriver::Create;
 
     GetGDALDriverManager()->RegisterDriver( poDriver );
 }

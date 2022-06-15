@@ -6,7 +6,7 @@
  *******************************************************************************
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2018-2020, NextGIS
+ *  Copyright (c) 2018-2021, NextGIS
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -98,6 +98,8 @@ namespace NGWAPI {
     std::string GetResmetaSuffix(CPLJSONObject::Type eType);
     bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
         const std::string &osFeatureId, char **papszHTTPOptions);
+    bool DeleteFeatures(const std::string &osUrl, const std::string &osResourceId,
+        const std::string &osFeaturesIDJson, char **papszHTTPOptions);
     GIntBig CreateFeature(const std::string &osUrl, const std::string &osResourceId,
         const std::string &osFeatureJson, char **papszHTTPOptions);
     bool UpdateFeature(const std::string &osUrl, const std::string &osResourceId,
@@ -144,7 +146,7 @@ public:
     virtual ~OGRNGWLayer();
 
     bool Delete();
-    virtual OGRErr Rename( const char* pszNewName ) override;
+    bool Rename( const std::string &osNewName );
     std::string GetResourceId() const;
 
     /* OGRLayer */
@@ -169,6 +171,7 @@ public:
     virtual OGRErr SyncToDisk() override;
 
     virtual OGRErr DeleteFeature(GIntBig nFID) override;
+    OGRErr DeleteFeatures(const std::vector<GIntBig> &vFeaturesID);
     bool DeleteAllFeatures();
 
     virtual CPLErr SetMetadata( char **papszMetadata,
@@ -217,6 +220,11 @@ class OGRNGWDataset final : public GDALDataset
     std::string osName;
     bool bExtInNativeData;
     bool bMetadataDerty;
+    // http options
+    std::string osConnectTimeout;
+    std::string osTimeout;
+    std::string osRetryCount;
+    std::string osRetryDelay;
 
     // vector
     OGRNGWLayer **papoLayers;
@@ -255,7 +263,7 @@ public:
         const char *pszDomain = "" ) override;
     virtual CPLErr SetMetadataItem( const char *pszName, const char *pszValue,
         const char *pszDomain = "" ) override;
-    virtual void FlushCache(bool bAtClosing) override;
+    virtual void FlushCache(bool bAtClosing = false) override;
     virtual OGRLayer *ExecuteSQL( const char *pszStatement,
         OGRGeometry *poSpatialFilter, const char *pszDialect ) override;
 
@@ -268,7 +276,7 @@ public:
         GDALRasterIOExtraArg* psExtraArg ) override;
 
 private:
-    char **GetHeaders() const;
+    char **GetHeaders(bool bSkipRetry = true) const;
     std::string GetUrl() const { return osUrl; }
     std::string GetResourceId() const { return osResourceId; }
     void FillMetadata( const CPLJSONObject &oRootObject );

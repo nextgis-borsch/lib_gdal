@@ -201,6 +201,7 @@ class CPL_DLL OGRSpatialReference
     OGRErr      exportToXML( char **, const char * = nullptr ) const;
     OGRErr      exportToPanorama( long *, long *, long *, long *,
                                   double * ) const;
+    OGRErr      exportVertCSToPanorama(int *) const;
     OGRErr      exportToERM( char *pszProj, char *pszDatum, char *pszUnits );
     OGRErr      exportToMICoordSys( char ** ) const;
 
