@@ -28,14 +28,26 @@
 
 option(BUILD_TESTING "Build GDAL Unit Testing" OFF)
 if(BUILD_TESTING)
-
-    file(COPY gcore/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/gcore)
-    # file(COPY alg/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/alg)
-    file(COPY gdrivers/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/gdrivers)
-    ##file(COPY ogr/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/ogr)
-    # file(COPY osr/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/osr)
-    # file(COPY utilities/data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/utilities)
-    # file(COPY utilities/ref_data DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/utilities)
+    
+      function (symlink_or_copy source destination)
+        if (CMAKE_VERSION VERSION_GREATER 3.14)
+          file(
+            CREATE_LINK ${source} ${destination}
+            RESULT res
+            SYMBOLIC)
+          if (NOT res EQUAL 0)
+            message(STATUS "Copying content of ${source} to ${destination}")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${source} ${destination})
+          endif ()
+        else ()
+          if (NOT CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink ${source} ${destination})
+          else ()
+            message(STATUS "Copying content of ${source} to ${destination}")
+            execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${source} ${destination})
+          endif ()
+        endif ()
+      endfunction ()
 
     list (FIND GDAL_BINDINGS "python" _index)
     if (${_index} GREATER -1 AND NOT SKIP_PYTHON_TESTS)
@@ -44,47 +56,25 @@ if(BUILD_TESTING)
         if(NOT PYTHONINTERP_FOUND)
             message(FATAL_ERROR "Cannot find python. Python required for testing")
         endif()
+        
+        configure_file(${CMAKE_SOURCE_DIR}/cmake/pytest.ini.in ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini @ONLY)
+        file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/conftest.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+        
+        foreach (tgt IN ITEMS
+                  ogr
+                  gcore
+                  gdrivers
+                  alg
+                  osr
+                  gnm
+                  pyscripts
+                  utilities)
 
-        # Create separate directory into which we will put generated python libraries (because each OS will have unique
-        # directory name).
-        # set(TEST_LIB_GDAL_DIRECTORY ${CMAKE_BINARY_DIR}/Testing-lib_gdal)
-        # add_custom_command(TARGET GDAL_EP
-        #     POST_BUILD
-        #     COMMAND ${CMAKE_COMMAND} -E make_directory ${TEST_LIB_GDAL_DIRECTORY}
-        #     COMMAND ${CMAKE_COMMAND} -E copy_directory
-        #         ${CMAKE_BINARY_DIR}/third-party/Install/GDAL_EP/lib/Python27/site-packages/.
-        #         ${TEST_LIB_GDAL_DIRECTORY}/.
-        #     COMMENT "Copying GDAL python libraries to ${TEST_LIB_GDAL_DIRECTORY}")
-        # if(WIN32)
-        #     # For windows copy GDAL dlls to the python modules' directory.
-        #     add_custom_command(TARGET GDAL_EP
-        #         POST_BUILD
-        #         COMMAND ${CMAKE_COMMAND} -E copy_directory
-        #             ${CMAKE_BINARY_DIR}/third-party/Install/GDAL_EP/bin/.
-        #             ${TEST_LIB_GDAL_DIRECTORY}/osgeo/.
-        #         COMMENT "Copying GDAL dlls to ${TEST_LIB_GDAL_DIRECTORY}")
-        # endif()
+            symlink_or_copy(${CMAKE_CURRENT_SOURCE_DIR}/${tgt} ${CMAKE_CURRENT_BINARY_DIR}/${tgt})
 
-        # Finally we can do tests for each python test dir, adding this path for finding python modules
-        # in order not to touch the system GDAL if it exists.
-        macro(do_gdal_test name)
-            add_test(NAME ${name} COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_all.py ${name})
-            # set_property(TEST ${name} PROPERTY ENVIRONMENT "PYTHONPATH=${TEST_LIB_GDAL_DIRECTORY}") # reset PYTHONPATH
-        endmacro()
-
-        # TODO: customize CTest so it can correctly define tests' results.
-        # https://cmake.org/Wiki/CMake/Testing_With_CTest
-
-        # Run all python tests.
-        do_gdal_test(gcore)
-        do_gdal_test(gdrivers)
-        do_gdal_test(alg)
-        do_gdal_test(osr)
-        do_gdal_test(ogr)
-        do_gdal_test(utilities)
-        do_gdal_test(pymod)
-        do_gdal_test(pyscripts)
-        do_gdal_test(gnm)
+            add_test(NAME autotest_${tgt} COMMAND ${PYTHON_EXECUTABLE} -m pytest -c ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini ${tgt})
+            set_property(TEST autotest_${tgt} PROPERTY ENVIRONMENT "${PYTHON_RUN_ENV}")
+        endforeach ()
 
     endif()
 

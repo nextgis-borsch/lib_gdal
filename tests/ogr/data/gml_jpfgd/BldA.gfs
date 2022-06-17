@@ -1,0 +1,16 @@
+<GMLFeatureClassList>
+  <GMLFeatureClass>
+    <Name>Curve</Name>
+    <ElementPath>Curve</ElementPath>
+    <GeometryType>100</GeometryType>
+    <DatasetSpecificInfo>
+      <FeatureCount>1</FeatureCount>
+    </DatasetSpecificInfo>
+    <PropertyDefn>
+      <Name>posList</Name>
+      <ElementPath>segments|LineStringSegment|posList</ElementPath>
+      <Type>String</Type>
+      <Width>196</Width>
+    </PropertyDefn>
+  </GMLFeatureClass>
+</GMLFeatureClassList>
