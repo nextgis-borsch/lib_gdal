@@ -270,6 +270,11 @@ typedef struct {
     std::vector<RSCSem> aoSem;
 } RSCObj;
 
+#define SWAP_SECTION(x) \
+    CPL_LSBPTR32(&(x.nOffset)); \
+    CPL_LSBPTR32(&(x.nLength)); \
+    CPL_LSBPTR32(&(x.nRecordCount));
+
 static GUInt32 FileLength(VSILFILE *pofRSC)
 {
     VSIFSeekL(pofRSC, 0, SEEK_END);
@@ -282,12 +287,17 @@ static bool WriteLength(VSILFILE *pofRSC)
     VSIFSeekL(pofRSC, 4, SEEK_SET);
 
     CPLDebug("SXF", "RSC Length is %d", nSize);
+
+    CPL_LSBPTR32(&nSize);
+
     return VSIFWriteL(&nSize, 4, 1, pofRSC) == 1;
 }
 
 static bool WriteNextID(GUInt32 nNextID, VSILFILE *pofRSC)
 {
     VSIFSeekL(pofRSC, 28, SEEK_SET);
+
+    CPL_LSBPTR32(&nNextID);
 
     return VSIFWriteL(&nNextID, 4, 1, pofRSC) == 1;
 }
@@ -299,6 +309,8 @@ static void WriteRSCSection(vsi_l_offset pos, GUInt32 size, GUInt32 count,
     stSect.nOffset = static_cast<GUInt32>(pos);
     stSect.nLength = size;
     stSect.nRecordCount = count;
+
+    SWAP_SECTION(stSect);
 
     auto currentPos = VSIFTellL(poFile);
     VSIFSeekL(poFile, nOffset, SEEK_SET);
@@ -312,8 +324,14 @@ static GUInt32 WritePolygonDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stParam.nLength = sizeof(RSCParameter) + 4;
     stParam.nType = 135;
     stParam.nCode = nCode;
+
+    CPL_LSBPTR32(&stParam.nLength);
+    CPL_LSBPTR16(&stParam.nCode);
+    CPL_LSBPTR16(&stParam.nType);
+
     VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
     GUInt32 nColor = static_cast<GUInt32>(DEFAULT_RGB);
+    CPL_LSBPTR32(&nColor);
     VSIFWriteL(&nColor, 4, 1, poFile);
 
     return stParam.nLength;
@@ -334,6 +352,11 @@ static GUInt32 WriteHatchPolygonDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stParam.nLength = sizeof(RSCParameter) + sizeof(struct HatchPolygonParam);
     stParam.nType = 153;
     stParam.nCode = nCode;
+
+    CPL_LSBPTR32(&stParam.nLength);
+    CPL_LSBPTR16(&stParam.nCode);
+    CPL_LSBPTR16(&stParam.nType);
+
     VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
 
     struct HatchPolygonParam stHatchParam = {};
@@ -343,6 +366,13 @@ static GUInt32 WriteHatchPolygonDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stHatchParam.nType = 128;
     stHatchParam.nWidth = 1 * 250;
     stHatchParam.nColor = static_cast<GUInt32>(DEFAULT_RGB);
+
+    CPL_LSBPTR32(&stHatchParam.nLength);
+    CPL_LSBPTR32(&stHatchParam.nAngle);
+    CPL_LSBPTR32(&stHatchParam.nHatchStep);
+    CPL_LSBPTR32(&stHatchParam.nType);
+    CPL_LSBPTR32(&stHatchParam.nWidth);
+    CPL_LSBPTR32(&stHatchParam.nColor);
 
     VSIFWriteL(&stHatchParam, sizeof(struct HatchPolygonParam), 1, poFile);
 
@@ -369,18 +399,30 @@ static GUInt32 WritePointDefaultParam(GUInt16 nCode, VSILFILE *poFile)
         sizeof(struct ColorMask);
     stParam.nType = 143;
     stParam.nCode = nCode;
+
+    CPL_LSBPTR32(&stParam.nLength);
+    CPL_LSBPTR16(&stParam.nCode);
+    CPL_LSBPTR16(&stParam.nType);
+
     VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
 
     struct PointParam stTP = {
         sizeof(struct PointParam) + sizeof(struct ColorMask),
         1, 8000, 750, 750
     };
+
+    CPL_LSBPTR32(&stTP.nLength);
+    CPL_LSBPTR32(&stTP.nColorCount);
+    CPL_LSBPTR32(&stTP.nSize);
+    CPL_LSBPTR32(&stTP.nAnchorX);
+    CPL_LSBPTR32(&stTP.nAnchorY);
+
     VSIFWriteL(&stTP, sizeof(struct PointParam), 1, poFile);
 
     struct ColorMask stTM = {};
     stTM.nColor = DEFAULT_RGB;
     memcpy(stTM.anMask, CROSS, sizeof(CROSS));
-
+    CPL_LSBPTR32(&stTM.nColor);
     VSIFWriteL(&stTM, sizeof(struct ColorMask), 1, poFile);
 
     return stParam.nLength;
@@ -409,6 +451,11 @@ static GUInt32 WriteTextDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stParam.nLength = sizeof(RSCParameter) + sizeof(struct TextParam);
     stParam.nType = 142;
     stParam.nCode = nCode;
+
+    CPL_LSBPTR32(&stParam.nLength);
+    CPL_LSBPTR16(&stParam.nCode);
+    CPL_LSBPTR16(&stParam.nType);
+
     VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
 
     struct TextParam stPar = {};
@@ -418,6 +465,13 @@ static GUInt32 WriteTextDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stPar.nThicknes = 400;
     stPar.nOrientation = 1;
     stPar.nCodePage = 1; // DEFAULT_CHARSET
+
+    CPL_LSBPTR32(&stPar.nColor);
+    CPL_LSBPTR32(&stPar.nBkColor);
+    CPL_LSBPTR32(&stPar.nHeight);
+    CPL_LSBPTR32(&stPar.nThicknes);
+    CPL_LSBPTR16(&stPar.nCenter);
+    CPL_LSBPTR16(&stPar.nReserve);
 
     VSIFWriteL(&stPar, sizeof(struct TextParam), 1, poFile);
 
@@ -478,7 +532,25 @@ static GUInt32 WriteVectorDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stParam.nLength = sizeof(RSCParameter) + stV.nLength;
     stParam.nType = 149;
     stParam.nCode = nCode;
+
+    CPL_LSBPTR32(&stParam.nLength);
+    CPL_LSBPTR16(&stParam.nCode);
+    CPL_LSBPTR16(&stParam.nType);
+
     VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
+
+    CPL_LSBPTR32(&stV.nLength);
+    CPL_LSBPTR32(&stV.nAnchorX);
+    CPL_LSBPTR32(&stV.nAnchorY);
+    CPL_LSBPTR32(&stV.nSize);
+    CPL_LSBPTR32(&stV.nBeginX);
+    CPL_LSBPTR32(&stV.nEndX);
+    CPL_LSBPTR32(&stV.nSizeX);
+    CPL_LSBPTR32(&stV.nBeginY);
+    CPL_LSBPTR32(&stV.nEndY);
+    CPL_LSBPTR32(&stV.nSizeY);
+    CPL_LSBPTR32(&stV.nMaxSize);
+    CPL_LSBPTR32(&stV.nFragmentCount);
 
     VSIFWriteL(&stV, sizeof(struct VectorParam), 1, poFile);
 
@@ -490,11 +562,21 @@ static GUInt32 WriteVectorDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stVF.nLineWidth = 500;
     stVF.nPointsCount = 2;
 
+    CPL_LSBPTR16(&stVF.nParamLength);
+    CPL_LSBPTR32(&stVF.nLineColor);
+    CPL_LSBPTR32(&stVF.nLineWidth);
+    CPL_LSBPTR32(&stVF.nPointsCount);
+
     VSIFWriteL(&stVF, sizeof(struct VectorFragment), 1, poFile);
 
     struct Point stBegin = { 0, 0 };
+    CPL_LSBPTR32(&stBegin.X);
+    CPL_LSBPTR32(&stBegin.Y);
     VSIFWriteL(&stBegin, sizeof(struct Point), 1, poFile);
+
     struct Point stEnd = { 4500, 0 };
+    CPL_LSBPTR32(&stEnd.X);
+    CPL_LSBPTR32(&stEnd.Y);
     VSIFWriteL(&stEnd, sizeof(struct Point), 1, poFile);
 
     return stParam.nLength;
@@ -528,16 +610,40 @@ static GUInt32 WriteTemplateDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stParam.nLength = sizeof(RSCParameter) + stTP.nLength;
     stParam.nType = 150;
     stParam.nCode = nCode;
+    CPL_LSBPTR32(&stParam.nLength);
+    CPL_LSBPTR16(&stParam.nCode);
+    CPL_LSBPTR16(&stParam.nType);
     VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
 
+    CPL_LSBPTR32(&stTP.nLength);
+    CPL_LSBPTR32(&stTP.nTemplateHeaderLength);
+    CPL_LSBPTR32(&stTP.nCellType[0]);
+    CPL_LSBPTR32(&stTP.nCellType[1]);
+    CPL_LSBPTR32(&stTP.nCellType[2]);
+    CPL_LSBPTR32(&stTP.nCellType[3]);
+    CPL_LSBPTR32(&stTP.nCellType[4]);
+    CPL_LSBPTR32(&stTP.nCellType[5]);
+    CPL_LSBPTR32(&stTP.nCellType[6]);
+    CPL_LSBPTR32(&stTP.nCellType[7]);
+    CPL_LSBPTR32(&stTP.nCellType[8]);
+    CPL_LSBPTR32(&stTP.nCellType[9]);
+    CPL_LSBPTR32(&stTP.nCellType[10]);
+    CPL_LSBPTR32(&stTP.nCellType[11]);
+    CPL_LSBPTR32(&stTP.nAnchorCell);
+    CPL_LSBPTR32(&stTP.nOrientation);
+    CPL_LSBPTR32(&stTP.nFiguresCount);
     VSIFWriteL(&stTP, sizeof(struct TemplateParam), 1, poFile);
         
     struct TemplateParamItem stTM = { sizeof(struct TemplateParamItem) + 8, 128 };
+    CPL_LSBPTR16(&stTM.nLength);
+    CPL_LSBPTR16(&stTM.nIndex);
     VSIFWriteL(&stTM, sizeof(struct TemplateParamItem), 1, poFile);
 
     GUInt32 nColor = static_cast<GUInt32>(DEFAULT_RGB);
+    CPL_LSBPTR32(&nColor);
     VSIFWriteL(&nColor, 4, 1, poFile);
     GUInt32 nSize = 250;
+    CPL_LSBPTR32(&nSize);
     VSIFWriteL(&nSize, 4, 1, poFile);
 
     return stParam.nLength;
@@ -549,10 +655,15 @@ static GUInt32 WriteLineDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     stParam.nLength = sizeof(RSCParameter) + 8;
     stParam.nType = 128;
     stParam.nCode = nCode;
+    CPL_LSBPTR32(&stParam.nLength);
+    CPL_LSBPTR16(&stParam.nCode);
+    CPL_LSBPTR16(&stParam.nType);
     VSIFWriteL(&stParam, sizeof(RSCParameter), 1, poFile);
     GUInt32 nColor = static_cast<GUInt32>(DEFAULT_RGB);
+    CPL_LSBPTR32(&nColor);
     VSIFWriteL(&nColor, 4, 1, poFile);
     GUInt32 nSize = 250;
+    CPL_LSBPTR32(&nSize);
     VSIFWriteL(&nSize, 4, 1, poFile);
 
     return stParam.nLength;
@@ -653,11 +764,6 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     CPL_LSBPTR32(&stRSCFileHeaderEx.nLang);
     CPL_LSBPTR32(&stRSCFileHeaderEx.nNextID);
     CPL_LSBPTR32(&stRSCFileHeaderEx.nScale);
-
-#define SWAP_SECTION(x) \
-    CPL_LSBPTR32(&(x.nOffset)); \
-    CPL_LSBPTR32(&(x.nLength)); \
-    CPL_LSBPTR32(&(x.nRecordCount));
 
     SWAP_SECTION(stRSCFileHeaderEx.Objects);
     SWAP_SECTION(stRSCFileHeaderEx.Semantic);
@@ -1037,6 +1143,10 @@ static vsi_l_offset WriteTAB(VSILFILE *fpRSC, vsi_l_offset nCMYOffset)
     stRSCTables.nColorsTablesOffset = static_cast<GUInt32>(nCMYOffset);
     stRSCTables.nRecordCount = 1;
     auto pos = VSIFTellL(fpRSC);
+
+    CPL_LSBPTR32(&stRSCTables.nColorsTablesLength);
+    CPL_LSBPTR32(&stRSCTables.nColorsTablesOffset);
+    CPL_LSBPTR32(&stRSCTables.nRecordCount);
     VSIFWriteL(&stRSCTables, sizeof(RSCTables), 1, fpRSC);
     GByte nop[8] = { 0 };
     VSIFWriteL(nop, 8, 1, fpRSC);
@@ -1070,6 +1180,13 @@ static void WriteOBJ(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj,
         stObject.nGeometryType = stObj.nLoc; // Same as enum SXFGeometryType
         stObject.nLayerId = stObj.nLayer;
 
+        CPL_LSBPTR32(&stObject.nLength);
+        CPL_LSBPTR32(&stObject.nClassifyCode);
+        CPL_LSBPTR32(&stObject.nInternalCode);
+        CPL_LSBPTR32(&stObject.nIdCode);
+        CPL_LSBPTR16(&stObject.nExtNo);
+        CPL_LSBPTR32(&stObject.nLinkedText);
+        CPL_LSBPTR32(&stObject.nSemCode);
         VSIFWriteL(&stObject, sizeof(RSCObject), 1, fpRSC);
     }
     GByte nop[12] = { 0 };
@@ -1117,6 +1234,14 @@ static void WriteSEM(VSILFILE *fpRSC, const std::vector<RSCSem> &astSem,
         stSemVal.nPrecision = stSem.nPrecision;
         stSemVal.bAllowAnythere = stSem.bAllowAnythere ? 1 : 0;
         stSemVal.bAllowMultiple = stSem.bAllowMultiple ? 1 : 0;
+
+        CPL_LSBPTR32(&stSemVal.nCode);
+        CPL_LSBPTR16(&stSemVal.nType);
+        CPL_LSBPTR16(&stSemVal.nFieldSize);
+        CPL_LSBPTR32(&stSemVal.nClassifyOffset);
+        CPL_LSBPTR32(&stSemVal.nClassifyCount);
+        CPL_LSBPTR32(&stSemVal.nClassifyDefaultsOffset);
+        CPL_LSBPTR32(&stSemVal.nClassifyDefaultsCount);
         VSIFWriteL(&stSemVal, sizeof(RSCSemantics), 1, fpRSC);
     }
     GByte nop[12] = { 0 };
@@ -1144,10 +1269,15 @@ static void WritePOS(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj,
         stPos.nObjectCode = stObj.nCode;
         stPos.nLocalization = stObj.nLoc;
 
+        CPL_LSBPTR32(&stPos.nLength);
+        CPL_LSBPTR32(&stPos.nObjectCode);
+        CPL_LSBPTR16(&stPos.nMandatorySemCount);
+        CPL_LSBPTR16(&stPos.nPossibleSemCount);
         VSIFWriteL(&stPos, sizeof(RSCObjectSemantics), 1, fpRSC);
 
         for (const auto &oSem : stObj.aoSem)
         {
+            CPL_LSBPTR32(&oSem.nCode);
             VSIFWriteL(&oSem.nCode, 4, 1, fpRSC);
         }
         nLength += stPos.nLength;
@@ -1182,6 +1312,10 @@ static void WriteSEG(VSILFILE *fpRSC, const std::vector<std::string> &aosLyr,
             pszEncoding);
         SXF::WriteEncString(aosLyr[i].c_str(), stRSCLayer.szShortName, 16, 
             pszEncoding);
+
+        CPL_LSBPTR32(&stRSCLayer.nLength);
+        CPL_LSBPTR16(&stRSCLayer.nSemanticCount);
+        CPL_LSBPTR32(&stRSCLayer.reserve);
         VSIFWriteL(&stRSCLayer, sizeof(RSCLayer), 1, fpRSC);
     }
     GByte nop[12] = { 0 };
@@ -1286,6 +1420,31 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
     stHeader.nFontEnc = 126; // ANSI encoding
     stHeader.nColorsInPalette = 16;
     
+    CPL_LSBPTR32(&stHeader.nFileState);
+    CPL_LSBPTR32(&stHeader.nFileModState);
+    CPL_LSBPTR32(&stHeader.nLang);
+    CPL_LSBPTR32(&stHeader.nNextID);
+    CPL_LSBPTR32(&stHeader.nScale);
+    CPL_LSBPTR32(&stHeader.nScalesRange);
+
+    SWAP_SECTION(stHeader.Objects);
+    SWAP_SECTION(stHeader.Semantic);
+    SWAP_SECTION(stHeader.ClassifySemantic);
+    SWAP_SECTION(stHeader.DefaultsSemantic);
+    SWAP_SECTION(stHeader.PossibleSemantic);
+    SWAP_SECTION(stHeader.Layers);
+    SWAP_SECTION(stHeader.Domains);
+    SWAP_SECTION(stHeader.Parameters);
+    SWAP_SECTION(stHeader.Print);
+    SWAP_SECTION(stHeader.Palettes);
+    SWAP_SECTION(stHeader.Fonts);
+    SWAP_SECTION(stHeader.Libs);
+    SWAP_SECTION(stHeader.ImageParams);
+    SWAP_SECTION(stHeader.Tables);
+
+    CPL_LSBPTR32(&stHeader.nFontEnc);
+    CPL_LSBPTR32(&stHeader.nColorsInPalette);
+
     // Write header
     nObjectsWrite = VSIFWriteL(&stHeader, sizeof(RSCHeader), 1, fpRSC.get());
     if (nObjectsWrite != 1)
@@ -1537,6 +1696,8 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
     stRSCFont.nTestSym = 48;
 
     pos = VSIFTellL(fpRSC.get());
+
+    CPL_LSBPTR32(&stRSCFont.nCode);
     VSIFWriteL(&stRSCFont, sizeof(RSCFont), 1, fpRSC.get());
 
     WriteRSCSection(pos, sizeof(RSCFont), 1, 240, fpRSC.get());

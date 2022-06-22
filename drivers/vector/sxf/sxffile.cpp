@@ -312,6 +312,14 @@ static void WriteSXFExtents(const OGREnvelope &stEnv, VSILFILE *fpSXF,
         corners[7] = stEnv.MinY;
     }
 
+    CPL_LSBPTR64(&corners[0]);
+    CPL_LSBPTR64(&corners[1]);
+    CPL_LSBPTR64(&corners[2]);
+    CPL_LSBPTR64(&corners[3]);
+    CPL_LSBPTR64(&corners[4]);
+    CPL_LSBPTR64(&corners[5]);
+    CPL_LSBPTR64(&corners[6]);
+    CPL_LSBPTR64(&corners[7]);
     VSIFWriteL(corners, 64, 1, fpSXF);
 }
 
@@ -1328,6 +1336,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
 
     // Read header
     Header stSXFFileHeader = { {'S', 'X', 'F', 0}, 400 };
+    CPL_LSBPTR32(&stSXFFileHeader.nLength);
 
     size_t nObjectsWrite =
         VSIFWriteL(&stSXFFileHeader, sizeof(Header), 1, fpSXF);
@@ -1379,6 +1388,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
             nScale = atoi(pszScale + 4);
         }
     }
+    CPL_LSBPTR32(&nScale);
     VSIFWriteL(&nScale, 4, 1, fpSXF);
 
     // Write sheet name
@@ -1404,6 +1414,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
             nEPSG = atoi(pSRS->GetAuthorityCode(nullptr));
         }
     }
+    CPL_LSBPTR32(&nEPSG);
     VSIFWriteL(&nEPSG, 4, 1, fpSXF);
     
     OGREnvelope stEnv;
@@ -1586,16 +1597,19 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     auto pszMagneticDeclination = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_MAGNETIC_DECLINATION_KEY);
     double fval = ToDouble(pszMagneticDeclination) * TO_RADIANS;
+    CPL_LSBPTR64(&fval);
     VSIFWriteL(&fval, 8, 1, fpSXF);
 
     auto pszAverageAapproachMeridians = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_AVG_APPROACH_OF_MERIDIANS_KEY);
     fval = ToDouble(pszAverageAapproachMeridians) * TO_RADIANS;
+    CPL_LSBPTR64(&fval);
     VSIFWriteL(&fval, 8, 1, fpSXF);
 
     auto pszAnnualMagneticDecl = 
         poDS->GetMetadataItem(MD_SOURCE_INFO_ANNUAL_MAGNETIC_DECLINATION_CHANGE_KEY);
     fval = ToDouble(pszAnnualMagneticDecl) * TO_RADIANS;
+    CPL_LSBPTR64(&fval);
     VSIFWriteL(&fval, 8, 1, fpSXF);
 
     SXFDate checkDate;
@@ -1612,14 +1626,18 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     {
         iVal = atoi(pszMSKZone);
     }
+
+    CPL_LSBPTR32(&iVal);
     VSIFWriteL(&iVal, 4, 1, fpSXF);
 
     auto pszHeightStep = poDS->GetMetadataItem(MD_SOURCE_TERRAIN_STEP_KEY);
     fval = ToDouble(pszHeightStep);
+    CPL_LSBPTR64(&fval);
     VSIFWriteL(&fval, 8, 1, fpSXF);
     
     auto pszAxisRotation = poDS->GetMetadataItem(MD_AXIS_ROTATION_KEY);
     fval = ToDouble(pszAxisRotation) * TO_RADIANS;
+    CPL_LSBPTR64(&fval);
     VSIFWriteL(&fval, 8, 1, fpSXF);
 
     auto pszResolution = poDS->GetMetadataItem(MD_SCAN_RESOLUTION_KEY);
@@ -1628,6 +1646,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     {
         nVal = atoi(pszResolution);
     }
+    CPL_LSBPTR32(&nVal);
     VSIFWriteL(&nVal, 4, 1, fpSXF);
 
     double adfFrameCornes[8] = { 0 };
@@ -1637,9 +1656,18 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     {
         adfFrameCornersShort[i] = static_cast<GInt32>(adfFrameCornes[i]);
     }
+    CPL_LSBPTR32(&adfFrameCornersShort[0]);
+    CPL_LSBPTR32(&adfFrameCornersShort[1]);
+    CPL_LSBPTR32(&adfFrameCornersShort[2]);
+    CPL_LSBPTR32(&adfFrameCornersShort[3]);
+    CPL_LSBPTR32(&adfFrameCornersShort[4]);
+    CPL_LSBPTR32(&adfFrameCornersShort[5]);
+    CPL_LSBPTR32(&adfFrameCornersShort[6]);
+    CPL_LSBPTR32(&adfFrameCornersShort[7]);
     VSIFWriteL(adfFrameCornersShort, 32, 1, fpSXF);
 
     iVal = 91000000;
+    CPL_LSBPTR32(&iVal);
     VSIFWriteL(&iVal, 4, 1, fpSXF);
 
     double adfProjDetails[6];
@@ -1650,6 +1678,12 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     adfProjDetails[4] = adfPrjParams[5];
     adfProjDetails[5] = adfPrjParams[6];
 
+    CPL_LSBPTR64(&adfProjDetails[0]);
+    CPL_LSBPTR64(&adfProjDetails[1]);
+    CPL_LSBPTR64(&adfProjDetails[2]);
+    CPL_LSBPTR64(&adfProjDetails[3]);
+    CPL_LSBPTR64(&adfProjDetails[4]);
+    CPL_LSBPTR64(&adfProjDetails[5]);
     VSIFWriteL(adfProjDetails, 48, 1, fpSXF);
     
     // Write data description ///////////////////////////////////////////////////
@@ -1676,6 +1710,9 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     auto pszAltFonts = poDS->GetMetadataItem(MD_DESC_USE_ALT_FONTS_KEY);
     stDataDesc.nAltFonts = ToGByte(pszAltFonts);
 
+    CPL_LSBPTR32(&stDataDesc.nLength);
+    CPL_LSBPTR32(&stDataDesc.nFeatureCount);
+    CPL_LSBPTR32(&stDataDesc.reserve);
     VSIFWriteL(&stDataDesc, sizeof(SXFDataDescriptorV4), 1, fpSXF);
 
     return true;
@@ -1883,6 +1920,8 @@ bool SXFFile::WriteTotalFeatureCount(GUInt32 nTotalFeatureCount)
         return false;
     }
     VSIFSeekL(fpSXF, 400 + 40, SEEK_SET);
+
+    CPL_LSBPTR32(&nTotalFeatureCount);
     return VSIFWriteL(&nTotalFeatureCount, 4, 1, fpSXF) == 1;
 }
 
@@ -1917,6 +1956,7 @@ bool SXFFile::WriteCheckSum()
     CPLDebug("SXF", "Checksum is %d", nCheckSum);
     VSIFSeekL(fpSXF, 12, SEEK_SET);
 
+    CPL_LSBPTR32(&nCheckSum);
     return VSIFWriteL(&nCheckSum, 4, 1, fpSXF) == 1;
 }
 

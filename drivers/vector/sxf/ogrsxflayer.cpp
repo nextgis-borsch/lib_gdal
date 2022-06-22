@@ -2412,6 +2412,17 @@ int OGRSXFLayer::SetRawFeature(OGRFeature *poFeature, OGRGeometry *poGeom,
         nGeometryBufferSize + nAttributesBufferSize);
     stRecordHeader.nGeometryLength = static_cast<GUInt32>(nGeometryBufferSize);
 
+    CPL_LSBPTR32(&stRecordHeader.nSign);
+    CPL_LSBPTR32(&stRecordHeader.nFullLength);
+    CPL_LSBPTR32(&stRecordHeader.nGeometryLength);
+    CPL_LSBPTR32(&stRecordHeader.nClassifyCode);
+    CPL_LSBPTR32(&stRecordHeader.nSign);
+    CPL_LSBPTR16(&stRecordHeader.anGroup[0]);
+    CPL_LSBPTR16(&stRecordHeader.anGroup[1]);
+    CPL_LSBPTR32(&stRecordHeader.nPointCount);
+    CPL_LSBPTR16(&stRecordHeader.nSubObjectCount);
+    CPL_LSBPTR16(&stRecordHeader.nPointCountSmall);
+
     // Write record data 
     VSIFWriteL(&stRecordHeader, sizeof(SXFRecordHeaderV4), 1, oSXF.File());
     VSIFWriteL(pGeomBuffer, nGeometryBufferSize, 1, oSXF.File());
