@@ -76,6 +76,12 @@ if(BUILD_TESTING)
             set_property(TEST autotest_${tgt} PROPERTY ENVIRONMENT "${PYTHON_RUN_ENV}")
         endforeach ()
 
+    else()
+        foreach (tgt IN ITEMS
+              gcore
+              gdrivers)
+            symlink_or_copy(${CMAKE_CURRENT_SOURCE_DIR}/${tgt} ${CMAKE_CURRENT_BINARY_DIR}/${tgt})
+        endforeach ()
     endif()
 
     add_subdirectory(cpp)
