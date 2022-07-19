@@ -686,8 +686,8 @@ swig/python,bindings/python,,"cpp,h,txt,py,conf,cfg,rst"
 swig/python/extensions,bindings/python/extensions,,"cpp,h,c,hpp"
 swig/python/osgeo,bindings/python/osgeo,,py
 swig/python/osgeo,bindings/python/,,py
-swig/python/gdal-utils/osgeo_utils,bindings/python/osgeo/utils,,py
-swig/python/gdal-utils/osgeo_utils/samples,bindings/python/osgeo/utils,,py
+swig/python/gdal-utils/osgeo_utils,bindings/python/osgeo_utils,,py
+swig/python/gdal-utils/osgeo_utils/samples,bindings/python/osgeo_utils,,py
 swig/python/gdal-utils/osgeo_utils/samples,bindings/python/samples,,py
 swig/python/gdal-utils,bindings/python/gdal-utils,,py
 swig/python/gdal-utils/osgeo_utils,bindings/python/gdal-utils/osgeo_utils,,py
