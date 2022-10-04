@@ -140,6 +140,20 @@ set(COPY
     osgeo_utils/ogrmerge.py
     osgeo_utils/pct2rgb.py
     osgeo_utils/rgb2pct.py
+    osgeo_utils/auxiliary/__init__.py
+    osgeo_utils/auxiliary/array_util.py
+    osgeo_utils/auxiliary/base.py
+    osgeo_utils/auxiliary/batch_creator.py
+    osgeo_utils/auxiliary/color_palette.py
+    osgeo_utils/auxiliary/color_table.py
+    osgeo_utils/auxiliary/extent_util.py
+    osgeo_utils/auxiliary/gdal_argparse.py
+    osgeo_utils/auxiliary/numpy_util.py
+    osgeo_utils/auxiliary/osr_util.py
+    osgeo_utils/auxiliary/progress.py
+    osgeo_utils/auxiliary/raster_creation.py
+    osgeo_utils/auxiliary/rectangle.py
+    osgeo_utils/auxiliary/util.py
     gdalconst.py
     gdalnumeric.py
     gdal.py

@@ -689,11 +689,7 @@ swig/python/osgeo,bindings/python/,,py
 swig/python/gdal-utils/osgeo_utils,bindings/python/osgeo_utils,,py
 swig/python/gdal-utils/osgeo_utils/samples,bindings/python/osgeo_utils,,py
 swig/python/gdal-utils/osgeo_utils/samples,bindings/python/samples,,py
-swig/python/gdal-utils,bindings/python/gdal-utils,,py
-swig/python/gdal-utils/osgeo_utils,bindings/python/gdal-utils/osgeo_utils,,py
-swig/python/gdal-utils/osgeo_utils/auxiliary,bindings/python/gdal-utils/osgeo_utils/auxiliary,,py
-swig/python/gdal-utils/osgeo_utils/samples,bindings/python/gdal-utils/osgeo_utils/samples,,py
-swig/python/gdal-utils/scripts,bindings/python/gdal-utils/scripts,,py
+swig/python/gdal-utils/osgeo_utils/auxiliary,bindings/python/osgeo_utils/auxiliary,,py
 frmts/vrt,core/frmts/vrt,,h
 frmts/mem,core/frmts/mem,,h
 frmts/gtiff,core/frmts/gtiff,,h
