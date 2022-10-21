@@ -29,6 +29,8 @@ cmake_minimum_required (VERSION 2.8.12 FATAL_ERROR)
 
 project(gdal)
 
+cmake_policy(SET CMP0057 NEW)
+
 # Some init settings
 set(CMAKE_COLOR_MAKEFILE ON)
 # Set path to additional CMake modules
