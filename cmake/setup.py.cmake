@@ -304,7 +304,7 @@ if HAVE_NUMPY:
     ext_modules.append(array_module)
     py_modules.append('gdalnumeric')
 
-packages = ["osgeo", "osgeo_utils"]
+packages = ["osgeo", "osgeo_utils", "osgeo_utils.auxiliary"]
 
 readme = str(open('README.rst','rb').read())
 
