@@ -2114,7 +2114,7 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
             }
         }
 
-        const char *pszValue = CSLFetchNameValue(papszParamList,"BLOCKXSIZE");
+        pszValue = CSLFetchNameValue(papszParamList,"BLOCKXSIZE");
         if( pszValue != nullptr )
             nBlockXSize = atoi( pszValue );
         if( static_cast<int>(nBlockXSize) <= 0 )
