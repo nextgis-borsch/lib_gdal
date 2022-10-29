@@ -2066,7 +2066,7 @@ GDALDataset *RMFDataset::Create( const char * pszFilename,
             return nullptr;
         }
 
-        const char *pszValue = CSLFetchNameValue(papszParmList, MD_SCALE_KEY);
+        const char *pszValue = CSLFetchNameValue(papszParamList, MD_SCALE_KEY);
         if (pszValue != nullptr && CPLStrnlen(pszValue, 10) > 4)
         {
             dfScale = atof(pszValue + 4);
