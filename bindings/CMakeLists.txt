@@ -28,8 +28,6 @@
 if(BUILD_SHARED_LIBS OR OSX_FRAMEWORK) # not support for static builds
 option(WITH_PYTHON "Set ON to build python bindings" OFF)
 if(WITH_PYTHON)
-    option(WITH_PYTHON2 "Set ON to build python2 bindings" ON)
-    option(WITH_PYTHON3 "Set ON to build python3 bindings" ON)
     set(GDAL_BINDINGS ${GDAL_BINDINGS} python PARENT_SCOPE)
     set(BINDING python)
     add_subdirectory(python)

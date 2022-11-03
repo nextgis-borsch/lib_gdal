@@ -32,23 +32,12 @@ else()
     set(INSTALL_PYTHON_DIR "lib" CACHE INTERNAL "Installation directory for python bindings" FORCE)
 endif()
 
-if(WITH_PYTHON2)
-    find_package(PythonInterp 2)
-    if(PYTHONINTERP_FOUND)
-        set(PYTHON2_EXECUTABLE ${PYTHON_EXECUTABLE})
-        set(PYTHON2_VERSION_MAJOR ${PYTHON_VERSION_MAJOR})
-        set(PYTHON2_VERSION_MINOR ${PYTHON_VERSION_MINOR})
-    else()
-        message(WARNING "Cannot find python 2")
-    endif()
-endif()
-
 unset(PYTHONINTERP_FOUND)
 unset(PYTHON_EXECUTABLE)
 unset(PYTHON_VERSION_MAJOR)
 unset(PYTHON_VERSION_MINOR)
 
-if(WITH_PYTHON3)
+if(WITH_PYTHON)
     # Hack, not find python3 withouut this
     find_program(PYTHON3_EXECUTABLE python3)
     set(PYTHON_EXECUTABLE ${PYTHON3_EXECUTABLE})
@@ -63,7 +52,7 @@ if(WITH_PYTHON3)
     endif()
 endif()
 
-if(NOT PYTHON2_EXECUTABLE AND NOT PYTHON3_EXECUTABLE)
+if(NOT PYTHON3_EXECUTABLE)
     message(FATAL_ERROR "Cannot find python")
 endif()
 
@@ -298,13 +287,7 @@ except ImportError:
     endif()
 endmacro()
 
-if(PYTHON2_EXECUTABLE)
-    #build_py(2)
-endif()
-
-if(PYTHON3_EXECUTABLE)
-    build_py(3)
-endif()
+build_py(3)
 
 # todo: add custom target to generate swig
 # '../../port', '../../gcore', '../../alg', '../../ogr/', '../../ogr/ogrsf_frmts', '../../gnm'
