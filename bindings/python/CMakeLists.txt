@@ -299,7 +299,7 @@ except ImportError:
 endmacro()
 
 if(PYTHON2_EXECUTABLE)
-    build_py(2)
+    #build_py(2)
 endif()
 
 if(PYTHON3_EXECUTABLE)
