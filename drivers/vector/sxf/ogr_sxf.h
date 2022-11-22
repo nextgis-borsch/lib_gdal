@@ -174,7 +174,7 @@ class RSCFile
     public:
         RSCFile();
         ~RSCFile();
-        bool Read(const std::string &osPath, CSLConstList papszOpenOpts);
+        bool Read(const std::string &osPath, CSLConstList papszOpenOpts, OGRSXFDataSource *poDS);
         bool Write(const std::string &osPath, OGRSXFDataSource *poDS, 
             const std::string &osEncoding, 
             const std::map<std::string, int> &mnClassMap);

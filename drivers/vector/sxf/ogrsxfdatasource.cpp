@@ -270,7 +270,7 @@ int OGRSXFDataSource::Open(const char *pszFilename, bool bUpdateIn,
     }
     else
     {
-        oRSCFile.Read(osRSCFileName, papszOpenOpts); // If read failed we get default layers and codes
+        oRSCFile.Read(osRSCFileName, papszOpenOpts, this); // If read failed we get default layers and codes
     }
     auto mstLayers = oRSCFile.GetLayers();
     CreateLayers(oSXFFile.Extent(), mstLayers, bNewBehavior);
