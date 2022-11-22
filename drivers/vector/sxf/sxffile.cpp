@@ -552,6 +552,10 @@ GUInt32 SXFLayerDefn::GenerateCode(SXFGeometryType eGeomType) const
     return nID + SXFFile::CodeForGeometryType(eGeomType);
 }
 
+std::unordered_set<SXFGeometryType> SXFLayerDefn::GetSupportedGeometryTypes() const
+{
+    return oSetSupportedGeometryTypes;
+}
 
 void SXFLayerDefn::AddLimits(const std::string &osCode, const SXFLimits &oLimIn)
 {
@@ -561,6 +565,10 @@ void SXFLayerDefn::AddLimits(const std::string &osCode, const SXFLimits &oLimIn)
     }
 }
 
+void SXFLayerDefn::AddSupportedGeometryType(SXFGeometryType eGeometryType)
+{
+    oSetSupportedGeometryTypes.insert(eGeometryType);
+}
 
 SXFLimits SXFLayerDefn::GetLimits(const std::string &osCode) const
 {

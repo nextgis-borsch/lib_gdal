@@ -36,6 +36,7 @@
 #include <set>
 #include <vector>
 #include <map>
+#include <unordered_set>
 
 #include "ogrsf_frmts.h"
 #include "org_sxf_defs.h"
@@ -93,12 +94,14 @@ class SXFLayerDefn
 		bool HasField(GUInt32 nSemCode) const;
 		void AddField(SXFField stField);
         void AddLimits(const std::string &osCode, const SXFLimits &oLimIn);
+        void AddSupportedGeometryType(SXFGeometryType eGeometryType);
 		std::string GetName() const;
 		std::vector<SXFClassCode> GetCodes(bool bForce = false);
 		std::vector<SXFField> GetFields() const;
         SXFLimits GetLimits(const std::string &osCode) const;
         std::string GetCodeName(const std::string &osCode, int nExt) const;
         GUInt32 GenerateCode(SXFGeometryType eGeometryType) const;
+        std::unordered_set<SXFGeometryType> GetSupportedGeometryTypes() const;
 	
 	private:
 		int nID;
@@ -106,6 +109,7 @@ class SXFLayerDefn
 		std::vector<SXFClassCode> astCodes;
 		std::vector<SXFField> astFields;
 		std::map<std::string, SXFLimits> mLim;
+        std::unordered_set<SXFGeometryType> oSetSupportedGeometryTypes;
 };
 
 /************************************************************************/
@@ -174,7 +178,7 @@ class RSCFile
     public:
         RSCFile();
         ~RSCFile();
-        bool Read(const std::string &osPath, CSLConstList papszOpenOpts, OGRSXFDataSource *poDS);
+        bool Read(const std::string &osPath, CSLConstList papszOpenOpts);
         bool Write(const std::string &osPath, OGRSXFDataSource *poDS, 
             const std::string &osEncoding, 
             const std::map<std::string, int> &mnClassMap);

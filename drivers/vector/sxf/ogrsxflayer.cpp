@@ -34,6 +34,7 @@
 #include "cpl_conv.h"
 #include "cpl_string.h"
 #include "ogr_p.h"
+#include <numeric>
 
 CPL_CVSID("$Id$")
 
@@ -47,6 +48,8 @@ constexpr const char *OBJECTNUMB = "OBJECTNUMB";
 constexpr const char *ANGLE = "ANGLE";
 constexpr const char *TEXT = "TEXT";
 constexpr const char *ALIGNMENT = "ALIGNMENT";
+
+constexpr const char * MD_SUPPORTED_GEOMETRY_TYPES_KEY = "SUPPORTED_GEOMETRY_TYPES";
 
 static enum SXFGeometryType OGRTypeToSXFType(OGRwkbGeometryType eType)
 {
@@ -671,6 +674,29 @@ static int GetTextAligment(GByte *pBuff, GUInt32 nTextL)
     return -1;
 }
 
+static std::string SXFTypeToNameString(SXFGeometryType eType)
+{
+    switch (eType)
+    {
+    case SXF_GT_Line:
+        return "LINE";
+    case SXF_GT_Polygon:
+        return "POLYGON";
+    case SXF_GT_Point:
+        return "POINT";
+    case SXF_GT_Text:
+        return "TEXT";
+    case SXF_GT_Vector:
+        return "VECTOR";
+    case SXF_GT_TextTemplate:
+        return "TEXT_TEMPLATE";
+
+    default:
+        return "";
+    }
+}
+
+
 ////////////////////////////////////////////////////////////////////////////
 /// OGRSXFLayer
 ////////////////////////////////////////////////////////////////////////////
@@ -744,6 +770,19 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn,
     }
     
     SetUpdatable(poDS->GetAccess() == GA_Update);
+
+    std::string sSupportedGeometryTypes;
+    auto oSetSupportedGeometryTypes = oSXFDefn.GetSupportedGeometryTypes();
+    if (!oSetSupportedGeometryTypes.empty())
+    {
+        sSupportedGeometryTypes = std::accumulate(std::next(oSetSupportedGeometryTypes.cbegin()), oSetSupportedGeometryTypes.cend(),
+            SXFTypeToNameString(*oSetSupportedGeometryTypes.cbegin()),
+            [](const std::string &str, SXFGeometryType geomType)
+        {
+            return str + ';' + SXFTypeToNameString(geomType);
+        });
+    }
+    SetMetadataItem(MD_SUPPORTED_GEOMETRY_TYPES_KEY, sSupportedGeometryTypes.c_str());
 }
 
 bool OGRSXFLayer::AddRecord(GIntBig nFID, const std::string &osClassCode, 

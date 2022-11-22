@@ -31,14 +31,10 @@
 #include "cpl_time.h"
 
 #include <memory>
-#include <unordered_set>
-#include <numeric>
 
 /************************************************************************/
 /*                            RSCInfo                                   */
 /************************************************************************/
-
-constexpr const char * MD_SUPPORTED_GEOMETRY_TYPES_KEY = "SUPPORTED_GEOMETRY_TYPES";
 
 constexpr int DEFAULT_RGB = 0x00B536AD; // rgb(181, 54, 173);
 /*
@@ -673,28 +669,6 @@ static GUInt32 WriteLineDefaultParam(GUInt16 nCode, VSILFILE *poFile)
     return stParam.nLength;
 }
 
-std::string SXFTypeToNameString(SXFGeometryType eType)
-{
-    switch (eType)
-    {
-    case SXF_GT_Line:
-        return "LINE";
-    case SXF_GT_Polygon:
-        return "POLYGON";
-    case SXF_GT_Point:
-        return "POINT";
-    case SXF_GT_Text:
-        return "TEXT";
-    case SXF_GT_Vector:
-        return "VECTOR";
-    case SXF_GT_TextTemplate:
-        return "TEXT_TEMPLATE";
-
-    default:
-        return "";
-    }
-}
-
 /************************************************************************/
 /*                             RSCFile                                  */
 /************************************************************************/
@@ -722,7 +696,7 @@ static std::string GetName(const char *pszName, const std::string &osEncoding)
     return out;
 }
 
-bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts, OGRSXFDataSource *poDS)
+bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
 {
     mstLayers.clear();
 
@@ -1061,9 +1035,6 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts, OGRSXF
     CPLDebug("SXF", "Read %d objects from RSC", stRSCFileHeaderEx.Objects.nRecordCount);
     nOffset = stRSCFileHeaderEx.Objects.nOffset;
     VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
-
-    std::unordered_set<SXFGeometryType> oSetSupportedGeomTypes;
-
     for( GUInt32 i = 0; i < stRSCFileHeaderEx.Objects.nRecordCount; i++ )
     {
         RSCObject stRSCObject;
@@ -1108,29 +1079,16 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts, OGRSXF
                     }
                 }
             }
-        }
 
-        if (eGeomType != SXFGeometryType::SXF_GT_Unknown)
-        {
-            oSetSupportedGeomTypes.insert(eGeomType);
+            if (eGeomType != SXFGeometryType::SXF_GT_Unknown)
+            {
+                layer->second.AddSupportedGeometryType(eGeomType);
+            }
         }
 
         nOffset += stRSCObject.nLength;
         VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
     }
-
-    std::string sSupportedGeomTypes;
-    if (!oSetSupportedGeomTypes.empty())
-    {
-        sSupportedGeomTypes = std::accumulate(std::next(oSetSupportedGeomTypes.cbegin()), oSetSupportedGeomTypes.cend(),
-            SXFTypeToNameString(*oSetSupportedGeomTypes.cbegin()),
-            [](const std::string &str, SXFGeometryType geomType)
-        {
-            return str + ';' + SXFTypeToNameString(geomType);
-        });
-    }
-    poDS->SetMetadataItem(MD_SUPPORTED_GEOMETRY_TYPES_KEY, sSupportedGeomTypes.c_str());
-
     return true;
 }
 
