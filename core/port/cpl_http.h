@@ -146,6 +146,18 @@ int CPL_DLL  CPLHTTPPushFetchCallback( CPLHTTPFetchCallbackFunc pFunc,
                                        void* pUserData );
 int CPL_DLL  CPLHTTPPopFetchCallback(void);
 
+/** Callback function to get Authorization header.
+ *
+ * @param pszURL See CPLHTTPFetchEx()
+ * @return Authorization header
+ */
+typedef std::string (*CPLHTTPAuthHeaderCallbackFunc)( const char *pszURL );
+
+void CPL_DLL CPLHTTPSetAuthHeaderCallback( CPLHTTPAuthHeaderCallbackFunc pFunc );
+int CPL_DLL  CPLHTTPPushAuthHeaderCallback( CPLHTTPAuthHeaderCallbackFunc pFunc );
+int CPL_DLL  CPLHTTPPopAuthHeaderCallback(void);
+
+
 /* -------------------------------------------------------------------- */
 /*      The following is related to OAuth2 authorization around         */
 /*      google services like fusion tables, and potentially others      */
