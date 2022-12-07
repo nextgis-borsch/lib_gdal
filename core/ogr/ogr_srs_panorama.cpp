@@ -103,6 +103,7 @@ constexpr long PAN_ELLIPSOID_KRASSOVSKY  = 1L;  // Krassovsky, 1940
 // constexpr long PAN_ELLIPSOID_BESSEL1841  = 7L;  // Bessel, 1841
 // constexpr long PAN_ELLIPSOID_AIRY1830    = 8L;  // Airy, 1830
 constexpr long PAN_ELLIPSOID_WGS84       = 9L;  // WGS, 1984 (GPS)
+constexpr long PAN_ELLIPSOID_WGS84_SPHERE = 45L;  // WGS, 1984 (Sphere)
 constexpr long PAN_ELLIPSOID_GSK2011     = 46L;   // GSK-2011
 constexpr long PAN_ELLIPSOID_PZ90        = 47L;   // PZ90
 
@@ -794,6 +795,7 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     CPLAssert( padfPrjParams );
 
     const char *pszProjection = GetAttrValue("PROJECTION");
+    auto nEPSG = atoi(GetAuthorityCode("PROJCS"))
 
 /* -------------------------------------------------------------------- */
 /*      Fill all projection parameters with zero.                       */
@@ -814,6 +816,14 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     else if (IsGeographic() || IsGeocentric())
     {
         *piProjSys = PAN_PROJ_SPHERE;
+    }
+    // Check well known EPSG codes
+    else if (nEPSG == 3857)
+    {
+        *piProjSys = PAN_PROJ_PSEUDO_MERCATOR;
+        *piDatum = PAN_DATUM_RECTANGULAR;
+        *piEllips = PAN_ELLIPSOID_WGS84_SPHERE;
+        return OGRERR_NONE;
     }
     else if( pszProjection == nullptr )
     {
