@@ -218,7 +218,7 @@ CPLErr RMFRasterBand::IReadBlock( int nBlockXOff, int nBlockYOff,
 #ifndef NDEBUG
     CPLDebug("RMF", "IReadBlock nBand %d, RawSize [%d, %d], Bits %d",
              nBand, nRawXSize, nRawYSize, (int)poGDS->sHeader.nBitDepth);
-#endif //NDEBUG
+#endif // NDEBUG
     if(poGDS->pabyCurrentTile == nullptr ||
        poGDS->nCurrentTileXOff != nBlockXOff ||
        poGDS->nCurrentTileYOff != nBlockYOff ||
@@ -543,7 +543,7 @@ CPLErr RMFRasterBand::IWriteBlock( int nBlockXOff, int nBlockYOff,
 #ifndef NDEBUG
         CPLDebug("RMF", "poGDS->oUnfinishedTiles.size() %d",
                  static_cast<int>(poGDS->oUnfinishedTiles.size()));
-#endif //NDEBUG
+#endif // NDEBUG
     }
 
     return CE_None;
@@ -2589,7 +2589,7 @@ CPLErr RMFDataset::IBuildOverviews( const char* pszResampling,
                       papapoOverviewBands[iBand][i]->GetYSize() );
         }
     }
-#endif //NDEBUG
+#endif // NDEBUG
     CPLErr  res;
     res = GDALRegenerateOverviewsMultiBand( nBandsIn, papoBandList,
                                             nOverviews, papapoOverviewBands,
@@ -2619,7 +2619,7 @@ CPLErr RMFDataset::IRasterIO(GDALRWFlag eRWFlag,
     CPLDebug("RMF", "Dataset %p, %s %d %d %d %d, %d %d",
              this, (eRWFlag == GF_Read ? "Read" : "Write"),
              nXOff, nYOff, nXSize, nYSize, nBufXSize, nBufYSize);
-#endif //NDEBUG
+#endif // NDEBUG
     if(eRWFlag == GF_Read &&
        poCompressData != nullptr &&
        poCompressData->oThreadPool.GetThreadCount() > 0)
