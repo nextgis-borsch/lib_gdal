@@ -795,7 +795,14 @@ OGRErr OGRSpatialReference::exportToPanorama( long *piProjSys, long *piDatum,
     CPLAssert( padfPrjParams );
 
     const char *pszProjection = GetAttrValue("PROJECTION");
-    auto nEPSG = atoi(GetAuthorityCode("PROJCS"));
+    int nEPSG = 0; 
+    auto pszEPSG = GetAuthorityCode("PROJCS");
+    if (pszEPSG == nullptr) {
+        pszEPSG = GetAuthorityCode("GEOGCS");
+    }
+    if (pszEPSG != nullptr) {
+        nEPSG = atoi(pszEPSG);
+    }
 
 /* -------------------------------------------------------------------- */
 /*      Fill all projection parameters with zero.                       */
