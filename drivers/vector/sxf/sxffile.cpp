@@ -470,8 +470,8 @@ std::pair<int, int> SXFLimits::GetLimitCodes() const
 /* SXFLayerDefn                                                               */
 /******************************************************************************/
 
-SXFLayerDefn::SXFLayerDefn(int nLayerID, int nLayerDrawingOrder, const std::string &osLayerName) :
-    nID(nLayerID), nDrawingOrder(nLayerDrawingOrder), osName(osLayerName)
+SXFLayerDefn::SXFLayerDefn(int nLayerID, const std::string &osLayerName) :
+    nID(nLayerID), osName(osLayerName)
 {
 
 }
@@ -560,6 +560,12 @@ std::unordered_set<SXFGeometryType> SXFLayerDefn::GetSupportedGeometryTypes() co
 int SXFLayerDefn::GetDrawingOrder() const
 {
     return nDrawingOrder;
+}
+
+
+void SXFLayerDefn::SetDrawingOrder(int nOrder)
+{
+    nDrawingOrder = nOrder;
 }
 
 void SXFLayerDefn::AddLimits(const std::string &osCode, const SXFLimits &oLimIn)

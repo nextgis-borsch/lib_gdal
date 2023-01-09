@@ -87,7 +87,7 @@ class SXFLimits
 class SXFLayerDefn 
 {
 	public:
-		explicit SXFLayerDefn(int nLayerID = 0, int nLayerDrawingOrder = 255, const std::string &osLayerName = "");
+		explicit SXFLayerDefn(int nLayerID = 0, const std::string &osLayerName = "");
 		//int GetExtentionNo(const std::string &osCode, const std::pair<int, int> &nSCValues) const;
 		bool HasCode(const std::string &osCode) const;
 		void AddCode(SXFClassCode stCode);
@@ -103,6 +103,7 @@ class SXFLayerDefn
         GUInt32 GenerateCode(SXFGeometryType eGeometryType) const;
         std::unordered_set<SXFGeometryType> GetSupportedGeometryTypes() const;
         int GetDrawingOrder() const;
+        void SetDrawingOrder(int nOrder);
 	
 	private:
 		int nID;
@@ -111,7 +112,7 @@ class SXFLayerDefn
 		std::vector<SXFField> astFields;
 		std::map<std::string, SXFLimits> mLim;
         std::unordered_set<SXFGeometryType> oSetSupportedGeometryTypes;
-        int nDrawingOrder;
+        int nDrawingOrder = -1;
 };
 
 /************************************************************************/

@@ -270,6 +270,11 @@ typedef struct {
     std::vector<RSCSem> aoSem;
 } RSCObj;
 
+typedef struct {
+    std::string osName;
+    int nDrawingOrder;
+} RSCSeg;
+
 #define SWAP_SECTION(x) \
     CPL_LSBPTR32(&(x.nOffset)); \
     CPL_LSBPTR32(&(x.nLength)); \
@@ -1025,7 +1030,9 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                 osEncoding);
         }
 
-        mstLayers[stLayer.nNo] = SXFLayerDefn(stLayer.nNo * EXTRA_ID, stLayer.nDrawOrder, osLayerName);
+        auto oDefn = SXFLayerDefn(stLayer.nNo * EXTRA_ID, osLayerName);
+        oDefn.SetDrawingOrder(stLayer.nDrawOrder);
+        mstLayers[stLayer.nNo] = oDefn;
 
         nOffset += stLayer.nLength;
         VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
@@ -1096,6 +1103,7 @@ static std::map<GByte, SXFLayerDefn> GetDefaultLayers()
 {
     std::map<GByte, SXFLayerDefn> mstDefaultLayers;
     SXFLayerDefn defn(0, "SYSTEM");
+    defn.SetDrawingOrder(255);
 
     // Some initial codes
     defn.AddCode({ "L1000000001", "Selection line", 0});
@@ -1293,7 +1301,7 @@ static void WritePOS(VSILFILE *fpRSC, const std::vector<RSCObj> &astObj,
     WriteRSCSection(pos, nLength, nRecordCount, 168, fpRSC);
 }
 
-static void WriteSEG(VSILFILE *fpRSC, const std::vector<std::string> &aosLyr, 
+static void WriteSEG(VSILFILE *fpRSC, const std::vector<RSCSeg> &aosLyr, 
     const char *pszEncoding)
 {
     GByte lyrId[4] = { 'S', 'E', 'G', 0 };
@@ -1308,13 +1316,18 @@ static void WriteSEG(VSILFILE *fpRSC, const std::vector<std::string> &aosLyr,
         RSCLayer stRSCLayer = RSCLayer();
         stRSCLayer.nLength = sizeof(RSCLayer);
         stRSCLayer.nNo = i;
-        if (aosLyr[i] == "SYSTEM")
+        if (aosLyr[i].nDrawingOrder < 0 || aosLyr[i].nDrawingOrder > 255)
         {
             stRSCLayer.nDrawOrder = 255;
         }
-        SXF::WriteEncString(aosLyr[i].c_str(), stRSCLayer.szName, 32, 
+        else
+        {
+            stRSCLayer.nDrawOrder = aosLyr[i].nDrawingOrder;
+        }
+
+        SXF::WriteEncString(aosLyr[i].osName.c_str(), stRSCLayer.szName, 32, 
             pszEncoding);
-        SXF::WriteEncString(aosLyr[i].c_str(), stRSCLayer.szShortName, 16, 
+        SXF::WriteEncString(aosLyr[i].osName.c_str(), stRSCLayer.szShortName, 16, 
             pszEncoding);
 
         CPL_LSBPTR32(&stRSCLayer.nLength);
@@ -1459,14 +1472,17 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
 
     /////////////////////////////////////////////////////////
 
-    std::vector<std::string> aosLyr;
+    std::vector<RSCSeg> aosLyr;
     std::vector<RSCObj> astObjs;
     std::vector<RSCSem> astSem;
 
     /// Mandatory default values order and position at the beginning
 
     /// Add system layer
-    aosLyr.push_back("SYSTEM");
+    RSCSeg stRSCSeg1 = RSCSeg();
+    stRSCSeg1.osName = "SYSTEM";
+    stRSCSeg1.nDrawingOrder = 255;
+    aosLyr.emplace_back(stRSCSeg1);
 
     /// Add default objects
     RSCObj stRSCObject1 = RSCObj();
@@ -1534,7 +1550,20 @@ bool RSCFile::Write(const std::string &osPath, OGRSXFDataSource *poDS,
             continue;
         }
 
-        aosLyr.push_back(poLayer->GetName());
+        auto stNewSeg = RSCSeg();
+        stNewSeg.osName = poLayer->GetName();
+
+        auto pszDrawingOrder = poLayer->GetMetadataItem(MD_DRAWING_ORDER_KEY);
+        if (pszDrawingOrder != nullptr)
+        {
+            stNewSeg.nDrawingOrder = atoi(pszDrawingOrder);
+        }
+        else
+        {
+            stNewSeg.nDrawingOrder = 0;
+        }
+
+        aosLyr.emplace_back(stNewSeg);
 
         auto poLayerDefn = poLayer->GetLayerDefn();
 

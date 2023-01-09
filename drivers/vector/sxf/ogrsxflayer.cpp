@@ -50,7 +50,6 @@ constexpr const char *TEXT = "TEXT";
 constexpr const char *ALIGNMENT = "ALIGNMENT";
 
 constexpr const char * MD_SUPPORTED_GEOMETRY_TYPES_KEY = "SUPPORTED_GEOMETRY_TYPES";
-constexpr const char * MD_DRAWING_ORDER_KEY = "DRAWING_ORDER";
 
 static enum SXFGeometryType OGRTypeToSXFType(OGRwkbGeometryType eType)
 {
@@ -784,7 +783,10 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn,
         });
     }
     SetMetadataItem(MD_SUPPORTED_GEOMETRY_TYPES_KEY, sSupportedGeometryTypes.c_str());
-    SetMetadataItem(MD_DRAWING_ORDER_KEY, CPLSPrintf("%d", oSXFDefn.GetDrawingOrder()));
+    if (oSXFDefn.GetDrawingOrder() > 0) 
+    {
+        SetMetadataItem(MD_DRAWING_ORDER_KEY, CPLSPrintf("%d", oSXFDefn.GetDrawingOrder()));
+    }
 }
 
 bool OGRSXFLayer::AddRecord(GIntBig nFID, const std::string &osClassCode, 
