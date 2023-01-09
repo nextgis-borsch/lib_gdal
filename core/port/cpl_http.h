@@ -35,7 +35,6 @@
 #include "cpl_string.h"
 #include "cpl_progress.h"
 #include "cpl_vsi.h"
-#include <functional>
 
 /**
  * \file cpl_http.h
@@ -152,7 +151,7 @@ int CPL_DLL  CPLHTTPPopFetchCallback(void);
  * @param pszURL See CPLHTTPFetchEx()
  * @return Authorization header
  */
-typedef std::function<std::string(const char *)> CPLHTTPAuthHeaderCallbackFunc;
+typedef std::string (*CPLHTTPAuthHeaderCallbackFunc)( const char *pszURL );
 
 void CPL_DLL CPLHTTPSetAuthHeaderCallback( CPLHTTPAuthHeaderCallbackFunc pFunc );
 int CPL_DLL  CPLHTTPPushAuthHeaderCallback( CPLHTTPAuthHeaderCallbackFunc pFunc );
