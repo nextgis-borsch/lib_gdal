@@ -227,7 +227,7 @@ class CPL_DLL OGRSpatialReference
     OGRErr      importFromUSGS( long iProjSys, long iZone,
                                 double *padfPrjParams, long iDatum,
                                 int nUSGSAngleFormat = USGS_ANGLE_PACKEDDMS );
-    OGRErr      importFromPanorama( long, long, long, double* );
+    OGRErr importFromPanorama(long, long, long, double *, int bNorth = 1);
     OGRErr      importVertCSFromPanorama( int );
     OGRErr      importFromOzi( const char * const* papszLines );
     OGRErr      importFromWMSAUTO( const char *pszAutoDef );
