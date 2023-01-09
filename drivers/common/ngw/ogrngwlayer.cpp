@@ -784,7 +784,10 @@ OGRErr OGRNGWLayer::SetNextByIndex( GIntBig nIndex )
                 osUrl = NGWAPI::GetFeature( poDS->GetUrl(), osResourceId );
             }
 
-            FillFeatures(osUrl);
+            if (!FillFeatures(osUrl))
+            {
+                return OGRERR_FAILURE;
+            }
         }
 
         if( moFeatures.empty() ||

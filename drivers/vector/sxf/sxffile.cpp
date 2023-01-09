@@ -470,8 +470,8 @@ std::pair<int, int> SXFLimits::GetLimitCodes() const
 /* SXFLayerDefn                                                               */
 /******************************************************************************/
 
-SXFLayerDefn::SXFLayerDefn(int nLayerID, const std::string &osLayerName) :
-    nID(nLayerID), osName(osLayerName)
+SXFLayerDefn::SXFLayerDefn(int nLayerID, int nLayerDrawingOrder, const std::string &osLayerName) :
+    nID(nLayerID), nDrawingOrder(nLayerDrawingOrder), osName(osLayerName)
 {
 
 }
@@ -555,6 +555,11 @@ GUInt32 SXFLayerDefn::GenerateCode(SXFGeometryType eGeomType) const
 std::unordered_set<SXFGeometryType> SXFLayerDefn::GetSupportedGeometryTypes() const
 {
     return oSetSupportedGeometryTypes;
+}
+
+int SXFLayerDefn::GetDrawingOrder() const
+{
+    return nDrawingOrder;
 }
 
 void SXFLayerDefn::AddLimits(const std::string &osCode, const SXFLimits &oLimIn)
@@ -1750,37 +1755,9 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
     }
 
     // Normalize some coordintates systems
-    if (iEllips == 45 && iProjSys == 35) //Mercator 3857 on sphere wgs84
-    {
-        pSpatRef = new OGRSpatialReference();
-        OGRErr eErr = pSpatRef->importFromEPSG(3857);
-        if (eErr != OGRERR_NONE)
-        {
-            return eErr;
-        }
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-        return SetVertCS(iVCS, papszOpenOpts);
-    }
-    else if (iEllips == 9 && iProjSys == 35) //Mercator 3395 on ellips wgs84
-    {
-        pSpatRef = new OGRSpatialReference();
-        OGRErr eErr = pSpatRef->importFromEPSG(3395);
-        if (eErr != OGRERR_NONE)
-        {
-            return eErr;
-        }
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-        return SetVertCS(iVCS, papszOpenOpts);
-    }
-    else if (iEllips == 9 && iProjSys == 34) //Miller 54003 on sphere wgs84
+    if (iEllips == 9 && iProjSys == 34) //Miller 54003 on sphere wgs84
     {
         pSpatRef = new OGRSpatialReference("PROJCS[\"World_Miller_Cylindrical\",GEOGCS[\"GCS_GLOBE\", DATUM[\"GLOBE\", SPHEROID[\"GLOBE\", 6367444.6571, 0.0]],PRIMEM[\"Greenwich\",0],UNIT[\"Degree\",0.017453292519943295]],PROJECTION[\"Miller_Cylindrical\"],PARAMETER[\"False_Easting\",0],PARAMETER[\"False_Northing\",0],PARAMETER[\"Central_Meridian\",0],UNIT[\"Meter\",1],AUTHORITY[\"ESRI\",\"54003\"]]");
-        pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-        return SetVertCS(iVCS, papszOpenOpts);
-    }
-    else if (iEllips == 9 && iProjSys == 33 && eUnitInPlan == SXF_COORD_MU_DEGREE)
-    {
-        pSpatRef = new OGRSpatialReference(SRS_WKT_WGS84_LAT_LONG);
         pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         return SetVertCS(iVCS, papszOpenOpts);
     }
@@ -1791,7 +1768,7 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
         pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         return SetVertCS(iVCS, papszOpenOpts);
     }
-    else if ((iEllips == 1 || iEllips == 0 ) && iCS == 1 && iProjSys == 1) // Pulkovo 1942 / Gauss-Kruger
+    else if ((iEllips == 1 || iEllips == 0 ) && (iCS == 1 || iCS == 9) && iProjSys == 1) // Pulkovo 1942 | 1995 / Gauss-Kruger
     {
         // First try to get center meridian from metadata
         double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
@@ -1800,76 +1777,27 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
             // Next try to get center meridian from sheet bounds. May be errors for double/triple/quad sheets.
             dfCenterLongEnv = GetCenter(padfGeoCoords[1], padfGeoCoords[5]);
         }
-        int nZoneEnv = GetZoneNumber(dfCenterLongEnv);
-        if (nZoneEnv > 1 && nZoneEnv < 33)
+        int nZone = GetZoneNumber(dfCenterLongEnv);
+        if (nZone < 0)
         {
-            int nEPSG = 28400 + nZoneEnv;
-            pSpatRef = new OGRSpatialReference();
-            OGRErr eErr = pSpatRef->importFromEPSG(nEPSG);
-            if (eErr != OGRERR_NONE)
-            {
-                return eErr;
-            }
-            pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-            return SetVertCS(iVCS, papszOpenOpts);
+            nZone += 60;
         }
-        else
-        {
-            padfPrjParams[7] = nZoneEnv;
+        
+        padfPrjParams[7] = nZone;
 
-            if (padfPrjParams[5] == 0) // False Easting
+        if (padfPrjParams[5] == 0) // False Easting
+        {
+            if (oEnvelope.MaxX < 500000)
             {
-                if (oEnvelope.MaxX < 500000)
-                {
-                    padfPrjParams[5] = 500000;
-                }
-                else
-                {
-                    padfPrjParams[5] = nZoneEnv * 1000000 + 500000;
-                }
+                padfPrjParams[5] = 500000;
+            }
+            else
+            {
+                padfPrjParams[5] = nZone * 1000000 + 500000;
             }
         }
     }
-    else if ((iEllips == 1 || iEllips == 0) && iCS == 9 && iProjSys == 1) // Pulkovo 1995 / Gauss-Kruger
-    {
-        // First try to get center meridian from metadata
-        double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
-        if (dfCenterLongEnv < 9 || dfCenterLongEnv > 189)
-        {
-            // Next try to get center meridian from sheet bounds. May be errors for double/triple/quad sheets.
-            dfCenterLongEnv = GetCenter(padfGeoCoords[1], padfGeoCoords[5]);
-        }
-        int nZoneEnv = GetZoneNumber(dfCenterLongEnv);
-        if (nZoneEnv > 3 && nZoneEnv < 33)
-        {
-            int nEPSG = 20000 + nZoneEnv;
-            pSpatRef = new OGRSpatialReference();
-            OGRErr eErr = pSpatRef->importFromEPSG(nEPSG);
-            if (eErr != OGRERR_NONE)
-            {
-                return eErr;
-            }
-            pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-            return SetVertCS(iVCS, papszOpenOpts);
-        }
-        else
-        {
-            padfPrjParams[7] = nZoneEnv;
-
-            if (padfPrjParams[5] == 0) // False Easting
-            {
-                if (oEnvelope.MaxX < 500000)
-                {
-                    padfPrjParams[5] = 500000;
-                }
-                else
-                {
-                    padfPrjParams[5] = nZoneEnv * 1000000 + 500000;
-                }
-            }
-        }
-    }
-    else if (iEllips == 9 && iCS == 2) // WGS84 / UTM
+    else if (iEllips == 9 && iCS == 2 && iProjSys == 17) // WGS84 / UTM  
     {
         // First try to get center meridian from metadata
         double dfCenterLongEnv = padfPrjParams[3] * TO_DEGREES;
@@ -1878,19 +1806,12 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
             // Next try to get center meridian from sheet bounds. May be errors for double/triple/quad sheets.
             dfCenterLongEnv = GetCenter(padfGeoCoords[1], padfGeoCoords[5]);
         }
-        int nZoneEnv = 30 + GetZoneNumber(dfCenterLongEnv);
+        int nZone = 30 + GetZoneNumber(dfCenterLongEnv);
+        padfPrjParams[7] = nZone;
         bool bNorth = padfGeoCoords[6] + (padfGeoCoords[2] - padfGeoCoords[6]) / 2 < 0;
-        int nEPSG = 0;
-        if (bNorth)
-        {
-            nEPSG = 32600 + nZoneEnv;
-        }
-        else
-        {
-            nEPSG = 32700 + nZoneEnv;
-        }
+ 
         pSpatRef = new OGRSpatialReference();
-        OGRErr eErr = pSpatRef->importFromEPSG(nEPSG);
+        OGRErr eErr = pSpatRef->importFromPanorama(iProjSys, iCS, iEllips, padfPrjParams, bNorth ? TRUE : FALSE);
         if (eErr != OGRERR_NONE)
         {
             return eErr;
@@ -1901,7 +1822,7 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
 
     pSpatRef = new OGRSpatialReference();
     OGRErr eErr = 
-        pSpatRef->importFromPanorama(iProjSys, 0L, iEllips, padfPrjParams);
+        pSpatRef->importFromPanorama(iProjSys, iCS, iEllips, padfPrjParams);
     if (eErr != OGRERR_NONE)
     {
         return eErr;

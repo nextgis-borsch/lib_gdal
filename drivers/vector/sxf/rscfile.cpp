@@ -1025,7 +1025,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                 osEncoding);
         }
 
-        mstLayers[stLayer.nNo] = SXFLayerDefn(stLayer.nNo * EXTRA_ID, osLayerName);
+        mstLayers[stLayer.nNo] = SXFLayerDefn(stLayer.nNo * EXTRA_ID, stLayer.nDrawOrder, osLayerName);
 
         nOffset += stLayer.nLength;
         VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
