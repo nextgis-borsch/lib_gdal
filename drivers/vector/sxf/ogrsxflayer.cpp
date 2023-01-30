@@ -783,6 +783,10 @@ OGRSXFLayer::OGRSXFLayer(OGRSXFDataSource *poDSIn,
         });
     }
     SetMetadataItem(MD_SUPPORTED_GEOMETRY_TYPES_KEY, sSupportedGeometryTypes.c_str());
+    if (oSXFDefn.GetDrawingOrder() > 0) 
+    {
+        SetMetadataItem(MD_DRAWING_ORDER_KEY, CPLSPrintf("%d", oSXFDefn.GetDrawingOrder()));
+    }
 }
 
 bool OGRSXFLayer::AddRecord(GIntBig nFID, const std::string &osClassCode, 

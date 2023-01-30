@@ -58,6 +58,7 @@ constexpr const char * DEFAULT_ENC_ANSI = "CP1251";
 constexpr const char * DEFAULT_ENC_KOI8 = "KOI8-R";
 
 constexpr const char * MD_SCALE_KEY = "SCALE";
+constexpr const char * MD_DRAWING_ORDER_KEY = "DRAWING_ORDER";
 
 constexpr int START_CODE = 7654321;
 constexpr int DEFAULT_CLCODE_L = START_CODE;

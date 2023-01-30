@@ -102,6 +102,8 @@ class SXFLayerDefn
         std::string GetCodeName(const std::string &osCode, int nExt) const;
         GUInt32 GenerateCode(SXFGeometryType eGeometryType) const;
         std::unordered_set<SXFGeometryType> GetSupportedGeometryTypes() const;
+        int GetDrawingOrder() const;
+        void SetDrawingOrder(int nOrder);
 	
 	private:
 		int nID;
@@ -110,6 +112,7 @@ class SXFLayerDefn
 		std::vector<SXFField> astFields;
 		std::map<std::string, SXFLimits> mLim;
         std::unordered_set<SXFGeometryType> oSetSupportedGeometryTypes;
+        int nDrawingOrder = -1;
 };
 
 /************************************************************************/
