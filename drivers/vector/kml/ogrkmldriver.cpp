@@ -50,10 +50,19 @@ static int OGRKMLDriverIdentify( GDALOpenInfo* poOpenInfo )
     if( poOpenInfo->fpL == nullptr )
         return FALSE;
 
-    return strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader),
-                  "<kml") != nullptr ||
-           strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader),
-                  "<kml:kml") != nullptr;
+    // According to KML 2.0 specification:
+    // An XML document must always have a single root element
+    // For KML, this means you can use the <kml>< / kml> tag, the
+    //    <Document>< / Document> tag, the <Folder>< / Folder> tag, or even the
+    //    <Placemark>< / Placemark> tag as the root
+
+    const char *tags[] = { "<kml", "<kml:kml", "<Document", "<Folder", "<Placemark" };
+
+    for (const char *tag : tags)
+        if (strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader), tag) != nullptr)
+            return TRUE;
+
+    return FALSE;
 }
 
 /************************************************************************/
