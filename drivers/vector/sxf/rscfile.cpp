@@ -1006,7 +1006,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
 
     std::map<GUInt32, std::vector<GUInt32>> codeSemMap;
-    std::map<GUInt32, std::vector<GUInt32>> mandatorySemMap;
+    std::unordered_map<GUInt32, std::vector<GUInt32>> mandatorySemMap;
 
     for( GUInt32 i = 0; i < stRSCFileHeaderEx.PossibleSemantic.nRecordCount; i++ )
     {
@@ -1114,13 +1114,17 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                     }
                 }
 
-                for ( auto semantic : mandatorySemMap[stRSCObject.nClassifyCode] )
+                auto mandatorySemIt = mandatorySemMap.find(stRSCObject.nClassifyCode);
+                if (mandatorySemIt != mandatorySemMap.end())
                 {
-                    double defaultValue = {};
-                    auto it = semanticDefaultValuesMap.find(semantic);
-                    if ( it != semanticDefaultValuesMap.end() )
-                        defaultValue = it->second;
-                    layer->second.AddMandatoryField( stRSCObject.nClassifyCode, { semantic, defaultValue });
+                    for (GUInt32 semantic : mandatorySemIt->second)
+                    {
+                        double defaultValue = {};
+                        auto it = semanticDefaultValuesMap.find(semantic);
+                        if (it != semanticDefaultValuesMap.end())
+                            defaultValue = it->second;
+                        layer->second.AddMandatoryField(stRSCObject.nClassifyCode, { semantic, defaultValue });
+                    }
                 }
             }
 
