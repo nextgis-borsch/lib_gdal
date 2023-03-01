@@ -323,4 +323,9 @@ typedef struct _SXFClassCode {
     }
 } SXFClassCode;
 
+typedef struct {
+    GUInt32 nCode;
+    double dDefValue;
+} SXFMandatoryField;
+
 #endif  /* SXF_DEFS_H */

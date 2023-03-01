@@ -275,6 +275,15 @@ typedef struct {
     int nDrawingOrder;
 } RSCSeg;
 
+typedef struct
+{
+    GUInt32 nId;
+    GUInt32 nCode;
+    double dMin;
+    double dDef;
+    double dMax;
+} RSCSemDefault;
+
 #define SWAP_SECTION(x) \
     CPL_LSBPTR32(&(x.nOffset)); \
     CPL_LSBPTR32(&(x.nLength)); \
@@ -975,13 +984,29 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
         }
     }
 
+    // Read semantic default values
+    std::unordered_map<GUInt32, double> semanticDefaultValuesMap;
+
+    vsi_l_offset nOffset = stRSCFileHeaderEx.DefaultsSemantic.nOffset;
+    VSIFSeekL( fpRSC.get(), nOffset, SEEK_SET );
+    for ( GUInt32 i = 0; i < stRSCFileHeaderEx.DefaultsSemantic.nRecordCount; i++ )
+    {
+        RSCSemDefault stSemDefault;
+        VSIFReadL(&stSemDefault, sizeof(RSCSemDefault), 1, fpRSC.get());
+        CPL_LSBPTR32(&stSemDefault.nCode);
+        CPL_LSBPTR64(&stSemDefault.dDef);
+
+        semanticDefaultValuesMap[stSemDefault.nCode] = stSemDefault.dDef;
+    }
+
     // Read classify code -> semantics[]
     CPLDebug("SXF", "Read %d classify code -> attributes[] from RSC", 
         stRSCFileHeaderEx.PossibleSemantic.nRecordCount);
-    vsi_l_offset nOffset = stRSCFileHeaderEx.PossibleSemantic.nOffset;
+    nOffset = stRSCFileHeaderEx.PossibleSemantic.nOffset;
     VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
 
     std::map<GUInt32, std::vector<GUInt32>> codeSemMap;
+    std::map<GUInt32, std::vector<GUInt32>> mandatorySemMap;
 
     for( GUInt32 i = 0; i < stRSCFileHeaderEx.PossibleSemantic.nRecordCount; i++ )
     {
@@ -999,6 +1024,9 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             VSIFReadL(&sc, 4, 1, fpRSC.get());
             CPL_LSBPTR32(&sc);
             codeSemMap[stRSCOS.nObjectCode].push_back(sc);
+
+            if ( j < stRSCOS.nMandatorySemCount )
+                mandatorySemMap[stRSCOS.nObjectCode].push_back(sc);
         }
 
         nOffset += stRSCOS.nLength;
@@ -1084,6 +1112,15 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                             layer->second.AddField(ss);
                         }
                     }
+                }
+
+                for ( auto semantic : mandatorySemMap[stRSCObject.nClassifyCode] )
+                {
+                    double defaultValue = {};
+                    auto it = semanticDefaultValuesMap.find(semantic);
+                    if ( it != semanticDefaultValuesMap.end() )
+                        defaultValue = it->second;
+                    layer->second.AddMandatoryField( stRSCObject.nClassifyCode, { semantic, defaultValue });
                 }
             }
 

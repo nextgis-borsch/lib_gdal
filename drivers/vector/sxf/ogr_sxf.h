@@ -37,6 +37,7 @@
 #include <vector>
 #include <map>
 #include <unordered_set>
+#include <unordered_map>
 
 #include "ogrsf_frmts.h"
 #include "org_sxf_defs.h"
@@ -104,7 +105,8 @@ class SXFLayerDefn
         std::unordered_set<SXFGeometryType> GetSupportedGeometryTypes() const;
         int GetDrawingOrder() const;
         void SetDrawingOrder(int nOrder);
-	
+        void AddMandatoryField(GUInt32 nClassifyCode, const SXFMandatoryField &field);
+        std::vector<SXFMandatoryField> GetMandatoryFields(GUInt32 nClassifyCode) const;
 	private:
 		int nID;
 		std::string osName;
@@ -113,6 +115,7 @@ class SXFLayerDefn
 		std::map<std::string, SXFLimits> mLim;
         std::unordered_set<SXFGeometryType> oSetSupportedGeometryTypes;
         int nDrawingOrder = -1;
+        std::unordered_map<GUInt32, std::vector<SXFMandatoryField>> mMandatoryFields;
 };
 
 /************************************************************************/

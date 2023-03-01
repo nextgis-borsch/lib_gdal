@@ -1219,7 +1219,7 @@ void OGRSXFLayer::AddValue(OGRFeature *poFeature, const std::string &osFieldName
     poFeature->SetField(nIndex, value);
 }
 
-OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,  
+OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
     int nGroupID, int nSubObjectID)
 {
     SXFRecordHeader stRecordHeader;
@@ -1592,6 +1592,15 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
         }
     }
 
+    // Add missing mandatory fields with default value
+    const std::vector<SXFMandatoryField> mandatoryFields = oSXFLayerDefn.GetMandatoryFields(stRecordHeader.nClassifyCode);
+    for (const SXFMandatoryField &field : mandatoryFields)
+    {
+        const std::string fieldName = "SC_" + std::to_string(field.nCode);
+        if (mFieldValues.find(fieldName) == mFieldValues.end())
+            AddValue(poFeature, fieldName, field.dDefValue);
+    }
+    
     int nExt = GetExtention(osStrCode, *poFeature, oSXFLayerDefn);
     auto osName = oSXFLayerDefn.GetCodeName(osStrCode, nExt);
     poFeature->SetField(CLNAME, osName.c_str());

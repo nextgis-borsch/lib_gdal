@@ -568,6 +568,19 @@ void SXFLayerDefn::SetDrawingOrder(int nOrder)
     nDrawingOrder = nOrder;
 }
 
+void SXFLayerDefn::AddMandatoryField(GUInt32 nClassifyCode, const SXFMandatoryField &field)
+{
+    mMandatoryFields[nClassifyCode].push_back(field);
+}
+
+std::vector<SXFMandatoryField> SXFLayerDefn::GetMandatoryFields(GUInt32 nClassifyCode) const
+{
+    auto it = mMandatoryFields.find(nClassifyCode);
+    if (it != mMandatoryFields.end())
+        return it->second;
+    return {};
+}
+
 void SXFLayerDefn::AddLimits(const std::string &osCode, const SXFLimits &oLimIn)
 {
     if (mLim.find(osCode) == mLim.end())
