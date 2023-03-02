@@ -6,7 +6,7 @@
  *******************************************************************************
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2018-2021, NextGIS <info@nextgis.com>
+ *  Copyright (c) 2018-2023, NextGIS <info@nextgis.com>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -718,14 +718,14 @@ CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
     CPLErrorReset();
     auto aosHTTPOptions = poDS->GetHeaders(false);
 
-    double dfRetryDelaySecs = CPLAtof(aosHTTPOptions.FetchNameValueDef("RETRY_DELAY", "1.0"));
-    int nMaxRetries = atoi(aosHTTPOptions.FetchNameValueDef("MAX_RETRY", "1"));
+    double dfRetryDelaySecs = CPLAtof(aosHTTPOptions.FetchNameValueDef("RETRY_DELAY", "2.5"));
+    int nMaxRetries = atoi(aosHTTPOptions.FetchNameValueDef("MAX_RETRY", "0"));
     int nRetryCount = 0;
 
     CPLJSONDocument oFeatureReq;
     while(true)
     {
-        bool bResult = oFeatureReq.LoadUrl( osUrl, papszHTTPOptions );
+        bool bResult = oFeatureReq.LoadUrl( osUrl, aosHTTPOptions );
         CPLJSONObject oRoot = oFeatureReq.GetRoot();
         if( CheckRequestResult(bResult, oRoot, "GetFeatures request failed", 
             nRetryCount >= nMaxRetries) )
