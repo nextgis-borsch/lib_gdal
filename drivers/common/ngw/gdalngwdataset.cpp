@@ -102,10 +102,8 @@ void OGRNGWDataset::FetchPermissions()
     if( IsUpdateMode() )
     {
         // Check connection and is it read only.
-        char **papszHTTPOptions = GetHeaders(false);
         stPermissions = NGWAPI::CheckPermissions( osUrl, osResourceId,
-            papszHTTPOptions, IsUpdateMode() );
-        CSLDestroy( papszHTTPOptions );
+            GetHeaders(false), IsUpdateMode() );
     }
     else
     {
@@ -256,9 +254,9 @@ bool OGRNGWDataset::Init(int nOpenFlagsIn)
 
     // Get resource details.
     CPLJSONDocument oResourceDetailsReq;
-    char **papszHTTPOptions = GetHeaders(false);
+    auto aosHTTPOptions = GetHeaders(false);
     bool bResult = oResourceDetailsReq.LoadUrl( NGWAPI::GetResource( osUrl,
-        osResourceId ), papszHTTPOptions );
+        osResourceId ), aosHTTPOptions );
 
     CPLDebug("NGW", "Get resource %s details %s", osResourceId.c_str(),
         bResult ? "success" : "failed");
@@ -275,19 +273,19 @@ bool OGRNGWDataset::Init(int nOpenFlagsIn)
             if( osResourceType == "resource_group" )
             {
                 // Check feature paging.
-                FillCapabilities( papszHTTPOptions );
+                FillCapabilities( aosHTTPOptions );
                 if( oRoot.GetBool( "resource/children", false ) ) {
                     // Get child resources.
-                    bResult = FillResources( papszHTTPOptions, nOpenFlagsIn );
+                    bResult = FillResources( aosHTTPOptions, nOpenFlagsIn );
                 }
             }
             else if( (osResourceType == "vector_layer" ||
                 osResourceType == "postgis_layer") )
             {
                 // Check feature paging.
-                FillCapabilities( papszHTTPOptions );
+                FillCapabilities( aosHTTPOptions );
                 // Add vector layer.
-                AddLayer( oRoot, papszHTTPOptions, nOpenFlagsIn );
+                AddLayer( oRoot, aosHTTPOptions, nOpenFlagsIn );
             }
             else if( osResourceType == "mapserver_style" ||
                 osResourceType == "qgis_vector_style" ||
@@ -299,7 +297,7 @@ bool OGRNGWDataset::Init(int nOpenFlagsIn)
                 OGREnvelope stExtent;
                 std::string osParentId = oRoot.GetString("resource/parent/id");
                 bool bExtentResult = NGWAPI::GetExtent(osUrl, osParentId,
-                    papszHTTPOptions, 3857, stExtent);
+                    aosHTTPOptions, 3857, stExtent);
 
                 if( !bExtentResult )
                 {
@@ -324,7 +322,7 @@ bool OGRNGWDataset::Init(int nOpenFlagsIn)
                 {
                     CPLJSONDocument oResourceReq;
                     bResult = oResourceReq.LoadUrl( NGWAPI::GetResource( osUrl,
-                        osResourceId ), papszHTTPOptions );
+                        osResourceId ), aosHTTPOptions );
 
                     if( bResult )
                     {
@@ -418,7 +416,7 @@ bool OGRNGWDataset::Init(int nOpenFlagsIn)
             }
             else if( osResourceType == "raster_layer" ) //FIXME: Do we need this check? && nOpenFlagsIn & GDAL_OF_RASTER )
             {
-                AddRaster( oRoot, papszHTTPOptions );
+                AddRaster( oRoot, aosHTTPOptions );
             }
             else
             {
@@ -428,7 +426,6 @@ bool OGRNGWDataset::Init(int nOpenFlagsIn)
         }
     }
 
-    CSLDestroy( papszHTTPOptions );
     return bResult;
 }
 

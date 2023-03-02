@@ -1124,10 +1124,9 @@ OGRErr OGRNGWLayer::GetExtent( OGREnvelope *psExtent, int bForce )
 {
     if( !stExtent.IsInit() || CPL_TO_BOOL(bForce) )
     {
-        char **papszHTTPOptions = poDS->GetHeaders(false);
+        auto aosHTTPOptions = poDS->GetHeaders(false);
         bool bResult = NGWAPI::GetExtent(poDS->GetUrl(), osResourceId,
-            papszHTTPOptions, 3857, stExtent);
-        CSLDestroy( papszHTTPOptions );
+            aosHTTPOptions, 3857, stExtent);
         if( !bResult )
         {
             return OGRERR_FAILURE;
@@ -1157,10 +1156,9 @@ void OGRNGWLayer::FetchPermissions()
 
     if( poDS->IsUpdateMode() )
     {
-        char **papszHTTPOptions = poDS->GetHeaders(false);
+        auto aosHTTPOptions = poDS->GetHeaders(false);
         stPermissions = NGWAPI::CheckPermissions( poDS->GetUrl(), osResourceId,
-            papszHTTPOptions, poDS->IsUpdateMode() );
-        CSLDestroy( papszHTTPOptions );
+            aosHTTPOptions, poDS->IsUpdateMode() );
     }
     else
     {
@@ -1439,7 +1437,7 @@ OGRErr OGRNGWLayer::SyncToDisk()
     else if( bNeedSyncStructure ) // Update vector layer at NextGIS Web.
     {
         if( !NGWAPI::UpdateResource( poDS->GetUrl(), GetResourceId(),
-            CreateNGWResourceJson(), poDS->GetHeaders(false) ) )
+            CreateNGWResourceJson(), poDS->GetHeaders() ) )
         {
             // Error message should set in UpdateResource.
             return OGRERR_FAILURE;
@@ -1630,7 +1628,7 @@ OGRErr OGRNGWLayer::ISetFeature(OGRFeature *poFeature)
 
             bool bResult = NGWAPI::UpdateFeature(poDS->GetUrl(), osResourceId,
                 std::to_string(poFeature->GetFID()),
-                FeatureToJsonString(poFeature), poDS->GetHeaders(false));
+                FeatureToJsonString(poFeature), poDS->GetHeaders());
             if( bResult )
             {
                 CPLDebug("NGW", "ISetFeature with FID " CPL_FRMT_GIB, poFeature->GetFID());
