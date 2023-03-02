@@ -814,41 +814,39 @@ void OGRNGWDataset::FlushCache(bool bAtClosing)
 /*
  * GetHeaders()
  */
-char **OGRNGWDataset::GetHeaders(bool bSkipRetry) const
+CPLStringList OGRNGWDataset::GetHeaders(bool bSkipRetry) const
 {
-    char **papszOptions = nullptr;
-    papszOptions = CSLAddString(papszOptions, "HEADERS=Accept: */*");
-    papszOptions = CSLAddNameValue(papszOptions, "JSON_DEPTH", osJsonDepth.c_str());
+    CPLStringList aosOptions;
+    aosOptions.AddNameValue("HEADERS", "Accept: */*");
+    aosOptions.AddNameValue("JSON_DEPTH", osJsonDepth.c_str());
     if( !osUserPwd.empty() )
-    {
-        papszOptions = CSLAddString(papszOptions, "HTTPAUTH=BASIC");
-        std::string osUserPwdOption("USERPWD=");
-        osUserPwdOption += osUserPwd;
-        papszOptions = CSLAddString(papszOptions, osUserPwdOption.c_str());
+    {   
+        aosOptions.AddNameValue("HTTPAUTH", "BASIC");
+        aosOptions.AddNameValue("USERPWD", osUserPwd.c_str());
     }
 
     if( !osConnectTimeout.empty() )
     {
-        papszOptions = CSLAddNameValue(papszOptions, "CONNECTTIMEOUT", osConnectTimeout.c_str());
+        aosOptions.AddNameValue("CONNECTTIMEOUT", osConnectTimeout.c_str());
     }
 
     if( !osTimeout.empty() )
     {
-        papszOptions = CSLAddNameValue(papszOptions, "TIMEOUT", osTimeout.c_str());
+        aosOptions.AddNameValue("TIMEOUT", osTimeout.c_str());
     }
 
     if( !bSkipRetry )
     { 
         if( !osRetryCount.empty() )
         {
-            papszOptions = CSLAddNameValue(papszOptions, "MAX_RETRY", osRetryCount.c_str());
+            aosOptions.AddNameValue("MAX_RETRY", osRetryCount.c_str());
         }
         if( !osRetryDelay.empty() )
         {
-            papszOptions = CSLAddNameValue(papszOptions, "RETRY_DELAY", osRetryDelay.c_str());
+            aosOptions.AddNameValue("RETRY_DELAY", osRetryDelay.c_str());
         }
     }
-    return papszOptions;
+    return aosOptions;
 }
 
 /*
