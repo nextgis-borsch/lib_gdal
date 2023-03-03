@@ -1703,12 +1703,12 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     VSIFWriteL(&iVal, 4, 1, fpSXF);
 
     double adfProjDetails[6];
-    adfProjDetails[0] = adfPrjParams[0];
-    adfProjDetails[1] = adfPrjParams[1];
-    adfProjDetails[2] = adfPrjParams[3];
-    adfProjDetails[3] = adfPrjParams[2];
-    adfProjDetails[4] = adfPrjParams[5];
-    adfProjDetails[5] = adfPrjParams[6];
+    adfProjDetails[0] = adfPrjParams[0]; // first standard parallel (lat)
+    adfProjDetails[1] = adfPrjParams[1]; // second standard parallel (lat)
+    adfProjDetails[2] = adfPrjParams[3]; // center longtitude
+    adfProjDetails[3] = adfPrjParams[2]; // center latitude
+    adfProjDetails[4] = adfPrjParams[6]; // false northing
+    adfProjDetails[5] = adfPrjParams[5]; // false easting
 
     CPL_LSBPTR64(&adfProjDetails[0]);
     CPL_LSBPTR64(&adfProjDetails[1]);
