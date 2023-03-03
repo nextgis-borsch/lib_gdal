@@ -1118,17 +1118,18 @@ OGRErr OGRSpatialReference::exportToPanorama(long *piProjSys, long *piDatum,
         *piDatum = PAN_DATUM_NONE;
         *piEllips = PAN_ELLIPSOID_NONE;
     }
-    else if (EQUAL(pszDatum, "Pulkovo_1942"))
+    else if (EQUAL(pszDatum, "Pulkovo_1942") || EQUAL(pszDatum, "Pulkovo 1942"))
     {
         *piDatum = PAN_DATUM_PULKOVO42;
         *piEllips = PAN_ELLIPSOID_KRASSOVSKY;
     }
-    else if (EQUAL(pszDatum, "Pulkovo_1995"))
+    else if (EQUAL(pszDatum, "Pulkovo_1995") || EQUAL(pszDatum, "Pulkovo 1995"))
     {
         *piDatum = PAN_DATUM_PULKOVO95;
         *piEllips = PAN_ELLIPSOID_KRASSOVSKY;
     }
-    else if (EQUAL(pszDatum, "Geodezicheskaya_Sistema_Koordinat_2011"))
+    else if (EQUAL(pszDatum, "Geodezicheskaya_Sistema_Koordinat_2011") || 
+        EQUAL(pszDatum, "Geodezicheskaya Sistema Koordinat 2011"))
     {
         *piDatum = PAN_DATUM_GSK2011;
         *piEllips = PAN_ELLIPSOID_GSK2011;
@@ -1138,7 +1139,6 @@ OGRErr OGRSpatialReference::exportToPanorama(long *piProjSys, long *piDatum,
         *piDatum = PAN_DATUM_RECTANGULAR;  // PAN_DATUM_WGS84;
         *piEllips = PAN_ELLIPSOID_WGS84;
     }
-
     // If not found well known datum, translate ellipsoid.
     else
     {
