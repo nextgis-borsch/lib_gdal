@@ -31,6 +31,7 @@
 #include "cpl_time.h"
 
 #include <memory>
+#include <algorithm>
 
 /************************************************************************/
 /*                            RSCInfo                                   */
@@ -923,6 +924,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                 CPL_LSBPTR64(&dfSCLimDef);
                 aSC1Def.emplace_back(dfSCLimDef);
             }
+            oLim.AddSemanticLimits(stLim.nSC1, aSC1Def);
 
             for (int j = 0; j < stLim.nSC2LimCount; j++)
             {
@@ -931,6 +933,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                 CPL_LSBPTR64(&dfSCLimDef);
                 aSC2Def.emplace_back(dfSCLimDef);
             }
+            oLim.AddSemanticLimits(stLim.nSC2, aSC2Def);
 
             if (stLim.nSC2LimCount == 0)
             {
@@ -1006,7 +1009,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
     VSIFSeekL(fpRSC.get(), nOffset, SEEK_SET);
 
     std::map<GUInt32, std::vector<GUInt32>> codeSemMap;
-    std::unordered_map<GUInt32, std::vector<GUInt32>> mandatorySemMap;
+    std::unordered_map<std::string, std::set<GUInt32>> mandatorySemMap;
 
     for( GUInt32 i = 0; i < stRSCFileHeaderEx.PossibleSemantic.nRecordCount; i++ )
     {
@@ -1017,6 +1020,9 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
         CPL_LSBPTR16(&stRSCOS.nMandatorySemCount);
         CPL_LSBPTR16(&stRSCOS.nPossibleSemCount);
 
+        auto eGeomType = SXFFile::CodeToGeometryType(stRSCOS.nLocalization);
+        auto osFullCode = SXFFile::ToStringCode(eGeomType, stRSCOS.nObjectCode);
+
         GUInt32 count = stRSCOS.nMandatorySemCount + stRSCOS.nPossibleSemCount;
         for( GUInt32 j = 0; j < count; j++ )
         {
@@ -1026,7 +1032,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             codeSemMap[stRSCOS.nObjectCode].push_back(sc);
 
             if ( j < stRSCOS.nMandatorySemCount )
-                mandatorySemMap[stRSCOS.nObjectCode].push_back(sc);
+                mandatorySemMap[osFullCode].insert(sc);
         }
 
         nOffset += stRSCOS.nLength;
@@ -1114,16 +1120,29 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                     }
                 }
 
-                auto mandatorySemIt = mandatorySemMap.find(stRSCObject.nClassifyCode);
+                // Get mandatory fields default value
+                auto mandatorySemIt = mandatorySemMap.find(osFullCode);
                 if (mandatorySemIt != mandatorySemMap.end())
                 {
                     for (GUInt32 semantic : mandatorySemIt->second)
                     {
-                        double defaultValue = {};
                         auto it = semanticDefaultValuesMap.find(semantic);
                         if (it != semanticDefaultValuesMap.end())
-                            defaultValue = it->second;
-                        layer->second.AddMandatoryField(stRSCObject.nClassifyCode, { semantic, defaultValue });
+                        {
+                            double defaultValue = it->second;
+                            auto sxfLimitsIt = moLimits.find(osFullCode);
+                            if (sxfLimitsIt != moLimits.end())
+                            {
+                                const std::vector<double> vSemLimits = sxfLimitsIt->second.GetSemanticLimits(semantic);
+                                if (!vSemLimits.empty() &&
+                                    std::find(vSemLimits.cbegin(), vSemLimits.cend(), defaultValue) == vSemLimits.cend())
+                                {
+                                    defaultValue = *std::min_element(vSemLimits.cbegin(), vSemLimits.cend());
+                                }
+                            }
+
+                            layer->second.AddMandatoryField(osFullCode, { semantic, defaultValue });
+                        }
                     }
                 }
             }

@@ -466,6 +466,19 @@ std::pair<int, int> SXFLimits::GetLimitCodes() const
     return std::make_pair(nSC1, nSC2);
 }
 
+void SXFLimits::AddSemanticLimits(int nSem, const std::vector<double> &vLimits)
+{
+    mSemLimits.insert({ nSem, vLimits });
+}
+
+std::vector<double> SXFLimits::GetSemanticLimits(int nSem) const
+{
+    auto it = mSemLimits.find(nSem);
+    if (it != mSemLimits.end())
+        return it->second;
+    return {};
+}
+
 /******************************************************************************/
 /* SXFLayerDefn                                                               */
 /******************************************************************************/
@@ -568,14 +581,14 @@ void SXFLayerDefn::SetDrawingOrder(int nOrder)
     nDrawingOrder = nOrder;
 }
 
-void SXFLayerDefn::AddMandatoryField(GUInt32 nClassifyCode, const SXFMandatoryField &field)
+void SXFLayerDefn::AddMandatoryField(const std::string &osFullCode, const SXFMandatoryField &field)
 {
-    mMandatoryFields[nClassifyCode].push_back(field);
+    mMandatoryFields[osFullCode].insert(field);
 }
 
-std::vector<SXFMandatoryField> SXFLayerDefn::GetMandatoryFields(GUInt32 nClassifyCode) const
+std::set<SXFMandatoryField> SXFLayerDefn::GetMandatoryFields(const std::string &osFullCode) const
 {
-    auto it = mMandatoryFields.find(nClassifyCode);
+    auto it = mMandatoryFields.find(osFullCode);
     if (it != mMandatoryFields.end())
         return it->second;
     return {};

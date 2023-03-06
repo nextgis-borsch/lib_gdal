@@ -1593,7 +1593,7 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
     }
 
     // Add missing mandatory fields with default value
-    const std::vector<SXFMandatoryField> mandatoryFields = oSXFLayerDefn.GetMandatoryFields(stRecordHeader.nClassifyCode);
+    const std::set<SXFMandatoryField> mandatoryFields = oSXFLayerDefn.GetMandatoryFields(osStrCode);
     for (const SXFMandatoryField &field : mandatoryFields)
     {
         const std::string fieldName = "SC_" + std::to_string(field.nCode);

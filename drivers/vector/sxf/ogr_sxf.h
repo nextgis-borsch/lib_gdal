@@ -76,10 +76,13 @@ class SXFLimits
         void SetDefaultExt(int nExt);
         int GetExtention(double dfnSC1Val, double dfSC2Val) const;
         std::pair<int, int> GetLimitCodes() const;
+        void AddSemanticLimits(int nSem, const std::vector<double> &vLimits);
+        std::vector<double> GetSemanticLimits(int nSem) const;
     private:
 		int nSC1, nSC2;
 		std::vector<Range> aRanges;
         int nDefaultExt = 0;
+        std::unordered_map<int, std::vector<double>> mSemLimits;
 };
 
 /************************************************************************/
@@ -105,8 +108,8 @@ class SXFLayerDefn
         std::unordered_set<SXFGeometryType> GetSupportedGeometryTypes() const;
         int GetDrawingOrder() const;
         void SetDrawingOrder(int nOrder);
-        void AddMandatoryField(GUInt32 nClassifyCode, const SXFMandatoryField &field);
-        std::vector<SXFMandatoryField> GetMandatoryFields(GUInt32 nClassifyCode) const;
+        void AddMandatoryField(const std::string &osFullCode, const SXFMandatoryField &field);
+        std::set<SXFMandatoryField> GetMandatoryFields(const std::string &osFullCode) const;
 	private:
 		int nID;
 		std::string osName;
@@ -115,7 +118,7 @@ class SXFLayerDefn
 		std::map<std::string, SXFLimits> mLim;
         std::unordered_set<SXFGeometryType> oSetSupportedGeometryTypes;
         int nDrawingOrder = -1;
-        std::unordered_map<GUInt32, std::vector<SXFMandatoryField>> mMandatoryFields;
+        std::unordered_map<std::string, std::set<SXFMandatoryField>> mMandatoryFields;
 };
 
 /************************************************************************/

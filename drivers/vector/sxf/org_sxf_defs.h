@@ -323,9 +323,13 @@ typedef struct _SXFClassCode {
     }
 } SXFClassCode;
 
-typedef struct {
+typedef struct _SXFMandatoryField {
     GUInt32 nCode;
     double dDefValue;
+    bool operator< (const _SXFMandatoryField& rhs) const
+    {
+        return nCode < rhs.nCode;
+    }
 } SXFMandatoryField;
 
 #endif  /* SXF_DEFS_H */
