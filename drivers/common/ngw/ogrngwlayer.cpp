@@ -6,7 +6,7 @@
  *******************************************************************************
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2018-2021, NextGIS <info@nextgis.com>
+ *  Copyright (c) 2018-2023, NextGIS <info@nextgis.com>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@
  * CheckRequestResult()
  */
 static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
-    const std::string &osErrorMessage)
+    const std::string &osErrorMessage, bool bReportError)
 {
     if( !bResult )
     {
@@ -42,19 +42,28 @@ static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
             std::string osErrorMessageInt = oRoot.GetString("message");
             if( !osErrorMessageInt.empty() )
             {
-                CPLError(CE_Failure, CPLE_AppDefined, "%s",
-                    osErrorMessageInt.c_str());
+                if(bReportError)
+                {
+                    CPLError(CE_Failure, CPLE_AppDefined, "%s",
+                        osErrorMessageInt.c_str());
+                }
                 return false;
             }
         }
-        CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
+        if(bReportError)
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
+        }
 
         return false;
     }
 
     if( !oRoot.IsValid() )
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
+        if(bReportError)
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
+        }
         return false;
     }
 
@@ -704,6 +713,40 @@ void OGRNGWLayer::ResetReading()
     oNextPos = moFeatures.begin();
 }
 
+CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
+{
+    CPLErrorReset();
+    auto aosHTTPOptions = poDS->GetHeaders(false);
+
+    double dfRetryDelaySecs = CPLAtof(aosHTTPOptions.FetchNameValueDef("RETRY_DELAY", "2.5"));
+    int nMaxRetries = atoi(aosHTTPOptions.FetchNameValueDef("MAX_RETRY", "0"));
+    int nRetryCount = 0;
+
+    CPLJSONDocument oFeatureReq;
+    while(true)
+    {
+        bool bResult = oFeatureReq.LoadUrl( osUrl, aosHTTPOptions );
+        CPLJSONObject oRoot = oFeatureReq.GetRoot();
+        if( CheckRequestResult(bResult, oRoot, "GetFeatures request failed", 
+            nRetryCount >= nMaxRetries) )
+        {
+            return oRoot;
+        }
+        if( nRetryCount < nMaxRetries )
+        {
+            CPLError(CE_Warning, CPLE_AppDefined,
+                            "HTTP error fetch JSON: %s. "
+                            "Retrying again in %.1f secs",
+                            osUrl.c_str(), dfRetryDelaySecs);
+            CPLSleep(dfRetryDelaySecs);
+            nRetryCount++;
+            continue;
+        }
+        break;
+    }
+    return CPLJSONObject();
+}
+
 /*
  * FillFeatures()
  */
@@ -711,14 +754,8 @@ bool OGRNGWLayer::FillFeatures(const std::string &osUrl)
 {
     CPLDebug("NGW", "GetNextFeature: Url: %s", osUrl.c_str());
 
-    CPLErrorReset();
-    CPLJSONDocument oFeatureReq;
-    char **papszHTTPOptions = poDS->GetHeaders(false);
-    bool bResult = oFeatureReq.LoadUrl( osUrl, papszHTTPOptions );
-    CSLDestroy( papszHTTPOptions );
-
-    CPLJSONObject oRoot = oFeatureReq.GetRoot();
-    if( !CheckRequestResult(bResult, oRoot, "GetFeatures request failed") )
+    CPLJSONObject oRoot = LoadUrl(osUrl);
+    if( !oRoot.IsValid() )
     {
         return false;
     }
@@ -913,17 +950,11 @@ OGRFeature *OGRNGWLayer::GetFeature( GIntBig nFID )
     {
         return moFeatures[nFID]->Clone();
     }
-    std::string osUrl = NGWAPI::GetFeature( poDS->GetUrl(), osResourceId) +
+    auto osUrl = NGWAPI::GetFeature( poDS->GetUrl(), osResourceId) +
         std::to_string(nFID);
-    CPLErrorReset();
-    CPLJSONDocument oFeatureReq;
-    char **papszHTTPOptions = poDS->GetHeaders(false);
-    bool bResult = oFeatureReq.LoadUrl( osUrl, papszHTTPOptions );
-    CSLDestroy( papszHTTPOptions );
 
-    CPLJSONObject oRoot = oFeatureReq.GetRoot();
-    if( !CheckRequestResult(bResult, oRoot, "GetFeature " + std::to_string(nFID) +
-        " response is invalid") )
+    CPLJSONObject oRoot = LoadUrl(osUrl);
+    if( !oRoot.IsValid() )
     {
         return nullptr;
     }
@@ -1058,21 +1089,15 @@ GIntBig OGRNGWLayer::GetMaxFeatureCount( bool bForce )
 {
     if( nFeatureCount < 0 || bForce )
     {
-        CPLErrorReset();
-        CPLJSONDocument oCountReq;
-        char **papszHTTPOptions = poDS->GetHeaders(false);
-        bool bResult = oCountReq.LoadUrl( NGWAPI::GetFeatureCount( poDS->GetUrl(),
-            osResourceId ), papszHTTPOptions );
-        CSLDestroy( papszHTTPOptions );
-        if( bResult )
+        CPLJSONObject oRoot = LoadUrl( NGWAPI::GetFeatureCount( poDS->GetUrl(),
+            osResourceId ));
+        if( !oRoot.IsValid() )
         {
-            CPLJSONObject oRoot = oCountReq.GetRoot();
-            if( oRoot.IsValid() )
-            {
-                nFeatureCount = oRoot.GetLong("total_count");
-                nFeatureCount += GetNewFeaturesCount();
-            }
+            return nFeatureCount;
         }
+
+        nFeatureCount = oRoot.GetLong("total_count");
+        nFeatureCount += GetNewFeaturesCount();
     }
     return nFeatureCount;
 }
@@ -1099,10 +1124,9 @@ OGRErr OGRNGWLayer::GetExtent( OGREnvelope *psExtent, int bForce )
 {
     if( !stExtent.IsInit() || CPL_TO_BOOL(bForce) )
     {
-        char **papszHTTPOptions = poDS->GetHeaders(false);
+        auto aosHTTPOptions = poDS->GetHeaders(false);
         bool bResult = NGWAPI::GetExtent(poDS->GetUrl(), osResourceId,
-            papszHTTPOptions, 3857, stExtent);
-        CSLDestroy( papszHTTPOptions );
+            aosHTTPOptions, 3857, stExtent);
         if( !bResult )
         {
             return OGRERR_FAILURE;
@@ -1132,10 +1156,9 @@ void OGRNGWLayer::FetchPermissions()
 
     if( poDS->IsUpdateMode() )
     {
-        char **papszHTTPOptions = poDS->GetHeaders(false);
+        auto aosHTTPOptions = poDS->GetHeaders(false);
         stPermissions = NGWAPI::CheckPermissions( poDS->GetUrl(), osResourceId,
-            papszHTTPOptions, poDS->IsUpdateMode() );
-        CSLDestroy( papszHTTPOptions );
+            aosHTTPOptions, poDS->IsUpdateMode() );
     }
     else
     {
@@ -1414,7 +1437,7 @@ OGRErr OGRNGWLayer::SyncToDisk()
     else if( bNeedSyncStructure ) // Update vector layer at NextGIS Web.
     {
         if( !NGWAPI::UpdateResource( poDS->GetUrl(), GetResourceId(),
-            CreateNGWResourceJson(), poDS->GetHeaders(false) ) )
+            CreateNGWResourceJson(), poDS->GetHeaders() ) )
         {
             // Error message should set in UpdateResource.
             return OGRERR_FAILURE;
@@ -1605,7 +1628,7 @@ OGRErr OGRNGWLayer::ISetFeature(OGRFeature *poFeature)
 
             bool bResult = NGWAPI::UpdateFeature(poDS->GetUrl(), osResourceId,
                 std::to_string(poFeature->GetFID()),
-                FeatureToJsonString(poFeature), poDS->GetHeaders(false));
+                FeatureToJsonString(poFeature), poDS->GetHeaders());
             if( bResult )
             {
                 CPLDebug("NGW", "ISetFeature with FID " CPL_FRMT_GIB, poFeature->GetFID());
