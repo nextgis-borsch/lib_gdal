@@ -65,7 +65,7 @@ static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
         else 
         {
             CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
-                nTryCount, osErrorMessageInt.c_str());
+                nTryCount, osErrorMessage.c_str());
         }
 
         return false;
@@ -82,7 +82,7 @@ static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
         else 
         {
             CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
-                nTryCount, osErrorMessageInt.c_str());
+                nTryCount, osErrorMessage.c_str());
         }
         return false;
     }
