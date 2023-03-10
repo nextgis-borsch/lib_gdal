@@ -47,6 +47,11 @@ static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
                     CPLError(CE_Failure, CPLE_AppDefined, 
                         "NGW driver failed to fetch data %d times with error: %s",
                         nTryCount, osErrorMessageInt.c_str());
+                } 
+                else 
+                {
+                    CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
+                        nTryCount, osErrorMessageInt.c_str());
                 }
                 return false;
             }
@@ -56,6 +61,11 @@ static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
             CPLError(CE_Failure, CPLE_AppDefined, 
                 "NGW driver failed to fetch data %d times with error: %s",
                 nTryCount, osErrorMessage.c_str());
+        }
+        else 
+        {
+            CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
+                nTryCount, osErrorMessageInt.c_str());
         }
 
         return false;
@@ -68,6 +78,11 @@ static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
             CPLError(CE_Failure, CPLE_AppDefined, 
                 "NGW driver failed to fetch data %d times with error: %s", 
                 nTryCount, osErrorMessage.c_str());
+        }
+        else 
+        {
+            CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
+                nTryCount, osErrorMessageInt.c_str());
         }
         return false;
     }
