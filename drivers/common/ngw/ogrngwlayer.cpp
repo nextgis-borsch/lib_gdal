@@ -33,7 +33,7 @@
  * CheckRequestResult()
  */
 static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot, 
-    int nTryCount, const std::string &osErrorMessage, bool bReportError)
+    const std::string &osErrorMessage, int nTryCount, bool bReportError)
 {
     if( !bResult )
     {
