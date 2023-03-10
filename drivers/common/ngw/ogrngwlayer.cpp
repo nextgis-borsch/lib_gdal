@@ -32,8 +32,8 @@
 /*
  * CheckRequestResult()
  */
-static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
-    const std::string &osErrorMessage, bool bReportError)
+static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot, 
+    int nTryCount, const std::string &osErrorMessage, bool bReportError)
 {
     if( !bResult )
     {
@@ -44,15 +44,18 @@ static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
             {
                 if(bReportError)
                 {
-                    CPLError(CE_Failure, CPLE_AppDefined, "%s",
-                        osErrorMessageInt.c_str());
+                    CPLError(CE_Failure, CPLE_AppDefined, 
+                        "NGW driver failed to fetch data %d times with error: %s",
+                        nTryCount, osErrorMessageInt.c_str());
                 }
                 return false;
             }
         }
         if(bReportError)
         {
-            CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
+            CPLError(CE_Failure, CPLE_AppDefined, 
+                "NGW driver failed to fetch data %d times with error: %s",
+                nTryCount, osErrorMessage.c_str());
         }
 
         return false;
@@ -62,7 +65,9 @@ static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
     {
         if(bReportError)
         {
-            CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
+            CPLError(CE_Failure, CPLE_AppDefined, 
+                "NGW driver failed to fetch data %d times with error: %s", 
+                nTryCount, osErrorMessage.c_str());
         }
         return false;
     }
@@ -727,7 +732,7 @@ CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
     {
         bool bResult = oFeatureReq.LoadUrl( osUrl, aosHTTPOptions );
         CPLJSONObject oRoot = oFeatureReq.GetRoot();
-        if( CheckRequestResult(bResult, oRoot, "GetFeatures request failed", 
+        if( CheckRequestResult(bResult, oRoot, "GetFeatures request failed", nRetryCount,
             nRetryCount >= nMaxRetries) )
         {
             return oRoot;

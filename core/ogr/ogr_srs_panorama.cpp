@@ -875,10 +875,10 @@ OGRErr OGRSpatialReference::exportToPanorama(long *piProjSys, long *piDatum,
 
     const char *pszProjection = GetAttrValue("PROJECTION");
     int nEPSG = 0;
-    auto pszEPSG = GetAuthorityCode("PROJCS");
+    auto pszEPSG = GetAuthorityCode("COMPD_CS|PROJCS");
     if (pszEPSG == nullptr)
     {
-        pszEPSG = GetAuthorityCode("GEOGCS");
+        pszEPSG = GetAuthorityCode("COMPD_CS|GEOGCS");
     }
     if (pszEPSG != nullptr)
     {
