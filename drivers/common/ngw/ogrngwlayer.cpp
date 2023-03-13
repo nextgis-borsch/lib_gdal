@@ -739,7 +739,7 @@ CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
     auto aosHTTPOptions = poDS->GetHeaders(false);
 
     double dfRetryDelaySecs = CPLAtof(aosHTTPOptions.FetchNameValueDef("RETRY_DELAY", "2.5"));
-    int nMaxRetries = atoi(aosHTTPOptions.FetchNameValueDef("MAX_RETRY", "1"));
+    int nMaxRetries = atoi(aosHTTPOptions.FetchNameValueDef("MAX_RETRY", "0"));
     int nRetryCount = 0;
 
     CPLJSONDocument oFeatureReq;
