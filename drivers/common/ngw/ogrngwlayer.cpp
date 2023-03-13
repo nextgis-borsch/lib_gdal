@@ -756,9 +756,9 @@ CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
         {
             return CPLJSONObject();
         }
-        CPLError(CE_Warning, CPLE_AppDefined,
-                "HTTP error fetch JSON: %s. "
-                "Retrying again in %.1f secs",
+        CPLDebug("NGW",
+                "Failed to fetch JSON from URL [%d of %d tries]: %s. "
+                "Retrying again in %.1f secs", nRetryCount, nMaxRetries,
                 osUrl.c_str(), dfRetryDelaySecs);
         CPLSleep(dfRetryDelaySecs);
         nRetryCount++;

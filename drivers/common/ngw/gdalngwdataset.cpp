@@ -216,16 +216,16 @@ bool OGRNGWDataset::Open( const std::string &osUrlIn,
         bExtInNativeData = false;
     }
 
-    CPLDebug("NGW", "Open options:"
-            "  BATCH_SIZE %d"
-            "  PAGE_SIZE %d"
-            "  CACHE_EXPIRES %d"
-            "  CACHE_MAX_SIZE %d"
-            "  JSON_DEPTH %s"
-            "  EXTENSIONS %s"
-            "  CONNECTTIMEOUT %s"
-            "  TIMEOUT %s"
-            "  MAX_RETRY %s"
+    CPLDebug("NGW", "Open options:\n"
+            "  BATCH_SIZE %d\n"
+            "  PAGE_SIZE %d\n"
+            "  CACHE_EXPIRES %d\n"
+            "  CACHE_MAX_SIZE %d\n"
+            "  JSON_DEPTH %s\n"
+            "  EXTENSIONS %s\n"
+            "  CONNECTTIMEOUT %s\n"
+            "  TIMEOUT %s\n"
+            "  MAX_RETRY %s\n"
             "  RETRY_DELAY %s", 
             nBatchSize, nPageSize, nCacheExpires, nCacheMaxSize, 
             osJsonDepth.c_str(), osExtensions.c_str(), osConnectTimeout.c_str(),
