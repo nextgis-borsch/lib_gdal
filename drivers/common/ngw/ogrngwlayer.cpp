@@ -739,7 +739,7 @@ CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
     auto aosHTTPOptions = poDS->GetHeaders(false);
 
     double dfRetryDelaySecs = CPLAtof(aosHTTPOptions.FetchNameValueDef("RETRY_DELAY", "2.5"));
-    int nMaxRetries = atoi(aosHTTPOptions.FetchNameValueDef("MAX_RETRY", "0"));
+    int nMaxRetries = atoi(aosHTTPOptions.FetchNameValueDef("MAX_RETRY", "1"));
     int nRetryCount = 0;
 
     CPLJSONDocument oFeatureReq;
@@ -752,17 +752,16 @@ CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
         {
             return oRoot;
         }
-        if( nRetryCount < nMaxRetries )
+        if( nRetryCount >= nMaxRetries )
         {
-            CPLError(CE_Warning, CPLE_AppDefined,
-                            "HTTP error fetch JSON: %s. "
-                            "Retrying again in %.1f secs",
-                            osUrl.c_str(), dfRetryDelaySecs);
-            CPLSleep(dfRetryDelaySecs);
-            nRetryCount++;
-            continue;
+            return CPLJSONObject();
         }
-        break;
+        CPLError(CE_Warning, CPLE_AppDefined,
+                "HTTP error fetch JSON: %s. "
+                "Retrying again in %.1f secs",
+                osUrl.c_str(), dfRetryDelaySecs);
+        CPLSleep(dfRetryDelaySecs);
+        nRetryCount++;
     }
     return CPLJSONObject();
 }
