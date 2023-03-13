@@ -1405,7 +1405,7 @@ OGRErr OGRNGWLayer::SyncFeatures()
             soChangedIds.clear();
             if( osIDs.size() != aoPatchedFIDs.size() ) // Expected equal identifier count.
             {
-                CPLDebug("ngw", "Patched feature count is not equal. Reload features from server.");
+                CPLDebug("NGW", "Patched feature count is not equal. Reload features from server.");
                 FreeMap(moFeatures);
             }
             else // Just update identifiers.
