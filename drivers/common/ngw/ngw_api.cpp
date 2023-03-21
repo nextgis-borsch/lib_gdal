@@ -42,7 +42,7 @@ bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
     {
         if( oRoot.IsValid() )
         {
-            std::string osErrorMessageInt = oRoot.GetString("message");
+            std::string osErrorMessageInt = oRoot.GetString("message", osErrorMessage);
             if( !osErrorMessageInt.empty() )
             {
                 if(bReportError)
