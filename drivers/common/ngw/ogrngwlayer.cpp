@@ -1461,9 +1461,10 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
     CPLErrorReset();
 
     // Try to delete local features (not synchronized with NGW)
-    for (size_t i = 0; i < vFeaturesID.size(); i++)
+    std::vector<GIntBig> vFeaturesIDInt(vFeaturesID);
+    for (size_t i = 0; i < vFeaturesIDInt.size(); i++)
     {
-        auto nFID = vFeaturesID[i];
+        auto nFID = vFeaturesIDInt[i];
         if (nFID < 0)
         {
             if (moFeatures[nFID] != nullptr)
@@ -1472,7 +1473,7 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
                 moFeatures[nFID] = nullptr;
                 nFeatureCount--;
                 soChangedIds.erase(nFID);
-                vFeaturesID.erase(vFeaturesID.begin() + i);
+                vFeaturesIDInt.erase(vFeaturesIDInt.begin() + i);
             }
         }
     }
@@ -1482,10 +1483,10 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
     {
         std::string osFeaturesJson;
         bool bResult = NGWAPI::DeleteFeatures(poDS->GetUrl(), osResourceId, 
-            FeaturesIDToJsonString(vFeaturesID), poDS->GetHeaders(false));
+            FeaturesIDToJsonString(vFeaturesIDInt), poDS->GetHeaders(false));
         if (bResult)
         {
-            for (GIntBig nFID : vFeaturesID)
+            for (GIntBig nFID : vFeaturesIDInt)
             {
                 if (moFeatures[nFID] != nullptr)
                 {
