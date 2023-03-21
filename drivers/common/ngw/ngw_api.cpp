@@ -492,8 +492,8 @@ Permissions CheckPermissions(const std::string &osUrl,
 {
     Permissions stOut;
     CPLErrorReset();
-    double dfRetryDelaySecs = CPLAtof(CSLFetchNameValueDef(, "RETRY_DELAY", "2.5"));
-    int nMaxRetries = atoi(CSLFetchNameValueDef("MAX_RETRY", "0"));
+    double dfRetryDelaySecs = CPLAtof(CSLFetchNameValueDef(papszHTTPOptions, "RETRY_DELAY", "2.5"));
+    int nMaxRetries = atoi(CSLFetchNameValueDef(papszHTTPOptions, "MAX_RETRY", "0"));
     int nRetryCount = 0;
     CPLJSONDocument oPermissionReq;
     while(true)
@@ -523,7 +523,7 @@ Permissions CheckPermissions(const std::string &osUrl,
 
         if( nRetryCount >= nMaxRetries )
         {
-            return CPLJSONObject();
+            return stOut;
         }
         CPLDebug("NGW",
                 "Failed to fetch JSON from URL [%d of %d tries]: %s. "
@@ -754,13 +754,13 @@ bool GetExtent(const std::string &osUrl, const std::string &osResourceId,
 {
     CPLErrorReset();
     CPLJSONDocument oExtentReq;
-    double dfRetryDelaySecs = CPLAtof(CSLFetchNameValueDef(, "RETRY_DELAY", "2.5"));
-    int nMaxRetries = atoi(CSLFetchNameValueDef("MAX_RETRY", "0"));
+    double dfRetryDelaySecs = CPLAtof(CSLFetchNameValueDef(papszHTTPOptions, "RETRY_DELAY", "2.5"));
+    int nMaxRetries = atoi(CSLFetchNameValueDef(papszHTTPOptions, "MAX_RETRY", "0"));
     int nRetryCount = 0;
     while(true)
     {
-        auto osUrlNew = GetLayerExtent( osUrl, osResourceId )
-        bool bResult = oExtentReq.LoadUrl( osUrlNew, papszHTTPOptions);
+        auto osUrlNew = GetLayerExtent( osUrl, osResourceId );
+        bool bResult = oExtentReq.LoadUrl( osUrlNew, papszHTTPOptions );
 
         CPLJSONObject oRoot = oExtentReq.GetRoot();
         if( CheckRequestResult(bResult, oRoot, "Get extent failed", 1, true) )
