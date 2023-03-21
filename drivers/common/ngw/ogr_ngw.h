@@ -51,6 +51,8 @@ namespace NGWAPI {
     std::string GetVersion(const std::string &osUrl);
     bool CheckVersion(const std::string &osVersion, int nMajor, int nMinor = 0,
         int nPatch = 0);
+    bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot, 
+    const std::string &osErrorMessage, int nTryCount, bool bReportError);
 
     struct Uri {
         std::string osPrefix;

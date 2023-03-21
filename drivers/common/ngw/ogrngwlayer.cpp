@@ -30,67 +30,6 @@
  #include "ogr_ngw.h"
 
 /*
- * CheckRequestResult()
- */
-static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot, 
-    const std::string &osErrorMessage, int nTryCount, bool bReportError)
-{
-    if( !bResult )
-    {
-        if( oRoot.IsValid() )
-        {
-            std::string osErrorMessageInt = oRoot.GetString("message");
-            if( !osErrorMessageInt.empty() )
-            {
-                if(bReportError)
-                {
-                    CPLError(CE_Failure, CPLE_AppDefined, 
-                        "NGW driver failed to fetch data %d times with error: %s",
-                        nTryCount, osErrorMessageInt.c_str());
-                } 
-                else 
-                {
-                    CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
-                        nTryCount, osErrorMessageInt.c_str());
-                }
-                return false;
-            }
-        }
-        if(bReportError)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined, 
-                "NGW driver failed to fetch data %d times with error: %s",
-                nTryCount, osErrorMessage.c_str());
-        }
-        else 
-        {
-            CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
-                nTryCount, osErrorMessage.c_str());
-        }
-
-        return false;
-    }
-
-    if( !oRoot.IsValid() )
-    {
-        if(bReportError)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined, 
-                "NGW driver failed to fetch data %d times with error: %s", 
-                nTryCount, osErrorMessage.c_str());
-        }
-        else 
-        {
-            CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
-                nTryCount, osErrorMessage.c_str());
-        }
-        return false;
-    }
-
-    return true;
-}
-
-/*
  * OGRGeometryToWKT()
  */
 static std::string OGRGeometryToWKT( OGRGeometry *poGeom )
@@ -747,7 +686,7 @@ CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
     {
         bool bResult = oFeatureReq.LoadUrl( osUrl, aosHTTPOptions );
         CPLJSONObject oRoot = oFeatureReq.GetRoot();
-        if( CheckRequestResult(bResult, oRoot, "GetFeatures request failed", nRetryCount,
+        if( NGWAPI::CheckRequestResult(bResult, oRoot, "GetFeatures request failed", nRetryCount,
             nRetryCount >= nMaxRetries) )
         {
             return oRoot;

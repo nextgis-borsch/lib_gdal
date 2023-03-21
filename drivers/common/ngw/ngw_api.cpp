@@ -33,6 +33,64 @@
 
 namespace NGWAPI {
 
+bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot, 
+    const std::string &osErrorMessage, int nTryCount, bool bReportError)
+{
+    if( !bResult )
+    {
+        if( oRoot.IsValid() )
+        {
+            std::string osErrorMessageInt = oRoot.GetString("message");
+            if( !osErrorMessageInt.empty() )
+            {
+                if(bReportError)
+                {
+                    CPLError(CE_Failure, CPLE_AppDefined, 
+                        "NGW driver failed to fetch data %d times with error: %s",
+                        nTryCount, osErrorMessageInt.c_str());
+                } 
+                else 
+                {
+                    CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
+                        nTryCount, osErrorMessageInt.c_str());
+                }
+                return false;
+            }
+        }
+        if(bReportError)
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, 
+                "NGW driver failed to fetch data %d times with error: %s",
+                nTryCount, osErrorMessage.c_str());
+        }
+        else 
+        {
+            CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
+                nTryCount, osErrorMessage.c_str());
+        }
+
+        return false;
+    }
+
+    if( !oRoot.IsValid() )
+    {
+        if(bReportError)
+        {
+            CPLError(CE_Failure, CPLE_AppDefined, 
+                "NGW driver failed to fetch data %d times with error: %s", 
+                nTryCount, osErrorMessage.c_str());
+        }
+        else 
+        {
+            CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
+                nTryCount, osErrorMessage.c_str());
+        }
+        return false;
+    }
+
+    return true;
+}
+
 std::string GetPermissions(const std::string &osUrl, const std::string &osResourceId)
 {
     return osUrl + "/api/resource/" + osResourceId + "/permission";
@@ -216,24 +274,18 @@ Uri ParseUri(const std::string &osUrl)
     return stOut;
 }
 
-static void ReportError(const GByte *pabyData, int nDataLen)
+static void ReportError(const GByte *pabyData, int nDataLen, const std::string &osErrorMessage)
 {
     CPLJSONDocument oResult;
     if( oResult.LoadMemory(pabyData, nDataLen) )
     {
         CPLJSONObject oRoot = oResult.GetRoot();
-        if( oRoot.IsValid() )
-        {
-            std::string osErrorMessage = oRoot.GetString("message");
-            if( !osErrorMessage.empty() )
-            {
-                CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
-                return;
-            }
-        }
+        CheckRequestResult(false, oRoot, osErrorMessage, 1, true);
     }
-
-    CPLError(CE_Failure, CPLE_AppDefined, "Unexpected error occurred.");
+    else
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
+    }
 }
 
 std::string CreateResource(const std::string &osUrl, const std::string &osPayload,
@@ -254,20 +306,9 @@ std::string CreateResource(const std::string &osUrl, const std::string &osPayloa
         papszHTTPOptions );
     std::string osResourceId("-1");
     CPLJSONObject oRoot = oCreateReq.GetRoot();
-    if( oRoot.IsValid() )
+    if(CheckRequestResult(bResult, oRoot, "CreateResource request failed", 1, true))
     {
-        if( bResult )
-        {
-            osResourceId = oRoot.GetString("id", "-1");
-        }
-        else
-        {
-            std::string osErrorMessage = oRoot.GetString("message");
-            if( !osErrorMessage.empty() )
-            {
-                CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
-            }
-        }
+        osResourceId = oRoot.GetString("id", "-1");
     }
     return osResourceId;
 }
@@ -295,7 +336,7 @@ bool UpdateResource(const std::string &osUrl, const std::string &osResourceId,
         // Get error message.
         if( !bResult )
         {
-            ReportError(psResult->pabyData, psResult->nDataLen);
+            ReportError(psResult->pabyData, psResult->nDataLen, "UpdateResource request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -321,7 +362,7 @@ bool DeleteResource(const std::string &osUrl, const std::string &osResourceId,
         // Get error message.
         if( !bResult )
         {
-            ReportError(psResult->pabyData, psResult->nDataLen);
+            ReportError(psResult->pabyData, psResult->nDataLen, "DeleteResource request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -451,14 +492,17 @@ Permissions CheckPermissions(const std::string &osUrl,
 {
     Permissions stOut;
     CPLErrorReset();
+    double dfRetryDelaySecs = CPLAtof(CSLFetchNameValueDef(, "RETRY_DELAY", "2.5"));
+    int nMaxRetries = atoi(CSLFetchNameValueDef("MAX_RETRY", "0"));
+    int nRetryCount = 0;
     CPLJSONDocument oPermissionReq;
-    bool bResult = oPermissionReq.LoadUrl( GetPermissions( osUrl, osResourceId ),
-        papszHTTPOptions );
-
-    CPLJSONObject oRoot = oPermissionReq.GetRoot();
-    if( oRoot.IsValid() )
+    while(true)
     {
-        if( bResult )
+        auto osUrlNew = GetPermissions( osUrl, osResourceId );
+        bool bResult = oPermissionReq.LoadUrl( osUrlNew, papszHTTPOptions );
+
+        CPLJSONObject oRoot = oPermissionReq.GetRoot();
+        if(CheckRequestResult(bResult, oRoot, "Get permissions failed", 1, true))
         {
             stOut.bResourceCanRead = oRoot.GetBool( "resource/read", true );
             stOut.bResourceCanCreate = oRoot.GetBool( "resource/create", bReadWrite );
@@ -473,22 +517,21 @@ Permissions CheckPermissions(const std::string &osUrl,
 
             stOut.bMetadataCanRead = oRoot.GetBool( "metadata/read", true );
             stOut.bMetadataCanWrite = oRoot.GetBool( "metadata/write", bReadWrite );
-        }
-        else
-        {
-            std::string osErrorMessage = oRoot.GetString("message");
-            if( osErrorMessage.empty() )
-            {
-                osErrorMessage = "Get permissions failed";
-            }
-            CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
-        }
-    }
-    else
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Get permissions failed");
-    }
 
+            return stOut;
+        }
+
+        if( nRetryCount >= nMaxRetries )
+        {
+            return CPLJSONObject();
+        }
+        CPLDebug("NGW",
+                "Failed to fetch JSON from URL [%d of %d tries]: %s. "
+                "Retrying again in %.1f secs", nRetryCount, nMaxRetries,
+                osUrlNew.c_str(), dfRetryDelaySecs);
+        CPLSleep(dfRetryDelaySecs);
+        nRetryCount++;
+    }
     return stOut;
 }
 
@@ -581,7 +624,7 @@ bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
         // Get error message.
         if( !bResult )
         {
-            ReportError(psResult->pabyData, psResult->nDataLen);
+            ReportError(psResult->pabyData, psResult->nDataLen, "DeleteFeature request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -608,7 +651,7 @@ bool DeleteFeatures(const std::string &osUrl, const std::string &osResourceId,
         // Get error message.
         if( !bResult )
         {
-            ReportError(psResult->pabyData, psResult->nDataLen);
+            ReportError(psResult->pabyData, psResult->nDataLen, "DeleteFeatures request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -635,25 +678,9 @@ GIntBig CreateFeature(const std::string &osUrl, const std::string &osResourceId,
 
     CPLJSONObject oRoot = oCreateFeatureReq.GetRoot();
     GIntBig nOutFID = OGRNullFID;
-    if( oRoot.IsValid() )
+    if( CheckRequestResult(bResult, oRoot, "Create new feature failed", 1, true) )
     {
-        if( bResult )
-        {
-            nOutFID = oRoot.GetLong( "id", OGRNullFID );
-        }
-        else
-        {
-            std::string osErrorMessage = oRoot.GetString("message");
-            if( osErrorMessage.empty() )
-            {
-                osErrorMessage = "Create new feature failed";
-            }
-            CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
-        }
-    }
-    else
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Create new feature failed");
+        nOutFID = oRoot.GetLong( "id", OGRNullFID );
     }
 
     CPLDebug("NGW", "CreateFeature new FID: " CPL_FRMT_GIB, nOutFID);
@@ -684,7 +711,7 @@ bool UpdateFeature(const std::string &osUrl, const std::string &osResourceId,
         // Get error message.
         if( !bResult )
         {
-            ReportError(psResult->pabyData, psResult->nDataLen);
+            ReportError(psResult->pabyData, psResult->nDataLen, "UpdateFeature request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -710,30 +737,14 @@ std::vector<GIntBig> PatchFeatures(const std::string &osUrl, const std::string &
     bool bResult = oPatchFeatureReq.LoadUrl( osUrlInt, papszHTTPOptions );
 
     CPLJSONObject oRoot = oPatchFeatureReq.GetRoot();
-    if( oRoot.IsValid() )
+    if( CheckRequestResult(bResult, oRoot, "Patch features failed", 1, true) )
     {
-        if( bResult )
+        CPLJSONArray aoJSONIDs = oRoot.ToArray();
+        for( int i = 0; i < aoJSONIDs.Size(); ++i)
         {
-            CPLJSONArray aoJSONIDs = oRoot.ToArray();
-            for( int i = 0; i < aoJSONIDs.Size(); ++i)
-            {
-                GIntBig nOutFID = aoJSONIDs[i].GetLong( "id", OGRNullFID );
-                aoFIDs.push_back(nOutFID);
-            }
+            GIntBig nOutFID = aoJSONIDs[i].GetLong( "id", OGRNullFID );
+            aoFIDs.push_back(nOutFID);
         }
-        else
-        {
-            std::string osErrorMessage = oRoot.GetString("message");
-            if( osErrorMessage.empty() )
-            {
-                osErrorMessage = "Patch features failed";
-            }
-            CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
-        }
-    }
-    else
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Patch features failed");
     }
     return aoFIDs;
 }
@@ -743,82 +754,92 @@ bool GetExtent(const std::string &osUrl, const std::string &osResourceId,
 {
     CPLErrorReset();
     CPLJSONDocument oExtentReq;
-    bool bResult = oExtentReq.LoadUrl( GetLayerExtent( osUrl, osResourceId ),
-        papszHTTPOptions);
-
-    CPLJSONObject oRoot = oExtentReq.GetRoot();
-    if( !bResult)
+    double dfRetryDelaySecs = CPLAtof(CSLFetchNameValueDef(, "RETRY_DELAY", "2.5"));
+    int nMaxRetries = atoi(CSLFetchNameValueDef("MAX_RETRY", "0"));
+    int nRetryCount = 0;
+    while(true)
     {
-        std::string osErrorMessage = oRoot.GetString("message");
-        if( osErrorMessage.empty() )
+        auto osUrlNew = GetLayerExtent( osUrl, osResourceId )
+        bool bResult = oExtentReq.LoadUrl( osUrlNew, papszHTTPOptions);
+
+        CPLJSONObject oRoot = oExtentReq.GetRoot();
+        if( CheckRequestResult(bResult, oRoot, "Get extent failed", 1, true) )
         {
-            osErrorMessage = "Get extent failed";
+            // Response extent spatial reference is EPSG:4326.
+
+            double dfMinX = oRoot.GetDouble("extent/minLon");
+            double dfMinY = oRoot.GetDouble("extent/minLat");
+            double dfMaxX = oRoot.GetDouble("extent/maxLon");
+            double dfMaxY = oRoot.GetDouble("extent/maxLat");
+
+            double adfCoordinatesX[4];
+            double adfCoordinatesY[4];
+            adfCoordinatesX[0] = dfMinX;
+            adfCoordinatesY[0] = dfMinY;
+            adfCoordinatesX[1] = dfMinX;
+            adfCoordinatesY[1] = dfMaxY;
+            adfCoordinatesX[2] = dfMaxX;
+            adfCoordinatesY[2] = dfMaxY;
+            adfCoordinatesX[3] = dfMaxX;
+            adfCoordinatesY[3] = dfMinY;
+
+            OGRSpatialReference o4326SRS;
+            o4326SRS.SetWellKnownGeogCS( "WGS84" );
+            o4326SRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+            OGRSpatialReference o3857SRS;
+            o3857SRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
+            if( o3857SRS.importFromEPSG(nEPSG) != OGRERR_NONE )
+            {
+                CPLError(CE_Failure, CPLE_AppDefined, "Project extent SRS to EPSG:3857 failed");
+                return false;
+            }
+
+            OGRCoordinateTransformation *poTransform =
+                OGRCreateCoordinateTransformation( &o4326SRS, &o3857SRS );
+            if( poTransform )
+            {
+                poTransform->Transform( 4, adfCoordinatesX, adfCoordinatesY );
+                delete poTransform;
+
+                stExtent.MinX = std::numeric_limits<double>::max();
+                stExtent.MaxX = std::numeric_limits<double>::min();
+                stExtent.MinY = std::numeric_limits<double>::max();
+                stExtent.MaxY = std::numeric_limits<double>::min();
+
+                for(int i = 1; i < 4; ++i)
+                {
+                    if( stExtent.MinX > adfCoordinatesX[i] )
+                    {
+                        stExtent.MinX = adfCoordinatesX[i];
+                    }
+                    if( stExtent.MaxX < adfCoordinatesX[i] )
+                    {
+                        stExtent.MaxX = adfCoordinatesX[i];
+                    }
+                    if( stExtent.MinY > adfCoordinatesY[i] )
+                    {
+                        stExtent.MinY = adfCoordinatesY[i];
+                    }
+                    if( stExtent.MaxY < adfCoordinatesY[i] )
+                    {
+                        stExtent.MaxY = adfCoordinatesY[i];
+                    }
+                }
+            }
+            return true;
         }
-        CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
-        return false;
-    }
-    // Response extent spatial reference is EPSG:4326.
-
-    double dfMinX = oRoot.GetDouble("extent/minLon");
-    double dfMinY = oRoot.GetDouble("extent/minLat");
-    double dfMaxX = oRoot.GetDouble("extent/maxLon");
-    double dfMaxY = oRoot.GetDouble("extent/maxLat");
-
-    double adfCoordinatesX[4];
-    double adfCoordinatesY[4];
-    adfCoordinatesX[0] = dfMinX;
-    adfCoordinatesY[0] = dfMinY;
-    adfCoordinatesX[1] = dfMinX;
-    adfCoordinatesY[1] = dfMaxY;
-    adfCoordinatesX[2] = dfMaxX;
-    adfCoordinatesY[2] = dfMaxY;
-    adfCoordinatesX[3] = dfMaxX;
-    adfCoordinatesY[3] = dfMinY;
-
-    OGRSpatialReference o4326SRS;
-    o4326SRS.SetWellKnownGeogCS( "WGS84" );
-    o4326SRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-    OGRSpatialReference o3857SRS;
-    o3857SRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
-    if( o3857SRS.importFromEPSG(nEPSG) != OGRERR_NONE )
-    {
-        CPLError(CE_Failure, CPLE_AppDefined, "Project extent SRS to EPSG:3857 failed");
-        return false;
-    }
-
-    OGRCoordinateTransformation *poTransform =
-        OGRCreateCoordinateTransformation( &o4326SRS, &o3857SRS );
-    if( poTransform )
-    {
-        poTransform->Transform( 4, adfCoordinatesX, adfCoordinatesY );
-        delete poTransform;
-
-        stExtent.MinX = std::numeric_limits<double>::max();
-        stExtent.MaxX = std::numeric_limits<double>::min();
-        stExtent.MinY = std::numeric_limits<double>::max();
-        stExtent.MaxY = std::numeric_limits<double>::min();
-
-        for(int i = 1; i < 4; ++i)
+        if( nRetryCount >= nMaxRetries )
         {
-            if( stExtent.MinX > adfCoordinatesX[i] )
-            {
-                stExtent.MinX = adfCoordinatesX[i];
-            }
-            if( stExtent.MaxX < adfCoordinatesX[i] )
-            {
-                stExtent.MaxX = adfCoordinatesX[i];
-            }
-            if( stExtent.MinY > adfCoordinatesY[i] )
-            {
-                stExtent.MinY = adfCoordinatesY[i];
-            }
-            if( stExtent.MaxY < adfCoordinatesY[i] )
-            {
-                stExtent.MaxY = adfCoordinatesY[i];
-            }
+            return false;
         }
+        CPLDebug("NGW",
+                "Failed to fetch JSON from URL [%d of %d tries]: %s. "
+                "Retrying again in %.1f secs", nRetryCount, nMaxRetries,
+                osUrlNew.c_str(), dfRetryDelaySecs);
+        CPLSleep(dfRetryDelaySecs);
+        nRetryCount++;
     }
-    return true;
+    return false;
 }
 
 CPLJSONObject UploadFile(const std::string &osUrl, const std::string &osFilePath,
@@ -846,14 +867,15 @@ CPLJSONObject UploadFile(const std::string &osUrl, const std::string &osFilePath
         // Get error message.
         if( !bResult )
         {
-            ReportError(psResult->pabyData, psResult->nDataLen);
-            CPLHTTPDestroyResult(psResult);
-            return oResult;
+            ReportError(psResult->pabyData, psResult->nDataLen, "UpdateFeature request failed");
         }
-        CPLJSONDocument oFileJson;
-        if( oFileJson.LoadMemory(psResult->pabyData, psResult->nDataLen) )
+        else
         {
-            oResult = oFileJson.GetRoot();
+            CPLJSONDocument oFileJson;
+            if( oFileJson.LoadMemory(psResult->pabyData, psResult->nDataLen) )
+            {
+                oResult = oFileJson.GetRoot();
+            }
         }
         CPLHTTPDestroyResult(psResult);
     }
