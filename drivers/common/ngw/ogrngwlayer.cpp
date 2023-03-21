@@ -1460,8 +1460,10 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
 {
     CPLErrorReset();
 
-    for (GIntBig nFID : vFeaturesID)
+    // Try to delete local features (not synchronized with NGW)
+    for (size_t i = 0; i < vFeaturesID.size(); i++)
     {
+        auto nFID = vFeaturesID[i];
         if (nFID < 0)
         {
             if (moFeatures[nFID] != nullptr)
@@ -1470,11 +1472,8 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
                 moFeatures[nFID] = nullptr;
                 nFeatureCount--;
                 soChangedIds.erase(nFID);
-                return OGRERR_NONE;
+                vFeaturesID.erase(vFeaturesID.begin() + i);
             }
-            CPLError(CE_Failure, CPLE_AppDefined,
-                "Feature with id " CPL_FRMT_GIB " not found.", nFID);
-            return OGRERR_FAILURE;
         }
     }
 
@@ -1482,7 +1481,8 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
     if (stPermissions.bDataCanWrite && poDS->IsUpdateMode())
     {
         std::string osFeaturesJson;
-        bool bResult = NGWAPI::DeleteFeatures(poDS->GetUrl(), osResourceId, FeaturesIDToJsonString(vFeaturesID), poDS->GetHeaders(false));
+        bool bResult = NGWAPI::DeleteFeatures(poDS->GetUrl(), osResourceId, 
+            FeaturesIDToJsonString(vFeaturesID), poDS->GetHeaders(false));
         if (bResult)
         {
             for (GIntBig nFID : vFeaturesID)
@@ -1491,16 +1491,14 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
                 {
                     OGRFeature::DestroyFeature(moFeatures[nFID]);
                     moFeatures[nFID] = nullptr;
+                    nFeatureCount--;
+                    soChangedIds.erase(nFID);
                 }
-                nFeatureCount--;
-                soChangedIds.erase(nFID);
             }
             return OGRERR_NONE;
         }
-        return OGRERR_FAILURE;
     }
-    CPLError(CE_Failure, CPLE_AppDefined,
-        "Delete feature " CPL_FRMT_GIB " operation is not permitted.");
+    CPLError(CE_Failure, CPLE_AppDefined, "Delete features failed");
     return OGRERR_FAILURE;
 }
 

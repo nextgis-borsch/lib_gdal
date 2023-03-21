@@ -97,7 +97,7 @@ namespace NGWAPI {
         const CPLStringList &aosHTTPOptions);
     bool UpdateResource(const std::string &osUrl, const std::string &osResourceId,
         const std::string &osPayload, const CPLStringList &aosHTTPOptions);
-    void FillResmeta(CPLJSONObject &oRoot, const CPLStringList &aosHTTPOptions);
+    void FillResmeta(CPLJSONObject &oRoot, char **papszMetadata);
     std::string GetResmetaSuffix(CPLJSONObject::Type eType);
     bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
         const std::string &osFeatureId, const CPLStringList &aosHTTPOptions);
