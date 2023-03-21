@@ -510,7 +510,7 @@ void OGRNGWDataset::AddLayer( const CPLJSONObject &oResourceJsonObject,
             CPLJSONArray oChildren( oResourceChildReq.GetRoot() );
             for( int i = 0; i < oChildren.Size(); ++i )
             {
-                AddRaster( oChildren[i], papszOptions );
+                AddRaster( oChildren[i], aosHTTPOptions );
             }
         }
     }

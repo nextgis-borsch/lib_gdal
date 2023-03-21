@@ -360,8 +360,8 @@ bool DeleteResource(const std::string &osUrl, const std::string &osResourceId,
     CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
 
     aosHTTPOptionsInt.AddString("CUSTOMREQUEST=DELETE");
-    auto osUrl = GetResource(osUrl, osResourceId);
-    CPLHTTPResult *psResult = CPLHTTPFetch( osUrl.c_str(), aosHTTPOptionsInt);
+    auto osUrlNew = GetResource(osUrl, osResourceId);
+    CPLHTTPResult *psResult = CPLHTTPFetch( osUrlNew.c_str(), aosHTTPOptionsInt);
     bool bResult = false;
     if( psResult )
     {

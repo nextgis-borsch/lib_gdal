@@ -92,7 +92,7 @@ namespace NGWAPI {
     std::string GetLayerExtent(const std::string &osUrl,
         const std::string &osResourceId);
     bool FlushMetadata(const std::string &osUrl, const std::string &osResourceId,
-        const CPLStringList &aosHTTPOptions, const CPLStringList &aosHTTPOptions);
+        char **papszMetadata, const CPLStringList &aosHTTPOptions);
     std::string CreateResource(const std::string &osUrl, const std::string &osPayload,
         const CPLStringList &aosHTTPOptions);
     bool UpdateResource(const std::string &osUrl, const std::string &osResourceId,
