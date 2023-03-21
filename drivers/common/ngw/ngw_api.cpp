@@ -37,7 +37,7 @@ bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
     const std::string &osErrorMessage, int nTryCount, bool bReportError)
 {
     CPLDebug("NGW", "CheckRequestResult(bResult: %d, oRoot is valid %d, osErrorMessage: %s, nTryCount %d, bReportError %d)",
-    bResult, oRoot.IsValid(), osErrorMessage, nTryCount, bReportError);
+    bResult, oRoot.IsValid(), osErrorMessage.c_str(), nTryCount, bReportError);
     if( !bResult )
     {
         if( oRoot.IsValid() )
