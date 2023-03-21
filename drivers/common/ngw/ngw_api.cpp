@@ -36,7 +36,9 @@ namespace NGWAPI {
 bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot, 
     const std::string &osErrorMessage, int nTryCount, bool bReportError)
 {
-    CPLDebug("NGW", "CheckRequestResult(bResult: %d, oRoot is valid %d, osErrorMessage: %s, nTryCount %d, bReportError %d)",
+    CPLDebug("NGW", 
+        "CheckRequestResult(bResult: %d, oRoot is valid %d, osErrorMessage: %s, "
+        "nTryCount %d, bReportError %d)",
     bResult, oRoot.IsValid(), osErrorMessage.c_str(), nTryCount, bReportError);
     if( !bResult )
     {
@@ -291,21 +293,22 @@ static void ReportError(const GByte *pabyData, int nDataLen, const std::string &
 }
 
 std::string CreateResource(const std::string &osUrl, const std::string &osPayload,
-    char **papszHTTPOptions)
+    const CPLStringList &aosHTTPOptions)
 {
     CPLErrorReset();
     std::string osPayloadInt = "POSTFIELDS=" + osPayload;
 
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, "CUSTOMREQUEST=POST" );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, osPayloadInt.c_str() );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions,
-        "HEADERS=Content-Type: application/json\r\nAccept: */*" );
+    CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
+
+    aosHTTPOptionsInt.AddString("CUSTOMREQUEST=POST");
+    aosHTTPOptionsInt.AddString(osPayloadInt.c_str());
+    aosHTTPOptionsInt.AddString("HEADERS=Content-Type: application/json\r\nAccept: */*");
 
     CPLDebug("NGW", "CreateResource request payload: %s", osPayload.c_str());
 
     CPLJSONDocument oCreateReq;
     bool bResult = oCreateReq.LoadUrl( GetResource( osUrl, "" ),
-        papszHTTPOptions );
+        aosHTTPOptionsInt );
     std::string osResourceId("-1");
     CPLJSONObject oRoot = oCreateReq.GetRoot();
     if(CheckRequestResult(bResult, oRoot, "CreateResource request failed", 1, true))
@@ -316,20 +319,20 @@ std::string CreateResource(const std::string &osUrl, const std::string &osPayloa
 }
 
 bool UpdateResource(const std::string &osUrl, const std::string &osResourceId,
-    const std::string &osPayload, char **papszHTTPOptions)
+    const std::string &osPayload, const CPLStringList &aosHTTPOptions)
 {
     CPLErrorReset();
     std::string osPayloadInt = "POSTFIELDS=" + osPayload;
 
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, "CUSTOMREQUEST=PUT" );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, osPayloadInt.c_str() );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions,
-        "HEADERS=Content-Type: application/json\r\nAccept: */*" );
+    CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
+    aosHTTPOptionsInt.AddString("CUSTOMREQUEST=PUT");
+    aosHTTPOptionsInt.AddString(osPayloadInt.c_str());
+    aosHTTPOptionsInt.AddString("HEADERS=Content-Type: application/json\r\nAccept: */*");
 
     CPLDebug("NGW", "UpdateResource request payload: %s", osPayload.c_str());
 
     CPLHTTPResult *psResult = CPLHTTPFetch( GetResource(osUrl, osResourceId).c_str(),
-        papszHTTPOptions );
+        aosHTTPOptionsInt );
     bool bResult = false;
     if( psResult )
     {
@@ -351,12 +354,14 @@ bool UpdateResource(const std::string &osUrl, const std::string &osResourceId,
 }
 
 bool DeleteResource(const std::string &osUrl, const std::string &osResourceId,
-    char **papszHTTPOptions)
+    const CPLStringList &aosHTTPOptions)
 {
     CPLErrorReset();
-    papszHTTPOptions = CSLAddString(papszHTTPOptions, "CUSTOMREQUEST=DELETE");
-    CPLHTTPResult *psResult = CPLHTTPFetch( GetResource(osUrl, osResourceId).c_str(),
-        papszHTTPOptions);
+    CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
+
+    aosHTTPOptionsInt.AddString("CUSTOMREQUEST=DELETE");
+    auto osUrl = GetResource(osUrl, osResourceId);
+    CPLHTTPResult *psResult = CPLHTTPFetch( osUrl.c_str(), aosHTTPOptionsInt);
     bool bResult = false;
     if( psResult )
     {
@@ -372,14 +377,14 @@ bool DeleteResource(const std::string &osUrl, const std::string &osResourceId,
 }
 
 bool RenameResource(const std::string &osUrl, const std::string &osResourceId,
-    const std::string &osNewName, char **papszHTTPOptions)
+    const std::string &osNewName, const CPLStringList &aosHTTPOptions)
 {
     CPLJSONObject oPayload;
     CPLJSONObject oResource("resource", oPayload);
     oResource.Add("display_name", osNewName);
     std::string osPayload = oPayload.Format(CPLJSONObject::PrettyFormat::Plain);
 
-    return UpdateResource( osUrl, osResourceId, osPayload, papszHTTPOptions);
+    return UpdateResource( osUrl, osResourceId, osPayload, aosHTTPOptions);
 }
 
 OGRwkbGeometryType NGWGeomTypeToOGRGeomType(const std::string &osGeomType)
@@ -490,18 +495,19 @@ std::string OGRFieldTypeToNGWFieldType(OGRFieldType eType)
 }
 
 Permissions CheckPermissions(const std::string &osUrl,
-    const std::string &osResourceId, char **papszHTTPOptions, bool bReadWrite)
+    const std::string &osResourceId, const CPLStringList &aosHTTPOptions, 
+    bool bReadWrite)
 {
     Permissions stOut;
     CPLErrorReset();
-    double dfRetryDelaySecs = CPLAtof(CSLFetchNameValueDef(papszHTTPOptions, "RETRY_DELAY", "2.5"));
-    int nMaxRetries = atoi(CSLFetchNameValueDef(papszHTTPOptions, "MAX_RETRY", "0"));
+    double dfRetryDelaySecs = CPLAtof(aosHTTPOptions.FetchNameValueDef("RETRY_DELAY", "2.5"));
+    int nMaxRetries = atoi(aosHTTPOptions.FetchNameValueDef("MAX_RETRY", "0"));
     int nRetryCount = 0;
     CPLJSONDocument oPermissionReq;
     while(true)
     {
         auto osUrlNew = GetPermissions( osUrl, osResourceId );
-        bool bResult = oPermissionReq.LoadUrl( osUrlNew, papszHTTPOptions );
+        bool bResult = oPermissionReq.LoadUrl( osUrlNew, aosHTTPOptions );
 
         CPLJSONObject oRoot = oPermissionReq.GetRoot();
         if(CheckRequestResult(bResult, oRoot, "Get permissions failed", 1, true))
@@ -599,7 +605,7 @@ void FillResmeta(CPLJSONObject &oRoot, char **papszMetadata)
 }
 
 bool FlushMetadata(const std::string &osUrl, const std::string &osResourceId,
-    char **papszMetadata, char **papszHTTPOptions )
+    char **papszMetadata, const CPLStringList &aosHTTPOptions)
 {
     if( nullptr == papszMetadata )
     {
@@ -609,16 +615,17 @@ bool FlushMetadata(const std::string &osUrl, const std::string &osResourceId,
     FillResmeta(oMetadataJson, papszMetadata);
 
     return UpdateResource( osUrl, osResourceId,
-        oMetadataJson.Format(CPLJSONObject::PrettyFormat::Plain), papszHTTPOptions);
+        oMetadataJson.Format(CPLJSONObject::PrettyFormat::Plain), aosHTTPOptions);
 }
 
 bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
-    const std::string &osFeatureId, char **papszHTTPOptions)
+    const std::string &osFeatureId, const CPLStringList &aosHTTPOptions)
 {
     CPLErrorReset();
-    papszHTTPOptions = CSLAddString(papszHTTPOptions, "CUSTOMREQUEST=DELETE");
+    CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
+    aosHTTPOptionsInt.AddString("CUSTOMREQUEST=DELETE");
     std::string osUrlInt = GetFeature(osUrl, osResourceId) + osFeatureId;
-    CPLHTTPResult *psResult = CPLHTTPFetch( osUrlInt.c_str(), papszHTTPOptions);
+    CPLHTTPResult *psResult = CPLHTTPFetch( osUrlInt.c_str(), aosHTTPOptionsInt);
     bool bResult = false;
     if( psResult )
     {
@@ -634,18 +641,18 @@ bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
 }
 
 bool DeleteFeatures(const std::string &osUrl, const std::string &osResourceId,
-    const std::string &osFeaturesIDJson, char **papszHTTPOptions)
+    const std::string &osFeaturesIDJson, const CPLStringList &aosHTTPOptions)
 {
     CPLErrorReset();
     std::string osPayloadInt = "POSTFIELDS=" + osFeaturesIDJson;
 
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, "CUSTOMREQUEST=DELETE" );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, osPayloadInt.c_str() );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions,
-        "HEADERS=Content-Type: application/json\r\nAccept: */*" );
+    CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
+    aosHTTPOptionsInt.AddString( "CUSTOMREQUEST=DELETE" );
+    aosHTTPOptionsInt.AddString( osPayloadInt.c_str() );
+    aosHTTPOptionsInt.AddString( "HEADERS=Content-Type: application/json\r\nAccept: */*" );
 
     std::string osUrlInt = GetFeature(osUrl, osResourceId);
-    CPLHTTPResult *psResult = CPLHTTPFetch( osUrlInt.c_str(), papszHTTPOptions);
+    CPLHTTPResult *psResult = CPLHTTPFetch( osUrlInt.c_str(), aosHTTPOptionsInt);
     bool bResult = false;
     if( psResult )
     {
@@ -661,22 +668,22 @@ bool DeleteFeatures(const std::string &osUrl, const std::string &osResourceId,
 }
 
 GIntBig CreateFeature(const std::string &osUrl, const std::string &osResourceId,
-    const std::string &osFeatureJson, char **papszHTTPOptions)
+    const std::string &osFeatureJson, const CPLStringList &aosHTTPOptions)
 {
     CPLErrorReset();
     std::string osPayloadInt = "POSTFIELDS=" + osFeatureJson;
 
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, "CUSTOMREQUEST=POST" );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, osPayloadInt.c_str() );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions,
-        "HEADERS=Content-Type: application/json\r\nAccept: */*" );
+    CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
+    aosHTTPOptionsInt.AddString( "CUSTOMREQUEST=POST" );
+    aosHTTPOptionsInt.AddString( osPayloadInt.c_str() );
+    aosHTTPOptionsInt.AddString( "HEADERS=Content-Type: application/json\r\nAccept: */*" );
 
     CPLDebug("NGW", "CreateFeature request payload: %s", osFeatureJson.c_str());
 
     std::string osUrlInt = GetFeature( osUrl, osResourceId );
 
     CPLJSONDocument oCreateFeatureReq;
-    bool bResult = oCreateFeatureReq.LoadUrl( osUrlInt, papszHTTPOptions );
+    bool bResult = oCreateFeatureReq.LoadUrl( osUrlInt, aosHTTPOptionsInt );
 
     CPLJSONObject oRoot = oCreateFeatureReq.GetRoot();
     GIntBig nOutFID = OGRNullFID;
@@ -691,20 +698,20 @@ GIntBig CreateFeature(const std::string &osUrl, const std::string &osResourceId,
 
 bool UpdateFeature(const std::string &osUrl, const std::string &osResourceId,
     const std::string &osFeatureId, const std::string &osFeatureJson,
-    char **papszHTTPOptions)
+    const CPLStringList &aosHTTPOptions)
 {
     CPLErrorReset();
     std::string osPayloadInt = "POSTFIELDS=" + osFeatureJson;
 
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, "CUSTOMREQUEST=PUT" );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, osPayloadInt.c_str() );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions,
-        "HEADERS=Content-Type: application/json\r\nAccept: */*" );
+    CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
+    aosHTTPOptionsInt.AddString( "CUSTOMREQUEST=PUT" );
+    aosHTTPOptionsInt.AddString( osPayloadInt.c_str() );
+    aosHTTPOptionsInt.AddString( "HEADERS=Content-Type: application/json\r\nAccept: */*" );
 
     CPLDebug("NGW", "UpdateFeature request payload: %s", osFeatureJson.c_str());
 
     std::string osUrlInt = GetFeature(osUrl, osResourceId) + osFeatureId;
-    CPLHTTPResult *psResult = CPLHTTPFetch( osUrlInt.c_str(), papszHTTPOptions );
+    CPLHTTPResult *psResult = CPLHTTPFetch( osUrlInt.c_str(), aosHTTPOptionsInt );
     bool bResult = false;
     if( psResult )
     {
@@ -721,22 +728,22 @@ bool UpdateFeature(const std::string &osUrl, const std::string &osResourceId,
 }
 
 std::vector<GIntBig> PatchFeatures(const std::string &osUrl, const std::string &osResourceId,
-    const std::string &osFeaturesJson, char **papszHTTPOptions)
+    const std::string &osFeaturesJson, const CPLStringList &aosHTTPOptions)
 {
     std::vector<GIntBig> aoFIDs;
     CPLErrorReset();
     std::string osPayloadInt = "POSTFIELDS=" + osFeaturesJson;
 
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, "CUSTOMREQUEST=PATCH" );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, osPayloadInt.c_str() );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions,
-        "HEADERS=Content-Type: application/json\r\nAccept: */*" );
+    CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
+    aosHTTPOptionsInt.AddString( "CUSTOMREQUEST=PATCH" );
+    aosHTTPOptionsInt.AddString( osPayloadInt.c_str() );
+    aosHTTPOptionsInt.AddString( "HEADERS=Content-Type: application/json\r\nAccept: */*" );
 
     CPLDebug("NGW", "PatchFeatures request payload: %s", osFeaturesJson.c_str());
 
     std::string osUrlInt = GetFeature(osUrl, osResourceId);
     CPLJSONDocument oPatchFeatureReq;
-    bool bResult = oPatchFeatureReq.LoadUrl( osUrlInt, papszHTTPOptions );
+    bool bResult = oPatchFeatureReq.LoadUrl( osUrlInt, aosHTTPOptionsInt );
 
     CPLJSONObject oRoot = oPatchFeatureReq.GetRoot();
     if( CheckRequestResult(bResult, oRoot, "Patch features failed", 1, true) )
@@ -752,17 +759,17 @@ std::vector<GIntBig> PatchFeatures(const std::string &osUrl, const std::string &
 }
 
 bool GetExtent(const std::string &osUrl, const std::string &osResourceId,
-    char **papszHTTPOptions, int nEPSG, OGREnvelope &stExtent)
+    const CPLStringList &aosHTTPOptions, int nEPSG, OGREnvelope &stExtent)
 {
     CPLErrorReset();
     CPLJSONDocument oExtentReq;
-    double dfRetryDelaySecs = CPLAtof(CSLFetchNameValueDef(papszHTTPOptions, "RETRY_DELAY", "2.5"));
-    int nMaxRetries = atoi(CSLFetchNameValueDef(papszHTTPOptions, "MAX_RETRY", "0"));
+    double dfRetryDelaySecs = CPLAtof(aosHTTPOptions.FetchNameValueDef("RETRY_DELAY", "2.5"));
+    int nMaxRetries = atoi(aosHTTPOptions.FetchNameValueDef("MAX_RETRY", "0"));
     int nRetryCount = 0;
     while(true)
     {
         auto osUrlNew = GetLayerExtent( osUrl, osResourceId );
-        bool bResult = oExtentReq.LoadUrl( osUrlNew, papszHTTPOptions );
+        bool bResult = oExtentReq.LoadUrl( osUrlNew, aosHTTPOptions );
 
         CPLJSONObject oRoot = oExtentReq.GetRoot();
         if( CheckRequestResult(bResult, oRoot, "Get extent failed", 1, true) )
@@ -845,22 +852,22 @@ bool GetExtent(const std::string &osUrl, const std::string &osResourceId,
 }
 
 CPLJSONObject UploadFile(const std::string &osUrl, const std::string &osFilePath,
-    char **papszHTTPOptions, GDALProgressFunc pfnProgress, void *pProgressData)
+    const CPLStringList &aosHTTPOptions, GDALProgressFunc pfnProgress, 
+    void *pProgressData)
 {
     CPLErrorReset();
-    papszHTTPOptions = CSLAddString( papszHTTPOptions,
-        CPLSPrintf("FORM_FILE_PATH=%s", osFilePath.c_str()) );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, "FORM_FILE_NAME=file" );
+    
+    CPLStringList aosHTTPOptionsInt(aosHTTPOptions);
+    aosHTTPOptionsInt.AddString( CPLSPrintf("FORM_FILE_PATH=%s", osFilePath.c_str()) );
+    aosHTTPOptionsInt.AddString( "FORM_FILE_NAME=file" );
 
     const char* pszFormFileName = CPLGetFilename( osFilePath.c_str() );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, "FORM_KEY_0=name" );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions,
-        CPLSPrintf("FORM_VALUE_0=%s", pszFormFileName) );
-    papszHTTPOptions = CSLAddString( papszHTTPOptions, "FORM_ITEM_COUNT=1" );
+    aosHTTPOptionsInt.AddString( "FORM_KEY_0=name" );
+    aosHTTPOptionsInt.AddString( CPLSPrintf("FORM_VALUE_0=%s", pszFormFileName) );
+    aosHTTPOptionsInt.AddString( "FORM_ITEM_COUNT=1" );
 
     CPLHTTPResult *psResult = CPLHTTPFetchEx( GetUpload(osUrl).c_str(),
-        papszHTTPOptions, pfnProgress, pProgressData, nullptr, nullptr );
-    CSLDestroy( papszHTTPOptions );
+        aosHTTPOptionsInt, pfnProgress, pProgressData, nullptr, nullptr );
     CPLJSONObject oResult;
     if( psResult )
     {
@@ -869,7 +876,7 @@ CPLJSONObject UploadFile(const std::string &osUrl, const std::string &osFilePath
         // Get error message.
         if( !bResult )
         {
-            ReportError(psResult->pabyData, psResult->nDataLen, "UpdateFeature request failed");
+            ReportError(psResult->pabyData, psResult->nDataLen, "Upload file request failed");
         }
         else
         {

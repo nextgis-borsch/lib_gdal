@@ -32,40 +32,40 @@
 /*
  * GetHeaders()
  */
-static char **GetHeaders(const std::string &osUserPwdIn = "", 
+static CPLStringList GetHeaders(const std::string &osUserPwdIn = "", 
     const std::string &osConnectTimeout = "", const std::string &osTimeout = "", 
     const std::string &osRetryCount = "", const std::string &osRetryDelay = "")
 {
-    char **papszOptions = nullptr;
-    papszOptions = CSLAddString(papszOptions, "HEADERS=Accept: */*");
+    CPLStringList aosHTTPOptions;
+    aosHTTPOptions.AddString("HEADERS=Accept: */*");
     if( !osUserPwdIn.empty() )
     {
-        papszOptions = CSLAddString(papszOptions, "HTTPAUTH=BASIC");
+        aosHTTPOptions.AddString("HTTPAUTH=BASIC");
         std::string osUserPwdOption("USERPWD=");
         osUserPwdOption += osUserPwdIn;
-        papszOptions = CSLAddString(papszOptions, osUserPwdOption.c_str());
+        aosHTTPOptions.AddString(osUserPwdOption.c_str());
     }
 
     if( !osConnectTimeout.empty() )
     {
-        papszOptions = CSLAddNameValue(papszOptions, "CONNECTTIMEOUT", osConnectTimeout.c_str());
+        aosHTTPOptions.AddNameValue("CONNECTTIMEOUT", osConnectTimeout.c_str());
     }
 
     if( !osTimeout.empty() )
     {
-        papszOptions = CSLAddNameValue(papszOptions, "TIMEOUT", osTimeout.c_str());
+        aosHTTPOptions.AddNameValue("TIMEOUT", osTimeout.c_str());
     }
 
     if( !osRetryCount.empty() )
     {
-        papszOptions = CSLAddNameValue(papszOptions, "MAX_RETRY", osRetryCount.c_str());
+        aosHTTPOptions.AddNameValue("MAX_RETRY", osRetryCount.c_str());
     }
     if( !osRetryDelay.empty() )
     {
-        papszOptions = CSLAddNameValue(papszOptions, "RETRY_DELAY", osRetryDelay.c_str());
+        aosHTTPOptions.AddNameValue("RETRY_DELAY", osRetryDelay.c_str());
     }
 
-    return papszOptions;
+    return aosHTTPOptions;
 }
 
 /*
@@ -204,14 +204,14 @@ static CPLErr OGRNGWDriverDelete( const char *pszName )
     std::string osRetryCount = CPLGetConfigOption("NGW_MAX_RETRY", "");   
     std::string osRetryDelay = CPLGetConfigOption("NGW_RETRY_DELAY", ""); 
 
-    char **papszOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
+    auto aosHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
         osRetryCount, osRetryDelay);
     // NGWAPI::Permissions stPermissions = NGWAPI::CheckPermissions(stUri.osAddress,
-    //     stUri.osResourceId, papszOptions, true);
+    //     stUri.osResourceId, aosHTTPOptions, true);
     // if( stPermissions.bResourceCanDelete )
     // {
         return NGWAPI::DeleteResource(stUri.osAddress, stUri.osResourceId,
-            papszOptions) ? CE_None : CE_Failure;
+            aosHTTPOptions) ? CE_None : CE_Failure;
     // }
     // CPLError(CE_Failure, CPLE_AppDefined, "Operation not permitted.");
     // return CE_Failure;
@@ -238,14 +238,14 @@ static CPLErr OGRNGWDriverRename( const char *pszNewName, const char *pszOldName
     std::string osRetryCount = CPLGetConfigOption("NGW_MAX_RETRY", "");   
     std::string osRetryDelay = CPLGetConfigOption("NGW_RETRY_DELAY", ""); 
 
-    char **papszOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
+    auto aosHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
         osRetryCount, osRetryDelay);
     // NGWAPI::Permissions stPermissions = NGWAPI::CheckPermissions(stUri.osAddress,
-    //     stUri.osResourceId, papszOptions, true);
+    //     stUri.osResourceId, aosHTTPOptions, true);
     // if( stPermissions.bResourceCanUpdate )
     // {
         return NGWAPI::RenameResource(stUri.osAddress, stUri.osResourceId,
-            pszNewName, papszOptions) ? CE_None : CE_Failure;
+            pszNewName, aosHTTPOptions) ? CE_None : CE_Failure;
     // }
     // CPLError(CE_Failure, CPLE_AppDefined, "Operation not permitted.");
     // return CE_Failure;
@@ -359,9 +359,9 @@ static GDALDataset *OGRNGWDriverCreateCopy( const char *pszFilename,
     std::string osTimeout = CSLFetchNameValueDef( papszOptions, "TIMEOUT", "");
 
     // Send file
-    char **papszHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout);
+    auto aosHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout);
     CPLJSONObject oFileJson = NGWAPI::UploadFile(stUri.osAddress, osFilename,
-        papszHTTPOptions, pfnProgress, pProgressData);
+        aosHTTPOptions, pfnProgress, pProgressData);
 
     if( bCloseDS ) // Delete temp tiff file.
     {
@@ -406,9 +406,8 @@ static GDALDataset *OGRNGWDriverCreateCopy( const char *pszFilename,
     CPLJSONObject oSrs("srs", oRasterLayer);
     oSrs.Add( "id", 3857 ); // Now only Web Mercator supported.
 
-    papszHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout);
     std::string osNewResourceId = NGWAPI::CreateResource( stUri.osAddress,
-        oPayloadRaster.Format(CPLJSONObject::PrettyFormat::Plain), papszHTTPOptions );
+        oPayloadRaster.Format(CPLJSONObject::PrettyFormat::Plain), aosHTTPOptions );
     if( osNewResourceId == "-1" )
     {
         return nullptr;
@@ -426,9 +425,8 @@ static GDALDataset *OGRNGWDriverCreateCopy( const char *pszFilename,
         oResourceStyle.Add( "cls", "qgis_raster_style" );
 
         // Upload QML file
-        papszHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout);
         oFileJson = NGWAPI::UploadFile(stUri.osAddress, osQMLPath,
-            papszHTTPOptions, pfnProgress, pProgressData);
+            aosHTTPOptions, pfnProgress, pProgressData);
         oUploadMeta = oFileJson.GetArray("upload_meta");
         if( !oUploadMeta.IsValid() || oUploadMeta.Size() == 0 )
         {
@@ -448,9 +446,8 @@ static GDALDataset *OGRNGWDriverCreateCopy( const char *pszFilename,
     CPLJSONObject oParentRaster( "parent", oResourceStyle );
     oParentRaster.Add( "id", atoi(osNewResourceId.c_str()) );
 
-    papszHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout);
     osNewResourceId = NGWAPI::CreateResource( stUri.osAddress,
-        oPayloadRasterStyle.Format(CPLJSONObject::PrettyFormat::Plain), papszHTTPOptions );
+        oPayloadRasterStyle.Format(CPLJSONObject::PrettyFormat::Plain), aosHTTPOptions );
     if( osNewResourceId == "-1" )
     {
         return nullptr;
