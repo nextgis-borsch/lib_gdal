@@ -526,6 +526,7 @@ Permissions CheckPermissions(const std::string &osUrl,
             stOut.bMetadataCanRead = oRoot.GetBool( "metadata/read", true );
             stOut.bMetadataCanWrite = oRoot.GetBool( "metadata/write", bReadWrite );
 
+            CPLErrorReset(); // If we are here no error occurred
             return stOut;
         }
 
@@ -835,6 +836,7 @@ bool GetExtent(const std::string &osUrl, const std::string &osResourceId,
                     }
                 }
             }
+            CPLErrorReset(); // If we are here no error occurred
             return true;
         }
         if( nRetryCount >= nMaxRetries )
