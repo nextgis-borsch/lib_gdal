@@ -248,7 +248,7 @@ function(find_extproject name)
             set(FIND_PROJECT_ARG ${FIND_PROJECT_ARG} NAMES ${find_extproject_NAMES})
         endif()
 
-        find_package(${name} NO_MODULE ${FIND_PROJECT_ARG})
+        find_package(${name} NO_MODULE ${FIND_PROJECT_ARG} NAMES ${UPPER_NAME} ${name})
         
         set(${UPPER_NAME}_FOUND ${${UPPER_NAME}_FOUND} PARENT_SCOPE)
         set(${UPPER_NAME}_VERSION ${${UPPER_NAME}_VERSION} PARENT_SCOPE)
