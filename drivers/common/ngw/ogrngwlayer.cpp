@@ -689,6 +689,7 @@ CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
         if( NGWAPI::CheckRequestResult(bResult, oRoot, "GetFeatures request failed", nRetryCount,
             nRetryCount >= nMaxRetries) )
         {
+            CPLErrorReset(); // If we are here no error occurred
             return oRoot;
         }
         if( nRetryCount >= nMaxRetries )
