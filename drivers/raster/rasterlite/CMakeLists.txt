@@ -35,6 +35,7 @@ if(ENABLE_RASTERLITE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/core/ogr)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
 
     set(LIB_HHEADERS
     )

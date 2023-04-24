@@ -149,8 +149,6 @@ set(COPY
     gnm.py
     ogr.py
     osr.py
-    setup.cfg
-#    setup.py
 )
 
 set(PY_COMMANDS

@@ -76,6 +76,7 @@ set(LIB_HHEADERS_PRIV
     ogrlayerpool.h
     ogrmutexedlayer.h
     ogrunionlayer.h
+    ograrrowarrayhelper.h
 )
 
 set(LIB_CSOURCES
@@ -97,6 +98,7 @@ set(LIB_CSOURCES
     ogr_miattrind.cpp
     ogrregisterall.cpp
     ogrwarpedlayer.cpp
+    ograrrowarrayhelper.cpp
 )
 
 add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

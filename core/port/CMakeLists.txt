@@ -89,6 +89,8 @@ set(LIB_HHEADERS_PRIV
     cpl_error_internal.h
     cpl_curl_priv.h
     cpl_zlib_header.h
+    cpl_mask.h
+    cpl_noncopyablevector.h
 )
 
 set(LIB_CSOURCES
@@ -161,6 +163,7 @@ set(LIB_CSOURCES
     cpl_vsil_uploadonclose.cpp
     cpl_compressor.cpp
     cpl_float.cpp
+    cpl_threadsafe_queue.hpp
 )
 
 if(WIN32)

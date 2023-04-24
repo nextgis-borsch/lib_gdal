@@ -59,6 +59,8 @@ set(LIB_HHEADERS_PRIV
     ogr_libs.h
     ogr_geo_utils.h
     ogr_proj_p.h
+    ogr_recordbatch.h
+    ogr_wkb.h
 )
 
 set(LIB_CSOURCES
@@ -117,6 +119,7 @@ set(LIB_CSOURCES
     ogrtriangulatedsurface.cpp
     ogr_geo_utils.cpp
     ogr_proj_p.cpp
+    ogr_wkb.cpp
 )
 
 

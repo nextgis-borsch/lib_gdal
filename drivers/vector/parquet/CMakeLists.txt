@@ -45,6 +45,7 @@ if(ENABLE_PARQUET)
         ogrparquetlayer.cpp
         ogrparquetwriterdataset.cpp
         ogrparquetwriterlayer.cpp
+        ogrparquetdatasetlayer.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

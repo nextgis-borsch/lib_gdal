@@ -60,6 +60,16 @@ if(BUILD_TESTING)
         configure_file(${CMAKE_SOURCE_DIR}/cmake/pytest.ini.in ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini @ONLY)
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/conftest.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
         
+        if (NOT "${CMAKE_BINARY_DIR}" STREQUAL "${CMAKE_SOURCE_DIR}")
+          foreach (subdir IN ITEMS pymod proj_grids cpp/data)
+              if (SKIP_COPYING_AUTOTEST_SUBDIRS)
+                message(STATUS "Skipping copying ${CMAKE_CURRENT_SOURCE_DIR}/${subdir}")
+              else ()
+                symlink_or_copy(${CMAKE_CURRENT_SOURCE_DIR}/${subdir} ${CMAKE_CURRENT_BINARY_DIR}/${subdir})
+              endif ()
+          endforeach ()
+        endif()
+        
         foreach (tgt IN ITEMS
                   ogr
                   gcore

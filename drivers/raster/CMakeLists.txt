@@ -53,6 +53,7 @@ find_anyproject(JPEG DEFAULT ON)
 if(JPEG_FOUND)
     add_definitions(-DJPEG_SUPPORTED)
     add_definitions(-DHAVE_LIBJPEG) # Added only after 2.1 release (especially for geotiff.cpp where incorrect #ifdef is used)
+    add_definitions(-DHAVE_JPEG)
 endif()
 
 find_anyproject(JPEG12 DEFAULT ON) # NAMES jpeg12 jpeg
@@ -61,6 +62,9 @@ if(JPEG12_FOUND)
 endif()
 
 find_anyproject(PNG DEFAULT ON)
+if(PNG_FOUND)
+    add_definitions(-DHAVE_PNG)
+endif()
 
 find_anyproject(WEBP DEFAULT ON)
 if(WEBP_FOUND)

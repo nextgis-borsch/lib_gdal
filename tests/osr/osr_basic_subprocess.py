@@ -31,13 +31,21 @@
 
 from osgeo import osr
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # This test use auxiliary database created with proj 6.3.2
     # (tested up to 8.0.0) and can be sensitive to future
     # database structure change.
     #
     # See PR https://github.com/OSGeo/gdal/pull/3590
-    osr.SetPROJAuxDbPath('../cpp/data/test_aux.db')
+    # Starting with sqlite 3.41, and commit
+    # https://github.com/sqlite/sqlite/commit/ed07d0ea765386c5bdf52891154c70f048046e60
+    # we must use the same exact table definition in the auxiliary db, otherwise
+    # SQLite3 is confused regarding column types. Hence this PROJ >= 9 check,
+    # to use a table structure identical to proj.db of PROJ 9.
+    if osr.GetPROJVersionMajor() >= 9:
+        osr.SetPROJAuxDbPath("../cpp/data/test_aux_proj_9.db")
+    else:
+        osr.SetPROJAuxDbPath("../cpp/data/test_aux.db")
     sr = osr.SpatialReference()
     assert sr.ImportFromEPSG(4326) == 0
     assert sr.ImportFromEPSG(111111) == 0

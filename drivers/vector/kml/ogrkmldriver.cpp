@@ -38,56 +38,45 @@
 #include "gdal.h"
 #include "gdal_priv.h"
 
-CPL_CVSID("$Id$")
-
 /************************************************************************/
 /*                         OGRKMLDriverIdentify()                       */
 /************************************************************************/
 
-static int OGRKMLDriverIdentify( GDALOpenInfo* poOpenInfo )
+static int OGRKMLDriverIdentify(GDALOpenInfo *poOpenInfo)
 
 {
-    if( poOpenInfo->fpL == nullptr )
+    if (poOpenInfo->fpL == nullptr)
         return FALSE;
 
-    // According to KML 2.0 specification:
-    // An XML document must always have a single root element
-    // For KML, this means you can use the <kml>< / kml> tag, the
-    //    <Document>< / Document> tag, the <Folder>< / Folder> tag, or even the
-    //    <Placemark>< / Placemark> tag as the root
-
-    const char *tags[] = { "<kml", "<kml:kml", "<Document", "<Folder", "<Placemark" };
-
-    for (const char *tag : tags)
-        if (strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader), tag) != nullptr)
-            return TRUE;
-
-    return FALSE;
+    return strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader), "<kml") !=
+               nullptr ||
+           strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader),
+                  "<kml:kml") != nullptr;
 }
 
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
-static GDALDataset *OGRKMLDriverOpen( GDALOpenInfo* poOpenInfo )
+static GDALDataset *OGRKMLDriverOpen(GDALOpenInfo *poOpenInfo)
 
 {
-    if( poOpenInfo->eAccess == GA_Update )
+    if (poOpenInfo->eAccess == GA_Update)
         return nullptr;
 
-    if( !OGRKMLDriverIdentify(poOpenInfo) )
+    if (!OGRKMLDriverIdentify(poOpenInfo))
         return nullptr;
 
 #ifdef HAVE_EXPAT
-    OGRKMLDataSource* poDS = new OGRKMLDataSource();
+    OGRKMLDataSource *poDS = new OGRKMLDataSource();
 
-    if( poDS->Open( poOpenInfo->pszFilename, TRUE ) )
+    if (poDS->Open(poOpenInfo->pszFilename, TRUE))
     {
 #ifdef DEBUG_VERBOSE
-        if( poDS->GetLayerCount() == 0 )
+        if (poDS->GetLayerCount() == 0)
         {
-            CPLError( CE_Failure, CPLE_OpenFailed,
-                "No layers in KML file: %s.", poOpenInfo->pszFilename );
+            CPLError(CE_Failure, CPLE_OpenFailed, "No layers in KML file: %s.",
+                     poOpenInfo->pszFilename);
 
             delete poDS;
             poDS = nullptr;
@@ -110,19 +99,17 @@ static GDALDataset *OGRKMLDriverOpen( GDALOpenInfo* poOpenInfo )
 /*                               Create()                               */
 /************************************************************************/
 
-static GDALDataset *OGRKMLDriverCreate( const char * pszName,
-                                        int /* nBands */,
-                                        int /* nXSize */ ,
-                                        int /* nYSize */,
-                                        GDALDataType /* eDT */,
-                                        char **papszOptions )
+static GDALDataset *OGRKMLDriverCreate(const char *pszName, int /* nBands */,
+                                       int /* nXSize */, int /* nYSize */,
+                                       GDALDataType /* eDT */,
+                                       char **papszOptions)
 {
-    CPLAssert( nullptr != pszName );
-    CPLDebug( "KML", "Attempt to create: %s", pszName );
+    CPLAssert(nullptr != pszName);
+    CPLDebug("KML", "Attempt to create: %s", pszName);
 
     OGRKMLDataSource *poDS = new OGRKMLDataSource();
 
-    if( !poDS->Create( pszName, papszOptions ) )
+    if (!poDS->Create(pszName, papszOptions))
     {
         delete poDS;
         poDS = nullptr;
@@ -137,42 +124,54 @@ static GDALDataset *OGRKMLDriverCreate( const char * pszName,
 
 void RegisterOGRKML()
 {
-    if( GDALGetDriverByName( "KML" ) != nullptr )
+    if (GDALGetDriverByName("KML") != nullptr)
         return;
 
     GDALDriver *poDriver = new GDALDriver();
 
-    poDriver->SetDescription( "KML" );
-    poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
-    poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
-                               "Keyhole Markup Language (KML)" );
-    poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "kml" );
-    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drivers/vector/kml.html" );
+    poDriver->SetDescription("KML");
+    poDriver->SetMetadataItem(GDAL_DCAP_VECTOR, "YES");
+    poDriver->SetMetadataItem(GDAL_DCAP_CREATE_LAYER, "YES");
+    poDriver->SetMetadataItem(GDAL_DCAP_CREATE_FIELD, "YES");
+    poDriver->SetMetadataItem(GDAL_DCAP_Z_GEOMETRIES, "YES");
+    poDriver->SetMetadataItem(GDAL_DMD_LONGNAME,
+                              "Keyhole Markup Language (KML)");
+    poDriver->SetMetadataItem(GDAL_DMD_EXTENSION, "kml");
+    poDriver->SetMetadataItem(GDAL_DMD_HELPTOPIC, "drivers/vector/kml.html");
+    poDriver->SetMetadataItem(GDAL_DMD_SUPPORTED_SQL_DIALECTS, "OGRSQL SQLITE");
 
-    poDriver->SetMetadataItem( GDAL_DMD_CREATIONOPTIONLIST,
-"<CreationOptionList>"
-"  <Option name='DOCUMENT_ID' type='string' description='Id of the root &lt;Document&gt; node' default='root_doc'/>"
-"  <Option name='GPX_USE_EXTENSIONS' type='boolean' description='Whether to write non-GPX attributes in an &lt;extensions&gt; tag' default='NO'/>"
-"  <Option name='NameField' type='string' description='Field to use to fill the KML &lt;name&gt; element' default='Name'/>"
-"  <Option name='DescriptionField' type='string' description='Field to use to fill the KML &lt;description&gt; element' default='Description'/>"
-"  <Option name='AltitudeMode' type='string-select' description='Value of the &lt;AltitudeMode&gt; element for 3D geometries'>"
-"    <Value>clampToGround</Value>"
-"    <Value>relativeToGround</Value>"
-"    <Value>absolute</Value>"
-"  </Option>"
-"</CreationOptionList>");
+    poDriver->SetMetadataItem(
+        GDAL_DMD_CREATIONOPTIONLIST,
+        "<CreationOptionList>"
+        "  <Option name='DOCUMENT_ID' type='string' description='Id of the "
+        "root &lt;Document&gt; node' default='root_doc'/>"
+        "  <Option name='GPX_USE_EXTENSIONS' type='boolean' "
+        "description='Whether to write non-GPX attributes in an "
+        "&lt;extensions&gt; tag' default='NO'/>"
+        "  <Option name='NameField' type='string' description='Field to use to "
+        "fill the KML &lt;name&gt; element' default='Name'/>"
+        "  <Option name='DescriptionField' type='string' description='Field to "
+        "use to fill the KML &lt;description&gt; element' "
+        "default='Description'/>"
+        "  <Option name='AltitudeMode' type='string-select' description='Value "
+        "of the &lt;AltitudeMode&gt; element for 3D geometries'>"
+        "    <Value>clampToGround</Value>"
+        "    <Value>relativeToGround</Value>"
+        "    <Value>absolute</Value>"
+        "  </Option>"
+        "</CreationOptionList>");
 
-    poDriver->SetMetadataItem( GDAL_DS_LAYER_CREATIONOPTIONLIST,
-                               "<LayerCreationOptionList/>" );
-    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
-    poDriver->SetMetadataItem( GDAL_DMD_CREATIONFIELDDATATYPES,
-                               "Integer Real String" );
-    poDriver->SetMetadataItem( GDAL_DCAP_FEATURE_STYLES, "YES" );
-    poDriver->SetMetadataItem( GDAL_DCAP_MULTIPLE_VECTOR_LAYERS, "YES" );
+    poDriver->SetMetadataItem(GDAL_DS_LAYER_CREATIONOPTIONLIST,
+                              "<LayerCreationOptionList/>");
+    poDriver->SetMetadataItem(GDAL_DCAP_VIRTUALIO, "YES");
+    poDriver->SetMetadataItem(GDAL_DMD_CREATIONFIELDDATATYPES,
+                              "Integer Real String");
+    poDriver->SetMetadataItem(GDAL_DCAP_FEATURE_STYLES, "YES");
+    poDriver->SetMetadataItem(GDAL_DCAP_MULTIPLE_VECTOR_LAYERS, "YES");
 
     poDriver->pfnOpen = OGRKMLDriverOpen;
     poDriver->pfnIdentify = OGRKMLDriverIdentify;
     poDriver->pfnCreate = OGRKMLDriverCreate;
 
-    GetGDALDriverManager()->RegisterDriver( poDriver );
+    GetGDALDriverManager()->RegisterDriver(poDriver);
 }

@@ -34,6 +34,7 @@ if(ENABLE_USGSDEM)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/core/alg)
+    include_directories(${CMAKE_SOURCE_DIR}/drivers/raster/mem)
 
     set(LIB_HHEADERS
     )

@@ -41,7 +41,6 @@
 #include "ogr_core.h"
 #include "ogr_geometry.h"
 
-CPL_CVSID("$Id$")
 
 #define YYSTYPE swq_expr_node *
 
@@ -130,7 +129,7 @@ input:
     | SWQT_SELECT_START select_statement
         {
             context->poRoot = $2;
-            swq_fixup(context);
+            // swq_fixup() must be done by caller
         }
 
 value_expr:

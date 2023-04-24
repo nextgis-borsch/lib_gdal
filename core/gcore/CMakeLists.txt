@@ -39,7 +39,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/sqlite)
 include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/geojson)
 
-configure_file(gdal_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/gdal_version.h COPYONLY)
+configure_file(gdal_version.h.in ${CMAKE_CURRENT_BINARY_DIR}/gdal_version_full/gdal_version.h COPYONLY)
 
 set(LIB_HHEADERS
     gdal_frmts.h
@@ -64,6 +64,7 @@ set(LIB_HHEADERS_PRIV
     gdalsse_priv.h
     gdal_avx2_emulation.hpp
     gdal_thread_pool.h
+    rasterio_ssse3.h
 )
 
 set(LIB_CSOURCES
@@ -108,6 +109,7 @@ set(LIB_CSOURCES
     tilematrixset.cpp
     gdal_thread_pool.cpp
     nasakeywordhandler.cpp
+    gdalrelationship.cpp
 )
 
 if(GDAL_PAM_ENABLED)

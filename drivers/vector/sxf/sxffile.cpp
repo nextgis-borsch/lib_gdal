@@ -1537,7 +1537,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     double adfPrjParams[7] = { 0 };
     if (pSRS)
     {
-        pSRS->exportToPanorama(&iProjSys, &iDatum, &iEllips, &iZone, adfPrjParams);
+        //TODO pSRS->exportToPanorama(&iProjSys, &iDatum, &iEllips, &iZone, adfPrjParams);
     }
     GByte val = static_cast<GByte>(iEllips);
     VSIFWriteL(&val, 1, 1, fpSXF);
@@ -1547,7 +1547,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     if (pSRS)
     {
         int nVertNo = 0;
-        eErr = pSRS->exportVertCSToPanorama(&nVertNo);
+        //TODO eErr = pSRS->exportVertCSToPanorama(&nVertNo);
         if (eErr == OGRERR_NONE)
         {
             val = nVertNo;
@@ -1843,11 +1843,12 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
         bool bNorth = padfGeoCoords[6] + (padfGeoCoords[2] - padfGeoCoords[6]) / 2 < 0;
  
         pSpatRef = new OGRSpatialReference();
-        OGRErr eErr = pSpatRef->importFromPanorama(iProjSys, iCS, iEllips, padfPrjParams, bNorth ? TRUE : FALSE);
+        /*TODO OGRErr eErr = pSpatRef->importFromPanorama(iProjSys, iCS, iEllips, padfPrjParams, bNorth ? TRUE : FALSE);
         if (eErr != OGRERR_NONE)
         {
             return eErr;
         }
+		*/
         pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         return SetVertCS(iVCS, papszOpenOpts);
     }

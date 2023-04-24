@@ -44,6 +44,7 @@ if(ENABLE_OPENFILEGDB)
         ${CMAKE_SOURCE_DIR}/drivers/vector/mem/ogr_mem.h
         filegdb_fielddomain.h
         filegdb_gdbtoogrfieldtype.h
+        filegdb_relationship.h
     )
 
     set(LIB_CSOURCES
@@ -52,6 +53,12 @@ if(ENABLE_OPENFILEGDB)
         ogropenfilegdblayer.cpp 
         filegdbtable.cpp 
         filegdbindex.cpp
+        filegdbindex_write.cpp
+        filegdbtable_freelist.cpp
+        filegdbtable_write.cpp
+        filegdbtable_write_fields.cpp
+        ogropenfilegdbdatasource_write.cpp
+        ogropenfilegdblayer_write.cpp
     )
 
     add_library(${TARGET_NAME} OBJECT ${LIB_HHEADERS} ${LIB_HHEADERS_PRIV} ${LIB_CSOURCES})

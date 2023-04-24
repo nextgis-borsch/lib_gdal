@@ -523,7 +523,7 @@ frmts/pcidsk/sdk/blockdir,drivers/raster/pcidsk/sdk/blockdir,,"cpp,h,c,hpp"
 frmts/pcidsk/sdk/channel,drivers/raster/pcidsk/sdk/channel,,"cpp,h,c,hpp"
 frmts/pcidsk/sdk/core,drivers/raster/pcidsk/sdk/core,,"cpp,h,c,hpp"
 frmts/pcidsk/sdk/port,drivers/raster/pcidsk/sdk/port,,"cpp,h,c,hpp"
-frmts/pcidsk/sdk/raster,drivers/raster/pcidsk/sdk/raster,,"cpp,h,c,hpp"
+frmts/pcidsk/sdk/raster,drivers/raster/pcidsk/sdk/raster,,"cpp,h,c,hpp,hh"
 frmts/pcidsk/sdk/segment,drivers/raster/pcidsk/sdk/segment,,"cpp,h,c,hpp"
 frmts/pcraster,drivers/raster/pcraster,,"cpp,h,c,hpp"
 frmts/pcraster/libcsf,drivers/raster/pcraster/libcsf,,"cpp,h,c,hpp"
@@ -682,12 +682,14 @@ swig/java/gdal,bindings/java/gdal,skip,"java,html,xml"
 swig/java/ogr,bindings/java/ogr,skip,"java,html,xml"
 swig/java/osr,bindings/java/osr,skip,"java,html,xml"
 swig/java/test_data,bindings/java/test_data,skip,"tif,dbf,shp,shx"
-swig/python,bindings/python,,"cpp,h,txt,py,conf,cfg,rst"
+swig/python,bindings/python,,"cpp,h,py,conf,cfg,rst"
 swig/python/extensions,bindings/python/extensions,,"cpp,h,c,hpp"
 swig/python/osgeo,bindings/python/osgeo,,py
 swig/python/osgeo,bindings/python/,,py
 swig/python/gdal-utils/osgeo_utils,bindings/python/osgeo_utils,,py
+swig/python/gdal-utils/osgeo_utils,bindings/python/scripts,,py
 swig/python/gdal-utils/osgeo_utils/samples,bindings/python/osgeo_utils,,py
+swig/python/gdal-utils/osgeo_utils/samples,bindings/python/scripts,,py
 swig/python/gdal-utils/osgeo_utils/samples,bindings/python/samples,,py
 swig/python/gdal-utils/osgeo_utils/auxiliary,bindings/python/osgeo_utils/auxiliary,,py
 frmts/vrt,core/frmts/vrt,,h
