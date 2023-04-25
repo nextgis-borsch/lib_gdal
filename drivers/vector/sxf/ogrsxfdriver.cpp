@@ -55,10 +55,12 @@ GDALDataset *OGRSXFDriver::Open(GDALOpenInfo *poOpenInfo)
 /*      Determine what sort of object this is.                          */
 /* -------------------------------------------------------------------- */
 
-    VSIStatBufL sStatBuf;
-    if (!EQUAL(CPLGetExtension(poOpenInfo->pszFilename), "sxf") ||
-        VSIStatL(poOpenInfo->pszFilename, &sStatBuf) != 0 ||
-        !VSI_ISREG(sStatBuf.st_mode))
+    if (poOpenInfo->pabyHeader == nullptr)
+        return nullptr;
+
+    if (memcmp(poOpenInfo->pabyHeader, SXF_Sig, sizeof(SXF_Sig)) != 0
+        && memcmp(poOpenInfo->pabyHeader, SXF_Sig_BE,
+            sizeof(SXF_Sig_BE)) != 0)
         return nullptr;
 
     OGRSXFDataSource *poDS = new OGRSXFDataSource();
