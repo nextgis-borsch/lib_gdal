@@ -6,7 +6,7 @@
  *******************************************************************************
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2018-2020, NextGIS
+ *  Copyright (c) 2018-2023, NextGIS
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to
@@ -131,11 +131,17 @@ GetFeaturePage(const std::string &osUrl, const std::string &osResourceId,
         osFeatureUrl += "?extensions=" + osExtensions;
         bParamAdd = true;
     }
-    CPL_IGNORE_RET_VAL(bParamAdd);
 
     if (IsGeometryIgnored)
     {
-        osFeatureUrl += "&geom=no";
+        if (bParamAdd)
+        {
+            osFeatureUrl += "&geom=no";
+        }
+        else
+        {
+            osFeatureUrl += "?geom=no";
+        }
     }
 
     return osFeatureUrl;
@@ -180,8 +186,9 @@ bool CheckVersion(const std::string &osVersion, int nMajor, int nMinor,
         nCurrentMajor = atoi(aosList[0]);
     }
 
-    return nCurrentMajor >= nMajor && nCurrentMinor >= nMinor &&
-           nCurrentPatch >= nPatch;
+    int nCheckVersion = nMajor * 1000 + nMinor * 100 + nPatch;
+    int nCurrentVersion = nCurrentMajor * 1000 + nCurrentMinor * 100 + nCurrentPatch;
+    return nCurrentVersion >= nCheckVersion;
 }
 
 Uri ParseUri(const std::string &osUrl)
@@ -605,6 +612,34 @@ bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
         bResult = psResult->nStatus == 0 && psResult->pszErrBuf == nullptr;
         // Get error message.
         if (!bResult)
+        {
+            ReportError(psResult->pabyData, psResult->nDataLen);
+        }
+        CPLHTTPDestroyResult(psResult);
+    }
+    return bResult;
+}
+
+bool DeleteFeatures(const std::string &osUrl, const std::string &osResourceId,
+    const std::string &osFeaturesIDJson, char **papszHTTPOptions)
+{
+    CPLErrorReset();
+    std::string osPayloadInt = "POSTFIELDS=" + osFeaturesIDJson;
+
+    papszHTTPOptions = CSLAddString( papszHTTPOptions, "CUSTOMREQUEST=DELETE" );
+    papszHTTPOptions = CSLAddString( papszHTTPOptions, osPayloadInt.c_str() );
+    papszHTTPOptions = CSLAddString( papszHTTPOptions,
+        "HEADERS=Content-Type: application/json\r\nAccept: */*" );
+
+    std::string osUrlInt = GetFeature(osUrl, osResourceId);
+    CPLHTTPResult *psResult = CPLHTTPFetch( osUrlInt.c_str(), papszHTTPOptions);
+    CSLDestroy( papszHTTPOptions );
+    bool bResult = false;
+    if( psResult )
+    {
+        bResult = psResult->nStatus == 0 && psResult->pszErrBuf == nullptr;
+        // Get error message.
+        if( !bResult )
         {
             ReportError(psResult->pabyData, psResult->nDataLen);
         }

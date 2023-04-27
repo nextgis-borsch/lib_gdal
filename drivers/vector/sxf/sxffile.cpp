@@ -1537,7 +1537,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     double adfPrjParams[7] = { 0 };
     if (pSRS)
     {
-        //TODO pSRS->exportToPanorama(&iProjSys, &iDatum, &iEllips, &iZone, adfPrjParams);
+        pSRS->exportToPanorama(&iProjSys, &iDatum, &iEllips, &iZone, adfPrjParams);
     }
     GByte val = static_cast<GByte>(iEllips);
     VSIFWriteL(&val, 1, 1, fpSXF);
@@ -1547,7 +1547,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
     if (pSRS)
     {
         int nVertNo = 0;
-        //TODO eErr = pSRS->exportVertCSToPanorama(&nVertNo);
+        eErr = pSRS->exportVertCSToPanorama(&nVertNo);
         if (eErr == OGRERR_NONE)
         {
             val = nVertNo;

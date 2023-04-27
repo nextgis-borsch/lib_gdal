@@ -6,7 +6,7 @@
  *******************************************************************************
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2018-2020, NextGIS <info@nextgis.com>
+ *  Copyright (c) 2018-2023, NextGIS <info@nextgis.com>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to
@@ -75,7 +75,7 @@ OGRNGWDataset::OGRNGWDataset()
 OGRNGWDataset::~OGRNGWDataset()
 {
     // Last sync with server.
-    OGRNGWDataset::FlushCache(true);
+    OGRNGWDataset::FlushCache();
 
     if (poRasterDS != nullptr)
     {
@@ -103,7 +103,7 @@ void OGRNGWDataset::FetchPermissions()
     if (IsUpdateMode())
     {
         // Check connection and is it read only.
-        char **papszHTTPOptions = GetHeaders();
+        char **papszHTTPOptions = GetHeaders(false);
         stPermissions = NGWAPI::CheckPermissions(
             osUrl, osResourceId, papszHTTPOptions, IsUpdateMode());
         CSLDestroy(papszHTTPOptions);
@@ -218,6 +218,15 @@ bool OGRNGWDataset::Open(const std::string &osUrlIn,
         CSLFetchNameValueDef(papszOpenOptionsIn, "EXTENSIONS",
                              CPLGetConfigOption("NGW_EXTENSIONS", ""));
 
+    osConnectTimeout = CSLFetchNameValueDef( papszOpenOptionsIn, "CONNECTTIMEOUT",
+        CPLGetConfigOption("NGW_CONNECTTIMEOUT", ""));
+    osTimeout = CSLFetchNameValueDef( papszOpenOptionsIn, "TIMEOUT",
+        CPLGetConfigOption("NGW_TIMEOUT", ""));            
+    osRetryCount = CSLFetchNameValueDef( papszOpenOptionsIn, "MAX_RETRY",
+        CPLGetConfigOption("NGW_MAX_RETRY", ""));   
+    osRetryDelay = CSLFetchNameValueDef( papszOpenOptionsIn, "RETRY_DELAY",
+        CPLGetConfigOption("NGW_RETRY_DELAY", "")); 
+
     if (osExtensions.empty())
     {
         bExtInNativeData = false;
@@ -261,7 +270,7 @@ bool OGRNGWDataset::Init(int nOpenFlagsIn)
 
     // Get resource details.
     CPLJSONDocument oResourceDetailsReq;
-    char **papszHTTPOptions = GetHeaders();
+    char **papszHTTPOptions = GetHeaders(false);
     bool bResult = oResourceDetailsReq.LoadUrl(
         NGWAPI::GetResource(osUrl, osResourceId), papszHTTPOptions);
 
@@ -786,7 +795,7 @@ bool OGRNGWDataset::FlushMetadata(char **papszMetadata)
     }
 
     bool bResult =
-        NGWAPI::FlushMetadata(osUrl, osResourceId, papszMetadata, GetHeaders());
+        NGWAPI::FlushMetadata(osUrl, osResourceId, papszMetadata, GetHeaders(false));
     if (bResult)
     {
         bMetadataDerty = false;
@@ -846,7 +855,7 @@ void OGRNGWDataset::FlushCache(bool bAtClosing)
 /*
  * GetHeaders()
  */
-char **OGRNGWDataset::GetHeaders() const
+char **OGRNGWDataset::GetHeaders(bool bSkipRetry) const
 {
     char **papszOptions = nullptr;
     papszOptions = CSLAddString(papszOptions, "HEADERS=Accept: */*");
@@ -858,6 +867,28 @@ char **OGRNGWDataset::GetHeaders() const
         std::string osUserPwdOption("USERPWD=");
         osUserPwdOption += osUserPwd;
         papszOptions = CSLAddString(papszOptions, osUserPwdOption.c_str());
+    }
+    
+    if( !osConnectTimeout.empty() )
+    {
+        papszOptions = CSLAddNameValue(papszOptions, "CONNECTTIMEOUT", osConnectTimeout.c_str());
+    }
+
+    if( !osTimeout.empty() )
+    {
+        papszOptions = CSLAddNameValue(papszOptions, "TIMEOUT", osTimeout.c_str());
+    }
+
+    if( !bSkipRetry )
+    { 
+        if( !osRetryCount.empty() )
+        {
+            papszOptions = CSLAddNameValue(papszOptions, "MAX_RETRY", osRetryCount.c_str());
+        }
+        if( !osRetryDelay.empty() )
+        {
+            papszOptions = CSLAddNameValue(papszOptions, "RETRY_DELAY", osRetryDelay.c_str());
+        }
     }
     return papszOptions;
 }
@@ -1008,34 +1039,85 @@ OGRLayer *OGRNGWDataset::ExecuteSQL(const char *pszStatement,
         return nullptr;
     }
 
-    if (STARTS_WITH_CI(osStatement, "DELETE FROM"))
+    if( STARTS_WITH_CI(osStatement, "DELETE FROM ") )
     {
-        // Get layer name from pszStatement DELETE FROM layer;.
-        CPLString osLayerName = osStatement.substr(strlen("DELETE FROM "));
-        if (osLayerName.endsWith(";"))
+        osStatement = osStatement.substr(strlen("DELETE FROM "));
+        if( osStatement.endsWith(";") )
         {
-            osLayerName = osLayerName.substr(0, osLayerName.size() - 1);
-            osLayerName.Trim();
+            osStatement = osStatement.substr(0, osStatement.size() - 1);
+            osStatement.Trim();
         }
 
-        CPLDebug("NGW", "Delete features from layer with name %s.",
-                 osLayerName.c_str());
+        std::size_t found = osStatement.find("WHERE");
+        CPLString osLayerName;
+        if (found == std::string::npos)
+        { // No where clause
+            osLayerName = osStatement;
+            osStatement.clear();
+        } 
+        else 
+        {
+            osLayerName = osStatement.substr(0, found);
+            osLayerName.Trim();
+            osStatement = osStatement.substr(found + strlen("WHERE "));
+        }
 
-        OGRNGWLayer *poLayer =
-            static_cast<OGRNGWLayer *>(GetLayerByName(osLayerName));
-        if (poLayer)
+        OGRNGWLayer *poLayer = reinterpret_cast<OGRNGWLayer *>(GetLayerByName(osLayerName));
+        if (nullptr == poLayer)
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                "Layer %s not found in dataset.", osName.c_str());
+            return nullptr;
+        }
+
+        if (osStatement.empty())
         {
             poLayer->DeleteAllFeatures();
         }
-        else
+        else 
         {
-            CPLError(CE_Failure, CPLE_AppDefined, "Unknown layer : %s",
-                     osLayerName.c_str());
+            OGRFeatureQuery oQuery;
+            OGRErr eErr = oQuery.Compile( poLayer->GetLayerDefn(), osStatement );
+            if (eErr != OGRERR_NONE)
+            {
+                return nullptr;
+            }
+
+            // Ignore all fields except first and ignore geometry
+            auto poLayerDefn = poLayer->GetLayerDefn();
+            if (poLayerDefn->GetFieldCount() > 0 )
+            {
+                std::set<std::string> osFields;
+                OGRFieldDefn *poFieldDefn = poLayerDefn->GetFieldDefn(0);
+                osFields.insert(poFieldDefn->GetNameRef());
+                poLayer->SetSelectedFields(osFields);
+            }
+            poLayerDefn->SetGeometryIgnored(TRUE);
+            CPLString osNgwDelete = "NGW:" + 
+                OGRNGWLayer::TranslateSQLToFilter(
+                    reinterpret_cast<swq_expr_node*>(oQuery.GetSWQExpr()));
+            poLayer->SetAttributeFilter(osNgwDelete);
+
+            std::vector<GIntBig> aiFeaturesIDs;
+            OGRFeature *poFeat;
+            while ((poFeat = poLayer->GetNextFeature()) != nullptr)
+            {
+                aiFeaturesIDs.push_back(poFeat->GetFID());
+                OGRFeature::DestroyFeature(poFeat);
+            }
+
+            poLayer->DeleteFeatures(aiFeaturesIDs);
+
+            // Reset all filters and ignores
+            poLayer->SetAttributeFilter(nullptr);
+            poLayerDefn->SetGeometryIgnored(FALSE);
+            poLayer->SetIgnoredFields(nullptr);
         }
+        
         return nullptr;
     }
 
-    if (STARTS_WITH_CI(osStatement, "DROP TABLE"))
+    if (STARTS_WITH_CI(osStatement, "DROP TABLE "))
     {
         // Get layer name from pszStatement DELETE FROM layer;.
         CPLString osLayerName = osStatement.substr(strlen("DROP TABLE "));

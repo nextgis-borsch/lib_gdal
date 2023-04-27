@@ -1677,29 +1677,8 @@ OGRErr OGRSpatialReference::exportToWkt(char **ppszResult,
             d->getPROJContext(), d->m_pj_crs, true, true);
     }
 
-    std::vector<CPLErrorHandlerAccumulatorStruct> aoErrors;
-    CPLInstallErrorHandlerAccumulator(aoErrors);
     const char *pszWKT = proj_as_wkt(ctxt, boundCRS ? boundCRS : d->m_pj_crs,
                                      wktFormat, aosOptions.List());
-    CPLUninstallErrorHandlerAccumulator();
-    for (const auto &oError : aoErrors)
-    {
-        if (pszFormat[0] == '\0' &&
-            (oError.msg.find("Unsupported conversion method") !=
-                 std::string::npos ||
-             oError.msg.find("can only be exported to WKT2") !=
-                 std::string::npos ||
-             oError.msg.find("can only be exported since WKT2:2019") !=
-                 std::string::npos))
-        {
-            CPLErrorReset();
-            // If we cannot export in the default mode (WKT1), retry with WKT2
-            pszWKT = proj_as_wkt(ctxt, boundCRS ? boundCRS : d->m_pj_crs,
-                                 PJ_WKT2_2018, aosOptions.List());
-            break;
-        }
-        CPLError(oError.type, oError.no, "%s", oError.msg.c_str());
-    }
 
     if (!pszWKT)
     {

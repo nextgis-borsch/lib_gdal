@@ -6,7 +6,7 @@
  *******************************************************************************
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2018-2020, NextGIS <info@nextgis.com>
+ *  Copyright (c) 2018-2023, NextGIS <info@nextgis.com>
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to
@@ -32,26 +32,37 @@
 /*
  * GetHeaders()
  */
-static char **GetHeaders(const std::string &osUserPwdIn = "")
+static char **GetHeaders(const std::string &osUserPwdIn = "", 
+    const std::string &osConnectTimeout = "", const std::string &osTimeout = "", 
+    const std::string &osRetryCount = "", const std::string &osRetryDelay = "")
 {
     char **papszOptions = nullptr;
     papszOptions = CSLAddString(papszOptions, "HEADERS=Accept: */*");
-    std::string osUserPwd;
-    if (osUserPwdIn.empty())
-    {
-        osUserPwd = CPLGetConfigOption("NGW_USERPWD", "");
-    }
-    else
-    {
-        osUserPwd = osUserPwdIn;
-    }
-
-    if (!osUserPwd.empty())
+    if( !osUserPwdIn.empty() )
     {
         papszOptions = CSLAddString(papszOptions, "HTTPAUTH=BASIC");
         std::string osUserPwdOption("USERPWD=");
-        osUserPwdOption += osUserPwd;
+        osUserPwdOption += osUserPwdIn;
         papszOptions = CSLAddString(papszOptions, osUserPwdOption.c_str());
+    }
+
+    if( !osConnectTimeout.empty() )
+    {
+        papszOptions = CSLAddNameValue(papszOptions, "CONNECTTIMEOUT", osConnectTimeout.c_str());
+    }
+
+    if( !osTimeout.empty() )
+    {
+        papszOptions = CSLAddNameValue(papszOptions, "TIMEOUT", osTimeout.c_str());
+    }
+
+    if( !osRetryCount.empty() )
+    {
+        papszOptions = CSLAddNameValue(papszOptions, "MAX_RETRY", osRetryCount.c_str());
+    }
+    if( !osRetryDelay.empty() )
+    {
+        papszOptions = CSLAddNameValue(papszOptions, "RETRY_DELAY", osRetryDelay.c_str());
     }
     return papszOptions;
 }
@@ -135,9 +146,14 @@ OGRNGWDriverCreate(const char *pszName, CPL_UNUSED int nBands,
     CPLJSONObject oParent("parent", oResource);
     oParent.Add("id", atoi(stUri.osResourceId.c_str()));
 
-    std::string osNewResourceId = NGWAPI::CreateResource(
-        stUri.osAddress, oPayload.Format(CPLJSONObject::PrettyFormat::Plain),
-        GetHeaders(osUserPwd));
+    std::string osConnectTimeout = CSLFetchNameValueDef( papszOptions, "CONNECTTIMEOUT", 
+        CPLGetConfigOption("NGW_CONNECTTIMEOUT", "") );
+    std::string osTimeout = CSLFetchNameValueDef( papszOptions, "TIMEOUT", 
+        CPLGetConfigOption("NGW_TIMEOUT", "") );
+
+    std::string osNewResourceId = NGWAPI::CreateResource( stUri.osAddress,
+        oPayload.Format(CPLJSONObject::PrettyFormat::Plain), 
+            GetHeaders(osUserPwd, osConnectTimeout, osTimeout) );
     if (osNewResourceId == "-1")
     {
         return nullptr;
@@ -181,7 +197,14 @@ static CPLErr OGRNGWDriverDelete(const char *pszName)
         return CE_Failure;
     }
 
-    char **papszOptions = GetHeaders();
+    std::string osUserPwd = CPLGetConfigOption("NGW_USERPWD", "");
+    std::string osConnectTimeout = CPLGetConfigOption("NGW_CONNECTTIMEOUT", "");
+    std::string osTimeout = CPLGetConfigOption("NGW_TIMEOUT", "");
+    std::string osRetryCount = CPLGetConfigOption("NGW_MAX_RETRY", "");   
+    std::string osRetryDelay = CPLGetConfigOption("NGW_RETRY_DELAY", ""); 
+
+    char **papszOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
+        osRetryCount, osRetryDelay);
     // NGWAPI::Permissions stPermissions =
     // NGWAPI::CheckPermissions(stUri.osAddress,
     //     stUri.osResourceId, papszOptions, true);
@@ -211,7 +234,15 @@ static CPLErr OGRNGWDriverRename(const char *pszNewName, const char *pszOldName)
     }
     CPLDebug("NGW", "Parse uri result. URL: %s, ID: %s, New name: %s",
              stUri.osAddress.c_str(), stUri.osResourceId.c_str(), pszNewName);
-    char **papszOptions = GetHeaders();
+
+    std::string osUserPwd = CPLGetConfigOption("NGW_USERPWD", "");
+    std::string osConnectTimeout = CPLGetConfigOption("NGW_CONNECTTIMEOUT", "");
+    std::string osTimeout = CPLGetConfigOption("NGW_TIMEOUT", "");
+    std::string osRetryCount = CPLGetConfigOption("NGW_MAX_RETRY", "");   
+    std::string osRetryDelay = CPLGetConfigOption("NGW_RETRY_DELAY", ""); 
+
+    char **papszOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout, 
+        osRetryCount, osRetryDelay);
     // NGWAPI::Permissions stPermissions =
     // NGWAPI::CheckPermissions(stUri.osAddress,
     //     stUri.osResourceId, papszOptions, true);
@@ -342,8 +373,11 @@ static GDALDataset *OGRNGWDriverCreateCopy(const char *pszFilename,
     std::string osStyleName =
         CSLFetchNameValueDef(papszOptions, "RASTER_STYLE_NAME", "");
 
+    std::string osConnectTimeout = CSLFetchNameValueDef( papszOptions, "CONNECTTIMEOUT", "");
+    std::string osTimeout = CSLFetchNameValueDef( papszOptions, "TIMEOUT", "");
+
     // Send file
-    char **papszHTTPOptions = GetHeaders(osUserPwd);
+    char **papszHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout);
     CPLJSONObject oFileJson =
         NGWAPI::UploadFile(stUri.osAddress, osFilename, papszHTTPOptions,
                            pfnProgress, pProgressData);
@@ -391,7 +425,7 @@ static GDALDataset *OGRNGWDriverCreateCopy(const char *pszFilename,
     CPLJSONObject oSrs("srs", oRasterLayer);
     oSrs.Add("id", 3857);  // Now only Web Mercator supported.
 
-    papszHTTPOptions = GetHeaders(osUserPwd);
+    papszHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout);
     std::string osNewResourceId = NGWAPI::CreateResource(
         stUri.osAddress,
         oPayloadRaster.Format(CPLJSONObject::PrettyFormat::Plain),
@@ -413,7 +447,7 @@ static GDALDataset *OGRNGWDriverCreateCopy(const char *pszFilename,
         oResourceStyle.Add("cls", "qgis_raster_style");
 
         // Upload QML file
-        papszHTTPOptions = GetHeaders(osUserPwd);
+        papszHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout);
         oFileJson =
             NGWAPI::UploadFile(stUri.osAddress, osQMLPath, papszHTTPOptions,
                                pfnProgress, pProgressData);
@@ -438,7 +472,7 @@ static GDALDataset *OGRNGWDriverCreateCopy(const char *pszFilename,
     CPLJSONObject oParentRaster("parent", oResourceStyle);
     oParentRaster.Add("id", atoi(osNewResourceId.c_str()));
 
-    papszHTTPOptions = GetHeaders(osUserPwd);
+    papszHTTPOptions = GetHeaders(osUserPwd, osConnectTimeout, osTimeout);
     osNewResourceId = NGWAPI::CreateResource(
         stUri.osAddress,
         oPayloadRasterStyle.Format(CPLJSONObject::PrettyFormat::Plain),
@@ -564,6 +598,10 @@ void RegisterOGRNGW()
         "   <Option name='EXTENSIONS' scope='vector' type='string' "
         "description='Comma separated extensions list. Available are "
         "description and attachment' default=''/>"
+        "   <Option name='CONNECTTIMEOUT' scope='raster,vector' type='integer' description='Maximum delay for the connection to be established before being aborted in seconds'/>"
+        "   <Option name='TIMEOUT' scope='raster,vector' type='integer' description='Maximum delay for the whole request to complete before being aborted in seconds'/>"
+        "   <Option name='MAX_RETRY' scope='raster,vector' type='integer' description='Maximum number of retry attempts if a 429, 502, 503 or 504 HTTP error occurs'/>"
+        "   <Option name='RETRY_DELAY' scope='raster,vector' type='integer' description='Number of seconds between retry attempts'/>"  
         "</CreationOptionList>");
 
     poDriver->SetMetadataItem(
@@ -582,8 +620,6 @@ void RegisterOGRNGW()
         GDAL_DMD_CREATIONFIELDDATATYPES,
         "Integer Integer64 Real String Date DateTime Time");
     poDriver->SetMetadataItem(GDAL_DCAP_NOTNULL_GEOMFIELDS, "YES");
-    poDriver->SetMetadataItem(GDAL_DCAP_MULTIPLE_VECTOR_LAYERS, "YES");
-    poDriver->SetMetadataItem(GDAL_DCAP_RENAME_LAYERS, "YES");
 
     poDriver->pfnOpen = OGRNGWDriverOpen;
     poDriver->pfnIdentify = OGRNGWDriverIdentify;
