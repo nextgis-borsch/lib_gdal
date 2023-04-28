@@ -1843,12 +1843,12 @@ OGRErr SXFFile::SetSRS(const long iEllips, const long iProjSys, const long iCS,
         bool bNorth = padfGeoCoords[6] + (padfGeoCoords[2] - padfGeoCoords[6]) / 2 < 0;
  
         pSpatRef = new OGRSpatialReference();
-        /*TODO OGRErr eErr = pSpatRef->importFromPanorama(iProjSys, iCS, iEllips, padfPrjParams, bNorth ? TRUE : FALSE);
+        OGRErr eErr = pSpatRef->importFromPanorama(iProjSys, iCS, iEllips, padfPrjParams, bNorth ? TRUE : FALSE);
         if (eErr != OGRERR_NONE)
         {
             return eErr;
         }
-		*/
+		
         pSpatRef->SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
         return SetVertCS(iVCS, papszOpenOpts);
     }
