@@ -68,6 +68,9 @@ constexpr int DEFAULT_CLCODE_T = START_CODE + 3;
 constexpr int DEFAULT_CLCODE_V = START_CODE + 4;
 constexpr int DEFAULT_CLCODE_C = START_CODE + 5;
 
+static const char SXF_Sig[] = { 'S', 'X', 'F', '\0' };
+static const char SXF_Sig_BE[] = { '\0', 'F', 'X', 'S' };
+
 enum SXFDataState /* Flag of the state of the data (Note 1) */
 {
     SXF_DS_UNKNOWN = 0,

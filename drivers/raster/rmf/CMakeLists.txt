@@ -38,6 +38,7 @@ if(ENABLE_RMF)
     )
 
     set(LIB_HHEADERS_PRIV
+	    rmfdataset.h
     )
 
     set(LIB_CSOURCES
