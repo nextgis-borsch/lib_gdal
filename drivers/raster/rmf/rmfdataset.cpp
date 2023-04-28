@@ -8,7 +8,7 @@
  ******************************************************************************
  * Copyright (c) 2005, Andrey Kiselev <dron@ak4719.spb.edu>
  * Copyright (c) 2007-2012, Even Rouault <even dot rouault at spatialys.com>
- * Copyright (c) 2023, NextGIS <info@nextgis.com>
+ * Copyright (c) 2022-2023, NextGIS <info@nextgis.com>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -64,6 +64,8 @@ constexpr const char *MD_MATH_BASE_PROJECTION_KEY = "MATH_BASE.Projection";
 constexpr const char *MD_MATH_BASE_HEIGHT_SYSTEM_KEY = "MATH_BASE.Height_system";
 
 constexpr int nMaxFramePointCount = 2048;
+constexpr double RMF_D2M = 20037508.342789244 / 180.0;
+constexpr double RMF_M2D = 1.0 / RMF_D2M;
 
 /* -------------------------------------------------------------------- */
 /*  Note: Due to the fact that in the early versions of RMF             */
@@ -1006,10 +1008,24 @@ CPLErr RMFDataset::WriteHeader()
         RMF_WRITE_LONG(abyHeader, sHeader.iProjection, 128);
         RMF_WRITE_LONG(abyHeader, sHeader.iEPSGCode, 132);
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfScale, 136);
+        
+        double dfLLX = sHeader.dfLLX;
+        double dfLLY = sHeader.dfLLY;
+        double dfResolution = sHeader.dfResolution;
+        double dfPixelSize = sHeader.dfPixelSize;
+
+        if (m_oSRS.IsGeographic() || m_oSRS.IsGeocentric())
+        {
+            dfLLX *= RMF_D2M;
+            dfLLY *= RMF_D2M;
+            dfPixelSize *= RMF_D2M;
+            dfResolution = sHeader.dfScale / dfPixelSize;
+        }
+        
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfResolution, 144);
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfPixelSize, 152);
-        RMF_WRITE_DOUBLE(abyHeader, sHeader.dfLLY, 160);
-        RMF_WRITE_DOUBLE(abyHeader, sHeader.dfLLX, 168);
+        RMF_WRITE_DOUBLE(abyHeader, dfLLY, 160);
+        RMF_WRITE_DOUBLE(abyHeader, dfLLX, 168);
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfStdP1, 176);
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfStdP2, 184);
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfCenterLong, 192);
@@ -1787,6 +1803,15 @@ RMFDataset *RMFDataset::Open(GDALOpenInfo *poOpenInfo, RMFDataset *poParentDS,
     /*  XXX: If projection value is not specified, but image still have     */
     /*  georeferencing information, assume Gauss-Kruger projection.         */
     /* -------------------------------------------------------------------- */
+    
+    OGRSpatialReference oSRS;
+    double adfGeoTransformTmp[6] = {0.0};
+    adfGeoTransformTmp[0] = poDS->sHeader.dfLLX;
+    adfGeoTransformTmp[3] = poDS->sHeader.dfLLY
+        + poDS->nRasterYSize * poDS->sHeader.dfPixelSize;
+    adfGeoTransformTmp[1] = poDS->sHeader.dfPixelSize;
+    adfGeoTransformTmp[5] = -poDS->sHeader.dfPixelSize;
+    
     if (poDS->sHeader.iEPSGCode > RMF_EPSG_MIN_CODE ||
         poDS->sHeader.iProjection > 0 ||
         (poDS->sHeader.dfPixelSize != 0.0 && poDS->sHeader.dfLLX != 0.0 &&
@@ -1842,6 +1867,15 @@ RMFDataset *RMFDataset::Open(GDALOpenInfo *poOpenInfo, RMFDataset *poParentDS,
             poDS->sExtHeader.nVertDatum > 0)
         {
             poDS->m_oSRS.importVertCSFromPanorama(poDS->sExtHeader.nVertDatum);
+        }
+        
+        // Fix for geographic CS
+        if (oSRS.IsGeographic() || oSRS.IsGeocentric())
+        {
+            poDS->sHeader.dfLLX *= RMF_M2D;
+            poDS->sHeader.dfLLY *= RMF_M2D;
+            poDS->sHeader.dfPixelSize *= RMF_M2D;
+            poDS->sHeader.dfResolution = poDS->sHeader.dfScale / poDS->sHeader.dfPixelSize;
         }
     }
 
@@ -1908,12 +1942,17 @@ RMFDataset *RMFDataset::Open(GDALOpenInfo *poOpenInfo, RMFDataset *poParentDS,
 
         if (stFrame.nType == 2147385342) // 2147385342 magic number for polygon
         {
+            int nPointCount = (stFrame.nSize / 4 - 4) / 2;
+            if (nPointCount > nMaxFramePointCount)
+            {
+                nPointCount = nMaxFramePointCount;
+            }
+            
             CPLString osWKT = "POLYGON((";
             bool bFirst = true;
 
             CPLDebug("RMF", "ROI coordinates:");
-            /* coverity[tainted_data] */
-            for (GUInt32 i = sizeof(stFrame); i < poDS->sHeader.nROISize; i += sizeof(RSWFrameCoord))
+            for(int i = 0; i < nPointCount; i++)
             {
                 RSWFrameCoord stCoord;
                 if (VSIFReadL(&stCoord, 1, sizeof(RSWFrameCoord),
@@ -1921,8 +1960,6 @@ RMFDataset *RMFDataset::Open(GDALOpenInfo *poOpenInfo, RMFDataset *poParentDS,
                 {
                     CPLDebug("RMF", "Cannot read ROI at index %u", i);
                     break;
-                    //delete poDS;
-                    //return nullptr;
                 }
 
                 CPLDebug("RMF", "X: %d, Y: %d", stCoord.nX, stCoord.nY);
