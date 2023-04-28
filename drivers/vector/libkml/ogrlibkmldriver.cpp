@@ -62,17 +62,31 @@ static int OGRLIBKMLDriverIdentify(GDALOpenInfo *poOpenInfo)
     if (poOpenInfo->bIsDirectory)
         return -1;
 
-    const char *pszExt = CPLGetExtension(poOpenInfo->pszFilename);
-    if (EQUAL(pszExt, "kml") || EQUAL(pszExt, "kmz"))
+    if (poOpenInfo->pabyHeader)
     {
-        return TRUE;
+        if (strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader), "<kml") != nullptr ||
+            strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader), "<kml:kml") != nullptr)
+        {
+            return TRUE;
+        }
+
+        // According to KML 2.0 specification:
+        // An XML document must always have a single root element
+        // For KML, this means you can use the <kml>< / kml> tag, the
+        //    <Document>< / Document> tag, the <Folder>< / Folder> tag, or even the
+        //    <Placemark>< / Placemark> tag as the root
+        //
+        // Checking for kml version. Because libkml driver only supports the kml root tag
+
+        if (strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader), "http://earth.google.com/kml/2.0") != nullptr)
+        {
+            return FALSE;
+        }
     }
 
-    if (poOpenInfo->pabyHeader &&
-        (strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader), "<kml") !=
-             nullptr ||
-         strstr(reinterpret_cast<char *>(poOpenInfo->pabyHeader), "<kml:kml") !=
-             nullptr))
+    const char* pszExt = CPLGetExtension(poOpenInfo->pszFilename);
+    if( EQUAL(pszExt, "kml") ||
+        EQUAL(pszExt, "kmz") )
     {
         return TRUE;
     }

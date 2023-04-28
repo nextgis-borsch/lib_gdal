@@ -816,3 +816,16 @@ def test_ogr_kml_read_non_conformant_multi_geometries():
     feat = lyr.GetNextFeature()
     wkt = "MULTIPOINT ((0 0))"
     assert not ogrtest.check_feature_geometry(feat, wkt)
+
+
+###############################################################################
+# Test reading KML 2.0
+
+
+def test_ogr_kml_2_0_read():
+
+    if not ogrtest.have_read_kml:
+        pytest.skip()
+
+    ds = ogr.Open('data/kml/kml_2.0.kml')
+    assert ds.GetLayerCount() == 2
