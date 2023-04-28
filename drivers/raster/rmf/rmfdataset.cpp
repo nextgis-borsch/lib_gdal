@@ -1496,8 +1496,6 @@ RMFDataset *RMFDataset::Open(GDALOpenInfo *poOpenInfo, RMFDataset *poParentDS,
 
     CPLDebug("RMF", "Version %d", poDS->sHeader.iVersion);
 
-#ifndef NDEBUG
-
     CPLDebug("RMF",
              "%s image has width %d, height %d, bit depth %d, "
              "compression scheme %d, %s, nodata %f",
@@ -1521,7 +1519,7 @@ RMFDataset *RMFDataset::Open(GDALOpenInfo *poOpenInfo, RMFDataset *poParentDS,
     CPLDebug("RMF", "Georeferencing: pixel size %f, LLX %f, LLY %f",
              poDS->sHeader.dfPixelSize, poDS->sHeader.dfLLX,
              poDS->sHeader.dfLLY);
-#endif // NDEBUG
+
     if (poDS->sHeader.nWidth >= INT_MAX || poDS->sHeader.nHeight >= INT_MAX ||
         !GDALCheckDatasetDimensions(poDS->sHeader.nWidth,
                                     poDS->sHeader.nHeight))
@@ -2042,7 +2040,15 @@ GDALDataset *RMFDataset::Create(const char *pszFilename, int nXSize, int nYSize,
             return nullptr;
         }
 
-        dfScale = RMF_DEFAULT_SCALE;
+        const char *pszValue = CSLFetchNameValue(papszParamList, MD_SCALE_KEY);
+        if (pszValue != nullptr && CPLStrnlen(pszValue, 10) > 4)
+        {
+            dfScale = atof(pszValue + 4);
+        }
+        else
+        {
+            dfScale = RMF_DEFAULT_SCALE;
+        }
         dfResolution = RMF_DEFAULT_RESOLUTION;
         dfPixelSize = 1;
 
@@ -2081,7 +2087,7 @@ GDALDataset *RMFDataset::Create(const char *pszFilename, int nXSize, int nYSize,
             }
         }
 
-        const char *pszValue = CSLFetchNameValue(papszParamList, "BLOCKXSIZE");
+        pszValue = CSLFetchNameValue(papszParamList,"BLOCKXSIZE");
         if (pszValue != nullptr)
             nBlockXSize = atoi(pszValue);
         if (static_cast<int>(nBlockXSize) <= 0)
@@ -3314,6 +3320,7 @@ CPLErr RMFDataset::SetMetadataItem(const char *pszName,
         else if (EQUAL(pszName, MD_SCALE_KEY) && CPLStrnlen(pszValue, 10) > 4)
         {
             sHeader.dfScale = atof(pszValue + 4);
+            sHeader.dfResolution = sHeader.dfScale / sHeader.dfPixelSize;
             bHeaderDirty = true;
         }
         else if (EQUAL(pszName, MD_FRAME_KEY))
@@ -3340,6 +3347,7 @@ CPLErr RMFDataset::SetMetadata(char **papszMetadata, const char *pszDomain)
         if (pszScale != nullptr && CPLStrnlen(pszScale, 10) > 4)
         {
             sHeader.dfScale = atof(pszScale + 4);
+            sHeader.dfResolution = sHeader.dfScale / sHeader.dfPixelSize;
             bHeaderDirty = true;
 
             CPLDebug("RMF", "SetMetadata: %s", pszScale);
