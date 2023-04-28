@@ -898,6 +898,109 @@ int CPLHTTPPopFetchCallback(void)
     }
 }
 
+struct CPLHTTPAuthHeaderContext
+{
+    std::vector< CPLHTTPAuthHeaderCallbackFunc > stack{};
+};
+
+/************************************************************************/
+/*                        GetHTTPAuthHeaderContext()                         */
+/************************************************************************/
+
+static CPLHTTPAuthHeaderContext* GetHTTPAuthHeaderContext(bool bAlloc)
+{
+    int bError = FALSE;
+    CPLHTTPAuthHeaderContext *psCtx =
+        static_cast<CPLHTTPAuthHeaderContext *>(
+            CPLGetTLSEx( CTLS_HTTPAUTHHEADERCALLBACK, &bError ) );
+    if( bError )
+        return nullptr;
+
+    if( psCtx == nullptr && bAlloc)
+    {
+        const auto FreeFunc = [](void* pData)
+        {
+            delete static_cast<CPLHTTPAuthHeaderContext*>(pData);
+        };
+        psCtx = new CPLHTTPAuthHeaderContext();
+        CPLSetTLSWithFreeFuncEx( CTLS_HTTPAUTHHEADERCALLBACK, psCtx, FreeFunc, &bError );
+        if( bError )
+        {
+            delete psCtx;
+            psCtx = nullptr;
+        }
+    }
+    return psCtx;
+}
+
+
+/************************************************************************/
+/*                      CPLHTTPSetAuthHeaderCallback()                       */
+/************************************************************************/
+
+static CPLHTTPAuthHeaderCallbackFunc gpsHTTPAuthHeaderCallbackFunc = nullptr;
+
+/** Installs a callback to get Authorization header
+ *
+ * This callback will be used by all threads, unless contextual callbacks are
+ * installed with CPLHTTPPushAuthHeaderCallback().
+ *
+ * @param pFunc Callback function to be called with CPLHTTPFetchEx() is called
+ *              (or NULL to restore default handler)
+ */
+void CPLHTTPSetAuthHeaderCallback( CPLHTTPAuthHeaderCallbackFunc pFunc )
+{
+    gpsHTTPAuthHeaderCallbackFunc = pFunc;
+}
+
+/************************************************************************/
+/*                      CPLHTTPPushAuthHeaderCallback()                      */
+/************************************************************************/
+
+/** Installs a callback to the default implementation of CPLHTTPFetchEx().
+ *
+ * This callback will only be used in the thread where this function has been
+ * called. It must be un-installed by CPLHTTPPopAuthHeaderCallback(), which must also
+ * be called from the same thread.
+ *
+ * @param pFunc Callback function to be called with CPLHTTPFetchEx() is called.
+ * @return TRUE in case of success.
+ *
+ */
+int CPLHTTPPushAuthHeaderCallback( CPLHTTPAuthHeaderCallbackFunc pFunc )
+{
+    auto psCtx = GetHTTPAuthHeaderContext(true);
+    if( psCtx == nullptr )
+        return false;
+    psCtx->stack.emplace_back( pFunc );
+    return true;
+}
+
+/************************************************************************/
+/*                       CPLHTTPPopAuthHeaderCallback()                      */
+/************************************************************************/
+
+/** Uninstalls a callback set by CPLHTTPPushAuthHeaderCallback().
+ *
+ * @see CPLHTTPPushAuthHeaderCallback()
+ * @return TRUE in case of success.
+ */
+int CPLHTTPPopAuthHeaderCallback(void)
+{
+    auto psCtx = GetHTTPAuthHeaderContext(false);
+    if( psCtx == nullptr || psCtx->stack.empty() )
+    {
+        CPLError(CE_Failure, CPLE_AppDefined,
+                 "CPLHTTPPushAuthHeaderCallback / CPLHTTPPopAuthHeaderCallback not balanced");
+        return false;
+    }
+    else
+    {
+        psCtx->stack.pop_back();
+        return true;
+    }
+}
+
 /************************************************************************/
 /*                           CPLHTTPFetch()                             */
 /************************************************************************/
@@ -1242,6 +1345,29 @@ CPLHTTPResult *CPLHTTPFetchEx(const char *pszURL, CSLConstList papszOptions,
         CSLDestroy(papszTokensHeaders);
     }
 
+    auto pAuthHeaderCtx = GetHTTPAuthHeaderContext(false);
+    if (pAuthHeaderCtx)
+    {
+        for (size_t i = pAuthHeaderCtx->stack.size(); i > 0; )
+        {
+            --i;
+            std::string osAuthHeader = pAuthHeaderCtx->stack[i](pszURL);
+            if (!osAuthHeader.empty())
+            {
+                headers = curl_slist_append(headers, osAuthHeader.c_str());
+            }
+        }
+    }
+
+    if (gpsHTTPAuthHeaderCallbackFunc)
+    {
+        std::string osAuthHeader = gpsHTTPAuthHeaderCallbackFunc(pszURL);
+        if (!osAuthHeader.empty())
+        {
+            headers = curl_slist_append(headers, osAuthHeader.c_str());
+        }
+    }
+    
     if (headers != nullptr)
         unchecked_curl_easy_setopt(http_handle, CURLOPT_HTTPHEADER, headers);
 
