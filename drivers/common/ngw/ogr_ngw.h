@@ -225,6 +225,7 @@ class OGRNGWLayer final : public OGRLayer
     GIntBig GetMaxFeatureCount(bool bForce);
     bool FillFeatures(const std::string &osUrl);
     GIntBig GetNewFeaturesCount() const;
+    CPLJSONObject LoadUrl(const std::string &osUrl) const;
 };
 
 class OGRNGWDataset final : public GDALDataset
@@ -303,7 +304,7 @@ class OGRNGWDataset final : public GDALDataset
                              GDALRasterIOExtraArg *psExtraArg) override;
 
   private:
-    char **GetHeaders(bool bSkipRetry = true) const;
+    CPLStringList GetHeaders(bool bSkipRetry = true) const;
     std::string GetUrl() const
     {
         return osUrl;

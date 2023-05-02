@@ -266,7 +266,6 @@ std::string CreateResource(const std::string &osUrl,
 
     CPLJSONDocument oCreateReq;
     bool bResult = oCreateReq.LoadUrl(GetResource(osUrl, ""), papszHTTPOptions);
-    CSLDestroy(papszHTTPOptions);
     std::string osResourceId("-1");
     CPLJSONObject oRoot = oCreateReq.GetRoot();
     if (oRoot.IsValid())
@@ -304,7 +303,6 @@ bool UpdateResource(const std::string &osUrl, const std::string &osResourceId,
 
     CPLHTTPResult *psResult = CPLHTTPFetch(
         GetResource(osUrl, osResourceId).c_str(), papszHTTPOptions);
-    CSLDestroy(papszHTTPOptions);
     bool bResult = false;
     if (psResult)
     {
@@ -343,7 +341,6 @@ bool DeleteResource(const std::string &osUrl, const std::string &osResourceId,
         }
         CPLHTTPDestroyResult(psResult);
     }
-    CSLDestroy(papszHTTPOptions);
     return bResult;
 }
 
@@ -605,7 +602,6 @@ bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
     papszHTTPOptions = CSLAddString(papszHTTPOptions, "CUSTOMREQUEST=DELETE");
     std::string osUrlInt = GetFeature(osUrl, osResourceId) + osFeatureId;
     CPLHTTPResult *psResult = CPLHTTPFetch(osUrlInt.c_str(), papszHTTPOptions);
-    CSLDestroy(papszHTTPOptions);
     bool bResult = false;
     if (psResult)
     {
@@ -633,7 +629,6 @@ bool DeleteFeatures(const std::string &osUrl, const std::string &osResourceId,
 
     std::string osUrlInt = GetFeature(osUrl, osResourceId);
     CPLHTTPResult *psResult = CPLHTTPFetch( osUrlInt.c_str(), papszHTTPOptions);
-    CSLDestroy( papszHTTPOptions );
     bool bResult = false;
     if( psResult )
     {
@@ -666,7 +661,6 @@ GIntBig CreateFeature(const std::string &osUrl, const std::string &osResourceId,
 
     CPLJSONDocument oCreateFeatureReq;
     bool bResult = oCreateFeatureReq.LoadUrl(osUrlInt, papszHTTPOptions);
-    CSLDestroy(papszHTTPOptions);
 
     CPLJSONObject oRoot = oCreateFeatureReq.GetRoot();
     GIntBig nOutFID = OGRNullFID;
@@ -712,7 +706,6 @@ bool UpdateFeature(const std::string &osUrl, const std::string &osResourceId,
 
     std::string osUrlInt = GetFeature(osUrl, osResourceId) + osFeatureId;
     CPLHTTPResult *psResult = CPLHTTPFetch(osUrlInt.c_str(), papszHTTPOptions);
-    CSLDestroy(papszHTTPOptions);
     bool bResult = false;
     if (psResult)
     {
@@ -749,7 +742,6 @@ std::vector<GIntBig> PatchFeatures(const std::string &osUrl,
     std::string osUrlInt = GetFeature(osUrl, osResourceId);
     CPLJSONDocument oPatchFeatureReq;
     bool bResult = oPatchFeatureReq.LoadUrl(osUrlInt, papszHTTPOptions);
-    CSLDestroy(papszHTTPOptions);
 
     CPLJSONObject oRoot = oPatchFeatureReq.GetRoot();
     if (oRoot.IsValid())
