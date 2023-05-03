@@ -30,47 +30,6 @@
 #include "ogr_ngw.h"
 
 /*
- * CheckRequestResult()
- */
-static bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
-                               const std::string &osErrorMessage, bool bReportError)
-{
-    if (!bResult)
-    {
-        if (oRoot.IsValid())
-        {
-            std::string osErrorMessageInt = oRoot.GetString("message");
-            if (!osErrorMessageInt.empty())
-            {
-                if(bReportError)
-                {
-                    CPLError(CE_Failure, CPLE_AppDefined, "%s",
-                        osErrorMessageInt.c_str());
-                }
-                return false;
-            }
-        }
-        if(bReportError)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
-        }
-
-        return false;
-    }
-
-    if (!oRoot.IsValid())
-    {
-        if(bReportError)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
-        }
-        return false;
-    }
-
-    return true;
-}
-
-/*
  * OGRGeometryToWKT()
  */
 static std::string OGRGeometryToWKT(OGRGeometry *poGeom)
@@ -732,22 +691,22 @@ CPLJSONObject OGRNGWLayer::LoadUrl(const std::string &osUrl) const
     {
         bool bResult = oFeatureReq.LoadUrl( osUrl, aosHTTPOptions );
         CPLJSONObject oRoot = oFeatureReq.GetRoot();
-        if( CheckRequestResult(bResult, oRoot, "GetFeatures request failed", 
+        if( NGWAPI::CheckRequestResult(bResult, oRoot, "GetFeatures request failed", nRetryCount,
             nRetryCount >= nMaxRetries) )
         {
+            CPLErrorReset(); // If we are here no error occurred
             return oRoot;
         }
-        if( nRetryCount < nMaxRetries )
+        if( nRetryCount >= nMaxRetries )
         {
-            CPLError(CE_Warning, CPLE_AppDefined,
-                            "HTTP error fetch JSON: %s. "
-                            "Retrying again in %.1f secs",
-                            osUrl.c_str(), dfRetryDelaySecs);
-            CPLSleep(dfRetryDelaySecs);
-            nRetryCount++;
-            continue;
+            return CPLJSONObject();
         }
-        break;
+        CPLDebug("NGW",
+                "Failed to fetch JSON from URL [%d of %d tries]: %s. "
+                "Retrying again in %.1f secs", nRetryCount, nMaxRetries,
+                osUrl.c_str(), dfRetryDelaySecs);
+        CPLSleep(dfRetryDelaySecs);
+        nRetryCount++;
     }
     return CPLJSONObject();
 }
@@ -1413,7 +1372,7 @@ OGRErr OGRNGWLayer::SyncFeatures()
             if (osIDs.size() !=
                 aoPatchedFIDs.size())  // Expected equal identifier count.
             {
-                CPLDebug("ngw", "Patched feature count is not equal. Reload "
+                CPLDebug("NGW", "Patched feature count is not equal. Reload "
                                 "features from server.");
                 FreeMap(moFeatures);
             }
@@ -1532,8 +1491,11 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
 {
     CPLErrorReset();
 
-    for (GIntBig nFID : vFeaturesID)
+    // Try to delete local features (not synchronized with NGW)
+    std::vector<GIntBig> vFeaturesIDInt(vFeaturesID);
+    for (size_t i = 0; i < vFeaturesIDInt.size(); i++)
     {
+        auto nFID = vFeaturesIDInt[i];
         if (nFID < 0)
         {
             if (moFeatures[nFID] != nullptr)
@@ -1542,11 +1504,8 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
                 moFeatures[nFID] = nullptr;
                 nFeatureCount--;
                 soChangedIds.erase(nFID);
-                return OGRERR_NONE;
+                vFeaturesIDInt.erase(vFeaturesIDInt.begin() + i);
             }
-            CPLError(CE_Failure, CPLE_AppDefined,
-                "Feature with id " CPL_FRMT_GIB " not found.", nFID);
-            return OGRERR_FAILURE;
         }
     }
 
@@ -1554,25 +1513,26 @@ OGRErr OGRNGWLayer::DeleteFeatures(const std::vector<GIntBig> &vFeaturesID)
     if (stPermissions.bDataCanWrite && poDS->IsUpdateMode())
     {
         std::string osFeaturesJson;
-        bool bResult = NGWAPI::DeleteFeatures(poDS->GetUrl(), osResourceId, FeaturesIDToJsonString(vFeaturesID), poDS->GetHeaders(false));
+        bool bResult = NGWAPI::DeleteFeatures(poDS->GetUrl(), osResourceId, 
+            FeaturesIDToJsonString(vFeaturesIDInt), poDS->GetHeaders(false));
         if (bResult)
         {
-            for (GIntBig nFID : vFeaturesID)
+            for (GIntBig nFID : vFeaturesIDInt)
             {
                 if (moFeatures[nFID] != nullptr)
                 {
                     OGRFeature::DestroyFeature(moFeatures[nFID]);
                     moFeatures[nFID] = nullptr;
+                    nFeatureCount--;
+                    soChangedIds.erase(nFID);
                 }
                 nFeatureCount--;
                 soChangedIds.erase(nFID);
             }
             return OGRERR_NONE;
         }
-        return OGRERR_FAILURE;
     }
-    CPLError(CE_Failure, CPLE_AppDefined,
-        "Delete feature " CPL_FRMT_GIB " operation is not permitted.");
+    CPLError(CE_Failure, CPLE_AppDefined, "Delete features failed");
     return OGRERR_FAILURE;
 }
 

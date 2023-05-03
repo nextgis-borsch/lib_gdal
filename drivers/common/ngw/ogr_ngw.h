@@ -59,6 +59,8 @@ std::string GetUpload(const std::string &osUrl);
 std::string GetVersion(const std::string &osUrl);
 bool CheckVersion(const std::string &osVersion, int nMajor, int nMinor = 0,
                   int nPatch = 0);
+bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot, 
+    const std::string &osErrorMessage, int nTryCount, bool bReportError);
 
 struct Uri
 {
@@ -86,11 +88,12 @@ struct Permissions
 Uri ParseUri(const std::string &osUrl);
 Permissions CheckPermissions(const std::string &osUrl,
                              const std::string &osResourceId,
-                             char **papszHTTPOptions, bool bReadWrite);
+                             const CPLStringList &aosHTTPOptions, 
+                             bool bReadWrite);
 bool DeleteResource(const std::string &osUrl, const std::string &osResourceId,
-                    char **papszHTTPOptions);
+                    const CPLStringList &aosHTTPOptions);
 bool RenameResource(const std::string &osUrl, const std::string &osResourceId,
-                    const std::string &osNewName, char **papszHTTPOptions);
+                    const std::string &osNewName, const CPLStringList &aosHTTPOptions);
 OGRwkbGeometryType NGWGeomTypeToOGRGeomType(const std::string &osGeomType);
 std::string OGRGeomTypeToNGWGeomType(OGRwkbGeometryType eType);
 OGRFieldType NGWFieldTypeToOGRFieldType(const std::string &osFieldType);
@@ -100,32 +103,32 @@ std::string GetFeatureCount(const std::string &osUrl,
 std::string GetLayerExtent(const std::string &osUrl,
                            const std::string &osResourceId);
 bool FlushMetadata(const std::string &osUrl, const std::string &osResourceId,
-                   char **papszMetadata, char **papszHTTPOptions);
+                   char **papszMetadata, const CPLStringList &aosHTTPOptions);
 std::string CreateResource(const std::string &osUrl,
                            const std::string &osPayload,
-                           char **papszHTTPOptions);
+                           const CPLStringList &aosHTTPOptions);
 bool UpdateResource(const std::string &osUrl, const std::string &osResourceId,
-                    const std::string &osPayload, char **papszHTTPOptions);
+                    const std::string &osPayload, const CPLStringList &aosHTTPOptions);
 void FillResmeta(CPLJSONObject &oRoot, char **papszMetadata);
 std::string GetResmetaSuffix(CPLJSONObject::Type eType);
 bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
-                   const std::string &osFeatureId, char **papszHTTPOptions);
+                   const std::string &osFeatureId, const CPLStringList &aosHTTPOptions);
 bool DeleteFeatures(const std::string &osUrl, const std::string &osResourceId,
-                   const std::string &osFeaturesIDJson, char **papszHTTPOptions);
+                   const std::string &osFeaturesIDJson, const CPLStringList &aosHTTPOptions);
 GIntBig CreateFeature(const std::string &osUrl, const std::string &osResourceId,
                       const std::string &osFeatureJson,
-                      char **papszHTTPOptions);
+                      const CPLStringList &aosHTTPOptions);
 bool UpdateFeature(const std::string &osUrl, const std::string &osResourceId,
                    const std::string &osFeatureId,
-                   const std::string &osFeatureJson, char **papszHTTPOptions);
+                   const std::string &osFeatureJson, const CPLStringList &aosHTTPOptions);
 std::vector<GIntBig> PatchFeatures(const std::string &osUrl,
                                    const std::string &osResourceId,
                                    const std::string &osFeaturesJson,
-                                   char **papszHTTPOptions);
+                                   const CPLStringList &aosHTTPOptions);
 bool GetExtent(const std::string &osUrl, const std::string &osResourceId,
-               char **papszHTTPOptions, int nEPSG, OGREnvelope &stExtent);
+               const CPLStringList &aosHTTPOptions, int nEPSG, OGREnvelope &stExtent);
 CPLJSONObject UploadFile(const std::string &osUrl,
-                         const std::string &osFilePath, char **papszHTTPOptions,
+                         const std::string &osFilePath, const CPLStringList &aosHTTPOptions,
                          GDALProgressFunc pfnProgress, void *pProgressData);
 }  // namespace NGWAPI
 
@@ -314,11 +317,11 @@ class OGRNGWDataset final : public GDALDataset
         return osResourceId;
     }
     void FillMetadata(const CPLJSONObject &oRootObject);
-    bool FillResources(char **papszOptions, int nOpenFlagsIn);
-    void AddLayer(const CPLJSONObject &oResourceJsonObject, char **papszOptions,
-                  int nOpenFlagsIn);
-    void AddRaster(const CPLJSONObject &oResourceJsonObject,
-                   char **papszOptions);
+    bool FillResources( const CPLStringList &aosHTTPOptions, int nOpenFlagsIn );
+    void AddLayer( const CPLJSONObject &oResourceJsonObject, 
+        const CPLStringList &aosHTTPOptions, int nOpenFlagsIn );
+    void AddRaster( const CPLJSONObject &oResourceJsonObject, 
+        const CPLStringList &aosHTTPOptions );
     bool Init(int nOpenFlagsIn);
     bool FlushMetadata(char **papszMetadata);
     inline bool IsUpdateMode() const
@@ -346,7 +349,7 @@ class OGRNGWDataset final : public GDALDataset
         return bExtInNativeData;
     }
     void FetchPermissions();
-    void FillCapabilities(char **papszOptions);
+    void FillCapabilities(const CPLStringList &aosHTTPOptions);
 
   private:
     CPL_DISALLOW_COPY_ASSIGN(OGRNGWDataset)

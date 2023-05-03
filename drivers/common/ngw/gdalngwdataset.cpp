@@ -229,6 +229,21 @@ bool OGRNGWDataset::Open(const std::string &osUrlIn,
     {
         bExtInNativeData = false;
     }
+    
+    CPLDebug("NGW", "Open options:\n"
+            "  BATCH_SIZE %d\n"
+            "  PAGE_SIZE %d\n"
+            "  CACHE_EXPIRES %d\n"
+            "  CACHE_MAX_SIZE %d\n"
+            "  JSON_DEPTH %s\n"
+            "  EXTENSIONS %s\n"
+            "  CONNECTTIMEOUT %s\n"
+            "  TIMEOUT %s\n"
+            "  MAX_RETRY %s\n"
+            "  RETRY_DELAY %s", 
+            nBatchSize, nPageSize, nCacheExpires, nCacheMaxSize, 
+            osJsonDepth.c_str(), osExtensions.c_str(), osConnectTimeout.c_str(),
+            osTimeout.c_str(), osRetryCount.c_str(), osRetryDelay.c_str());
 
     return Init(nOpenFlagsIn);
 }
@@ -465,11 +480,11 @@ bool OGRNGWDataset::Init(int nOpenFlagsIn)
 /*
  * FillResources()
  */
-bool OGRNGWDataset::FillResources(char **papszOptions, int nOpenFlagsIn)
+bool OGRNGWDataset::FillResources(const CPLStringList &aosHTTPOptions, int nOpenFlagsIn)
 {
     CPLJSONDocument oResourceDetailsReq;
     bool bResult = oResourceDetailsReq.LoadUrl(
-        NGWAPI::GetChildren(osUrl, osResourceId), papszOptions);
+        NGWAPI::GetChildren(osUrl, osResourceId), aosHTTPOptions);
 
     if (bResult)
     {
@@ -482,13 +497,13 @@ bool OGRNGWDataset::FillResources(char **papszOptions, int nOpenFlagsIn)
                  osResourceType == "postgis_layer"))
             {
                 // Add vector layer. If failed, try next layer.
-                AddLayer(oChild, papszOptions, nOpenFlagsIn);
+                AddLayer(oChild, aosHTTPOptions, nOpenFlagsIn);
             }
             else if ((osResourceType == "raster_layer" ||
                       osResourceType == "wmsclient_layer") &&
                      nOpenFlagsIn & GDAL_OF_RASTER)
             {
-                AddRaster(oChild, papszOptions);
+                AddRaster(oChild, aosHTTPOptions);
             }
             // TODO: Add support for baselayers, webmap, wfsserver_service,
             // wmsserver_service.
@@ -501,7 +516,7 @@ bool OGRNGWDataset::FillResources(char **papszOptions, int nOpenFlagsIn)
  * AddLayer()
  */
 void OGRNGWDataset::AddLayer(const CPLJSONObject &oResourceJsonObject,
-                             char **papszOptions, int nOpenFlagsIn)
+                             const CPLStringList &aosHTTPOptions, int nOpenFlagsIn)
 {
     std::string osLayerResourceId;
     if (nOpenFlagsIn & GDAL_OF_VECTOR)
@@ -523,14 +538,14 @@ void OGRNGWDataset::AddLayer(const CPLJSONObject &oResourceJsonObject,
     {
         CPLJSONDocument oResourceChildReq;
         bool bResult = oResourceChildReq.LoadUrl(
-            NGWAPI::GetChildren(osUrl, osLayerResourceId), papszOptions);
+            NGWAPI::GetChildren(osUrl, osLayerResourceId), aosHTTPOptions);
 
         if (bResult)
         {
             CPLJSONArray oChildren(oResourceChildReq.GetRoot());
             for (int i = 0; i < oChildren.Size(); ++i)
             {
-                AddRaster(oChildren[i], papszOptions);
+                AddRaster(oChildren[i], aosHTTPOptions);
             }
         }
     }
@@ -540,7 +555,7 @@ void OGRNGWDataset::AddLayer(const CPLJSONObject &oResourceJsonObject,
  * AddRaster()
  */
 void OGRNGWDataset::AddRaster(const CPLJSONObject &oRasterJsonObj,
-                              char **papszOptions)
+                              const CPLStringList &aosHTTPOptions)
 {
     std::string osOutResourceId;
     std::string osOutResourceName;
@@ -560,7 +575,7 @@ void OGRNGWDataset::AddRaster(const CPLJSONObject &oRasterJsonObj,
             oRasterJsonObj.GetString("resource/id");
         CPLJSONDocument oResourceRequest;
         bool bResult = oResourceRequest.LoadUrl(
-            NGWAPI::GetChildren(osUrl, osRasterResourceId), papszOptions);
+            NGWAPI::GetChildren(osUrl, osRasterResourceId), aosHTTPOptions);
 
         if (bResult)
         {
@@ -572,7 +587,7 @@ void OGRNGWDataset::AddRaster(const CPLJSONObject &oRasterJsonObj,
                 if (osResourceType == "raster_style" ||
                     osResourceType == "qgis_raster_style")
                 {
-                    AddRaster(oChild, papszOptions);
+                    AddRaster(oChild, aosHTTPOptions);
                 }
             }
         }
@@ -1380,11 +1395,11 @@ CPLErr OGRNGWDataset::IRasterIO(GDALRWFlag eRWFlag, int nXOff, int nYOff,
 /*
  * FillCapabilities()
  */
-void OGRNGWDataset::FillCapabilities(char **papszOptions)
+void OGRNGWDataset::FillCapabilities(const CPLStringList &aosHTTPOptions)
 {
     // Check NGW version. Paging available from 3.1
     CPLJSONDocument oRouteReq;
-    if (oRouteReq.LoadUrl(NGWAPI::GetVersion(osUrl), papszOptions))
+    if (oRouteReq.LoadUrl(NGWAPI::GetVersion(osUrl), aosHTTPOptions))
     {
         CPLJSONObject oRoot = oRouteReq.GetRoot();
 
