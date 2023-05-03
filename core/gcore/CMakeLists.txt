@@ -55,7 +55,7 @@ set(LIB_HHEADERS
     rawdataset.h
     tilematrixset.hpp
     nasakeywordhandler.h
-    ${CMAKE_CURRENT_BINARY_DIR}/gdal_version.h
+    ${CMAKE_CURRENT_BINARY_DIR}/gdal_version_full/gdal_version.h
 )
 
 set(LIB_HHEADERS_PRIV
