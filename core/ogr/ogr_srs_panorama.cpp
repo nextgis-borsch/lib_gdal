@@ -408,6 +408,24 @@ OGRErr OGRSpatialReference::importFromPanorama(long iProjSys, long iDatum,
             return importFromEPSG(20000 + nZone);
         }
     }
+    if ((iEllips == PAN_ELLIPSOID_NONE ||
+         iEllips == PAN_ELLIPSOID_GSK2011) &&
+        iDatum == PAN_DATUM_GSK2011 &&
+        iProjSys == PAN_PROJ_TM)  // GSK-2011 / Gauss-Kruger
+    {
+        int nZone = adfPrjParams[7] == 0.0
+                        ? GetZoneNumber(TO_DEGREES * adfPrjParams[3])
+                        : static_cast<int>(adfPrjParams[7]);
+        if (nZone < 0)
+        {
+            nZone += 60;
+        }
+
+        if (nZone > 3 && nZone < 33)
+        {
+            return importFromEPSG(20900 + nZone);
+        }
+    }
     if (iEllips == PAN_ELLIPSOID_WGS84 && iDatum == PAN_DATUM_UTM &&
         iProjSys == PAN_PROJ_UTM)  // WGS84 / UTM
     {
@@ -859,10 +877,10 @@ OGRErr OGRSpatialReference::exportToPanorama(long *piProjSys, long *piDatum,
 
     const char *pszProjection = GetAttrValue("PROJECTION");
     int nEPSG = 0;
-    auto pszEPSG = GetAuthorityCode("PROJCS");
+    auto pszEPSG = GetAuthorityCode("COMPD_CS|PROJCS");
     if (pszEPSG == nullptr)
     {
-        pszEPSG = GetAuthorityCode("GEOGCS");
+        pszEPSG = GetAuthorityCode("COMPD_CS|GEOGCS");
     }
     if (pszEPSG != nullptr)
     {
@@ -1102,15 +1120,21 @@ OGRErr OGRSpatialReference::exportToPanorama(long *piProjSys, long *piDatum,
         *piDatum = PAN_DATUM_NONE;
         *piEllips = PAN_ELLIPSOID_NONE;
     }
-    else if (EQUAL(pszDatum, "Pulkovo_1942"))
+    else if (EQUAL(pszDatum, "Pulkovo_1942") || EQUAL(pszDatum, "Pulkovo 1942"))
     {
         *piDatum = PAN_DATUM_PULKOVO42;
         *piEllips = PAN_ELLIPSOID_KRASSOVSKY;
     }
-    else if (EQUAL(pszDatum, "Pulkovo_1995"))
+    else if (EQUAL(pszDatum, "Pulkovo_1995") || EQUAL(pszDatum, "Pulkovo 1995"))
     {
         *piDatum = PAN_DATUM_PULKOVO95;
         *piEllips = PAN_ELLIPSOID_KRASSOVSKY;
+    }
+    else if (EQUAL(pszDatum, "Geodezicheskaya_Sistema_Koordinat_2011") || 
+        EQUAL(pszDatum, "Geodezicheskaya Sistema Koordinat 2011"))
+    {
+        *piDatum = PAN_DATUM_GSK2011;
+        *piEllips = PAN_ELLIPSOID_GSK2011;
     }
     else if (EQUAL(pszDatum, SRS_DN_WGS84))
     {
