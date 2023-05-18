@@ -48,6 +48,7 @@ set(LIB_HHEADERS
     ogr_spatialref.h
     ogr_srs_api.h
     ogr_geocoding.h
+    ogr_recordbatch.h
     ogrsf_frmts/ogrsf_frmts.h
 )
 
@@ -59,7 +60,6 @@ set(LIB_HHEADERS_PRIV
     ogr_libs.h
     ogr_geo_utils.h
     ogr_proj_p.h
-    ogr_recordbatch.h
     ogr_wkb.h
 )
 
