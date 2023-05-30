@@ -28,6 +28,10 @@
 
 option(BUILD_TESTING "Build GDAL Unit Testing" OFF)
 if(BUILD_TESTING)
+
+    if (UNIX)
+        set(SKIP_PYTHON_TESTS OFF)
+    endif ()
     
       function (symlink_or_copy source destination)
         if (CMAKE_VERSION VERSION_GREATER 3.14)
