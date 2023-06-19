@@ -52,14 +52,14 @@ if(BUILD_TESTING)
           endif ()
         endif ()
       endfunction ()
+    
+    set(PYTHON_ENV "LD_LIBRARY_PATH=$<SHELL_PATH:$<TARGET_FILE_DIR:${LIB_NAME}>>"
+                   "PYTHONPATH=${PROJECT_BINARY_DIR}/bindings/python/inst_tmp/lib/python3/dist-packages")
 
-    list (FIND GDAL_BINDINGS "python" _index)
-    if (${_index} GREATER -1 AND NOT SKIP_PYTHON_TESTS)
-        # Find Python.
-        find_package(PythonInterp REQUIRED)
-        if(NOT PYTHONINTERP_FOUND)
-            message(FATAL_ERROR "Cannot find python. Python required for testing")
-        endif()
+	if (NOT SKIP_PYTHON_TESTS)
+		if(NOT PYTHON3_EXECUTABLE)
+			message(FATAL_ERROR "Cannot find python")
+		endif()
         
         configure_file(${CMAKE_SOURCE_DIR}/cmake/pytest.ini.in ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini @ONLY)
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/conftest.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
@@ -86,7 +86,8 @@ if(BUILD_TESTING)
 
             symlink_or_copy(${CMAKE_CURRENT_SOURCE_DIR}/${tgt} ${CMAKE_CURRENT_BINARY_DIR}/${tgt})
 
-            add_test(NAME autotest_${tgt} COMMAND ${PYTHON_EXECUTABLE} -m pytest -c ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini ${tgt})
+            add_test(NAME autotest_${tgt} COMMAND ${CMAKE_COMMAND} -E env ${PYTHON_ENV} ${PYTHON3_EXECUTABLE} -m pytest -c ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini ${tgt})
+
             set_property(TEST autotest_${tgt} PROPERTY ENVIRONMENT "${PYTHON_RUN_ENV}")
         endforeach ()
 
