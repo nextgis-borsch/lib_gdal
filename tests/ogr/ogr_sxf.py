@@ -78,7 +78,7 @@ def test_ogr_sxf_3():
     fake_rsc = open(rsc_name, 'w')
     fake_rsc.close()
     shutil.copy('data/sxf/100_test.sxf', sxf_name)
-    sxf_ds = gdal.OpenEx(sxf_name, gdal.OF_VECTOR, open_options=['SXF_RSC_FILENAME=' + rsc_name])
+    sxf_ds = gdal.OpenEx(sxf_name, gdal.OF_VECTOR, open_options=['SXF_RSC_FILENAME=' + rsc_name, 'SXF_NEW_BEHAVIOR=YES'])
 
     assert sxf_ds is not None
 
@@ -95,11 +95,16 @@ def test_ogr_sxf_4(capsys):
                  'ВОДНЫЕ ОБЪЕКТЫ',
                  'НАСЕЛЕННЫЕ ПУНКТЫ',
                  'ИНФРАСТРУКТУРА',
+                 'ЖЕЛЕЗНЫЕ ДОРОГИ',
                  'ЗЕМЛЕПОЛЬЗОВАНИЕ',
+                 'ПОЖАРЫ',
+                 'НАПРАВЛЕНИЯ',
+                 'НАЗВАНИЯ И ПОДПИСИ',
                  'РЕЛЬЕФ СУШИ',
                  'ГИДРОГРАФИЯ (РЕЛЬЕФ)',
                  'МАТЕМАТИЧЕСКАЯ ОСНОВА',
                  'Not_Classified']
+
     sxf_name = 'data/sxf/100_test.sxf'
     sxf_ds = gdal.OpenEx(sxf_name, gdal.OF_VECTOR, open_options=['SXF_LAYER_FULLNAME=YES'])
 

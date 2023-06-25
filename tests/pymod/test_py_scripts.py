@@ -41,8 +41,8 @@ import gdaltest
 #
 
 # path relative to gdal root
-scripts_subdir = "swig/python/gdal-utils/scripts"
-utils_subdir = "swig/python/gdal-utils/osgeo_utils"
+scripts_subdir = "bindings/python/scripts"
+utils_subdir = "bindings/python/osgeo_utils"
 samples_subdir = utils_subdir + "/samples"
 samples_path = "../../" + samples_subdir
 

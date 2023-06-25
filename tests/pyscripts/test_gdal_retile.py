@@ -412,8 +412,9 @@ def test_gdal_retile_cleanup():
                 os.rmdir(filename)
             except OSError:
                 pass
-
-    shutil.rmtree("tmp/outretile4")
+    
+    if os.path.exists("tmp/outretile4"):
+        shutil.rmtree("tmp/outretile4")
 
     if os.path.exists("tmp/outretile5"):
         shutil.rmtree("tmp/outretile5")

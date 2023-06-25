@@ -293,7 +293,7 @@ if HAVE_NUMPY:
     ext_modules.append(array_module)
     extras_require={'numpy': ['numpy > 1.0.0']}
 
-packages = ["osgeo", "osgeo_utils", "osgeo_utils.auxiliary"]
+packages = ["osgeo", "osgeo_utils", "osgeo_utils.auxiliary", "osgeo_utils.samples"]
 
 readme = open('README.rst', encoding="utf-8").read()
 

@@ -125,6 +125,7 @@ set(COPY
     osgeo_utils/gdalident.py
     osgeo_utils/gdalimport.py
     osgeo_utils/gdalmove.py
+	osgeo_utils/gdalattachpct.py
     osgeo_utils/mkgraticule.py
     osgeo_utils/ogrmerge.py
     osgeo_utils/pct2rgb.py
@@ -143,6 +144,67 @@ set(COPY
     osgeo_utils/auxiliary/raster_creation.py
     osgeo_utils/auxiliary/rectangle.py
     osgeo_utils/auxiliary/util.py
+
+	osgeo_utils/samples/__init__.py				
+	osgeo_utils/samples/gdal_mkdir.py				
+	osgeo_utils/samples/make_fuzzer_friendly_archive.py
+	osgeo_utils/samples/assemblepoly.py				
+	osgeo_utils/samples/gdal_remove_towgs84.py			
+	osgeo_utils/samples/mkgraticule.py
+	osgeo_utils/samples/build_jp2_from_xml.py			
+	osgeo_utils/samples/gdal_rm.py				
+	osgeo_utils/samples/ogr2ogr.py
+	osgeo_utils/samples/classify.py				
+	osgeo_utils/samples/gdal_rmdir.py				
+	osgeo_utils/samples/ogr2vrt.py
+	osgeo_utils/samples/crs2crs2grid.py				
+	osgeo_utils/samples/gdal_vrtmerge.py			
+	osgeo_utils/samples/ogr_build_junction_table.py
+	osgeo_utils/samples/densify.py				
+	osgeo_utils/samples/gdal_zip.py				
+	osgeo_utils/samples/ogr_dispatch.py
+	osgeo_utils/samples/dump_jp2.py				
+	osgeo_utils/samples/gdalchksum.py				
+	osgeo_utils/samples/ogrinfo.py
+	osgeo_utils/samples/epsg_tr.py				
+	osgeo_utils/samples/gdalcopyproj.py				
+	osgeo_utils/samples/ogrupdate.py
+	osgeo_utils/samples/esri2wkt.py				
+	osgeo_utils/samples/gdalfilter.py				
+	osgeo_utils/samples/rel.py
+	osgeo_utils/samples/fft.py					
+	osgeo_utils/samples/gdalident.py				
+	osgeo_utils/samples/tigerpoly.py
+	osgeo_utils/samples/fix_gpkg.py				
+	osgeo_utils/samples/gdalimport.py				
+	osgeo_utils/samples/tile_extent_from_raster.py
+	osgeo_utils/samples/gcps2ogr.py				
+	osgeo_utils/samples/gdalinfo.py				
+	osgeo_utils/samples/tolatlong.py
+	osgeo_utils/samples/gcps2vec.py				
+	osgeo_utils/samples/gdallocationinfo.py			
+	osgeo_utils/samples/val_repl.py
+	osgeo_utils/samples/gcps2wld.py				
+	osgeo_utils/samples/get_soundg.py				
+	osgeo_utils/samples/validate_cloud_optimized_geotiff.py
+	osgeo_utils/samples/gdal2grd.py				
+	osgeo_utils/samples/histrep.py				
+	osgeo_utils/samples/validate_gpkg.py
+	osgeo_utils/samples/gdal_auth.py				
+	osgeo_utils/samples/hsv_merge.py				
+	osgeo_utils/samples/validate_jp2.py
+	osgeo_utils/samples/gdal_cp.py				
+	osgeo_utils/samples/jpeg_in_tiff_extract.py			
+	osgeo_utils/samples/vec_tr.py
+	osgeo_utils/samples/gdal_create_pdf.py			
+	osgeo_utils/samples/load2odbc.py				
+	osgeo_utils/samples/vec_tr_spat.py
+	osgeo_utils/samples/gdal_ls.py				
+	osgeo_utils/samples/loslas2ntv2.py				
+	osgeo_utils/samples/wcs_virtds_params.py
+	osgeo_utils/samples/gdal_lut.py				
+	osgeo_utils/samples/magphase.py
+
     gdalconst.py
     gdalnumeric.py
     gdal.py
@@ -162,6 +224,7 @@ set(PY_COMMANDS
     scripts/gdal_calc.py
     scripts/gdal_edit.py
     scripts/gdal_fillnodata.py
+	osgeo_utils/gdalattachpct.py
     scripts/gdal_merge.py
     scripts/gdal_pansharpen.py
     scripts/gdal_polygonize.py
@@ -324,9 +387,4 @@ endif()
 if(NOT SKIP_INSTALL_EXECUTABLES AND NOT SKIP_INSTALL_ALL )
     #install scripts
     install(PROGRAMS ${PY_COMMANDS} DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications)
-
-    #install examples
-    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/samples/
-            DESTINATION ${INSTALL_DOC_DIR}/python-samples
-            COMPONENT documents)
 endif()

@@ -8,11 +8,11 @@ autotest/cpp,tests/cpp,,"cpp,c,h"
 autotest/cpp/data,tests/cpp/data,,*
 autotest/cpp/tmp,tests/cpp/tmp,skip,*
 autotest/cpp/tut,tests/cpp/tut,,"hpp,h,cpp"
-autotest/gcore,tests/gcore,skip,py
+autotest/gcore,tests/gcore,,*
 autotest/gcore/data,tests/gcore/data,,*
 autotest/gcore/data/alos,tests/gcore/data/alos,,*
 autotest/gcore/data/gtiff,tests/gcore/data/gtiff,,*
-autotest/gcore/data/spots,tests/gcore/data/spot,,*
+autotest/gcore/data/spot,tests/gcore/data/spot,,*
 autotest/gcore/data/vrt,tests/gcore/data/vrt,,*
 autotest/gcore/tmp,tests/gcore/tmp,,*
 autotest/gdrivers,tests/gdrivers,,py
@@ -320,6 +320,10 @@ autotest/ogr/data/filegdb/filegdb_polygonzm_m_not_closing_with_curves.gdb,tests/
 autotest/ogr/data/filegdb/filegdb_polygonzm_nan_m_with_curves.gdb,tests/ogr/data/filegdb/filegdb_polygonzm_nan_m_with_curves.gdb,,*
 autotest/ogr/data/filegdb/table_outside_gdbitems.gdb,tests/ogr/data/filegdb/table_outside_gdbitems.gdb,,*
 autotest/ogr/data/filegdb/testdatetimeutc.gdb,tests/ogr/data/filegdb/testdatetimeutc.gdb,,*
+autotest/ogr/data/filegdb/inconsistent_crs_feature_dataset_and_feature_table.gdb,tests/ogr/data/filegdb/inconsistent_crs_feature_dataset_and_feature_table.gdb,,*
+autotest/ogr/data/filegdb/relationships.gdb,tests/ogr/data/filegdb/relationships.gdb,,*
+autotest/ogr/data/filegdb/spx_zero_in_value_count_trailer.gdb,tests/ogr/data/filegdb/spx_zero_in_value_count_trailer.gdb,,*
+autotest/ogr/data/filegdb/test_str_indexed_truncated.gdb,tests/ogr/data/filegdb/test_str_indexed_truncated.gdb,,*
 autotest/ogr/data/flatgeobuf,tests/ogr/data/flatgeobuf,,*
 autotest/ogr/data/geoconcept,tests/ogr/data/geoconcept,,*
 autotest/ogr/data/geojson,tests/ogr/data/geojson,,*
@@ -620,6 +624,7 @@ ogr/ogrsf_frmts/ili,drivers/vector/ili,,"cpp,h,c,hpp"
 ogr/ogrsf_frmts/jml,drivers/vector/jml,,"cpp,h,c,hpp"
 ogr/ogrsf_frmts/kml,drivers/vector/kml,,"cpp,h,c,hpp"
 ogr/ogrsf_frmts/libkml,drivers/vector/libkml,,"cpp,h,c,hpp"
+ogr/ogrsf_frmts/mapml,drivers/vector/mapml,,"cpp,h,c,hpp"
 ogr/ogrsf_frmts/mem,drivers/vector/mem,,"cpp,h,c,hpp"
 ogr/ogrsf_frmts/mitab,drivers/vector/mitab,,"cpp,h,c,hpp"
 ogr/ogrsf_frmts/mitab,core/ogr/ogrsf_frmts/mitab,,h
@@ -690,7 +695,7 @@ swig/python/gdal-utils/osgeo_utils,bindings/python/osgeo_utils,,py
 swig/python/gdal-utils/osgeo_utils,bindings/python/scripts,,py
 swig/python/gdal-utils/osgeo_utils/samples,bindings/python/osgeo_utils,,py
 swig/python/gdal-utils/osgeo_utils/samples,bindings/python/scripts,,py
-swig/python/gdal-utils/osgeo_utils/samples,bindings/python/samples,,py
+swig/python/gdal-utils/osgeo_utils/samples,bindings/python/osgeo_utils/samples,,py
 swig/python/gdal-utils/osgeo_utils/auxiliary,bindings/python/osgeo_utils/auxiliary,,py
 frmts/vrt,core/frmts/vrt,,h
 frmts/mem,core/frmts/mem,,h

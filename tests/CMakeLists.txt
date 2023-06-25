@@ -29,10 +29,6 @@
 option(BUILD_TESTING "Build GDAL Unit Testing" OFF)
 if(BUILD_TESTING)
 
-    if (UNIX)
-        set(SKIP_PYTHON_TESTS OFF)
-    endif ()
-    
       function (symlink_or_copy source destination)
         if (CMAKE_VERSION VERSION_GREATER 3.14)
           file(
@@ -53,14 +49,11 @@ if(BUILD_TESTING)
         endif ()
       endfunction ()
     
-    set(PYTHON_ENV "LD_LIBRARY_PATH=$<SHELL_PATH:$<TARGET_FILE_DIR:${LIB_NAME}>>"
-                   "PYTHONPATH=${PROJECT_BINARY_DIR}/bindings/python/inst_tmp/lib/python3/dist-packages")
-
 	if (NOT SKIP_PYTHON_TESTS)
 		if(NOT PYTHON3_EXECUTABLE)
 			message(FATAL_ERROR "Cannot find python")
 		endif()
-        
+
         configure_file(${CMAKE_SOURCE_DIR}/cmake/pytest.ini.in ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini @ONLY)
         file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/conftest.py DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
         
@@ -73,6 +66,10 @@ if(BUILD_TESTING)
               endif ()
           endforeach ()
         endif()
+
+		set(PYTHON_RUN_ENV "LD_LIBRARY_PATH=$<SHELL_PATH:$<TARGET_FILE_DIR:${LIB_NAME}>>"
+				   "PYTHONPATH=${PROJECT_BINARY_DIR}/bindings/python/inst_tmp/lib/python3/dist-packages:${PROJECT_SOURCE_DIR}/bindings/python/osgeo_utils/samples"
+				   "GDAL_DATA=${PROJECT_SOURCE_DIR}/data")
         
         foreach (tgt IN ITEMS
                   ogr
@@ -86,7 +83,7 @@ if(BUILD_TESTING)
 
             symlink_or_copy(${CMAKE_CURRENT_SOURCE_DIR}/${tgt} ${CMAKE_CURRENT_BINARY_DIR}/${tgt})
 
-            add_test(NAME autotest_${tgt} COMMAND ${CMAKE_COMMAND} -E env ${PYTHON_ENV} ${PYTHON3_EXECUTABLE} -m pytest -c ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini ${tgt})
+            add_test(NAME autotest_${tgt} COMMAND ${PYTHON3_EXECUTABLE} -m pytest -c ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini ${tgt})
 
             set_property(TEST autotest_${tgt} PROPERTY ENVIRONMENT "${PYTHON_RUN_ENV}")
         endforeach ()

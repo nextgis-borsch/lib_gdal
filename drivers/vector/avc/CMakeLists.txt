@@ -29,8 +29,8 @@ option(ENABLE_AVC "Build Arc/Info Binary Coverage & Arc/Info .E00 (ASCII) Covera
 if(ENABLE_AVC)
     set(TARGET_NAME vec_avc)
 
-    add_definitions(-DAVCBIN_ENABLED)
-	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DAVCBIN_ENABLED" PARENT_SCOPE)
+    add_definitions(-DAVC_ENABLED)
+	set(FORMAT_DEFINITIONS ${FORMAT_DEFINITIONS} "-DAVC_ENABLED" PARENT_SCOPE)
 
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
     include_directories(${CMAKE_SOURCE_DIR}/drivers/vector/shape)
