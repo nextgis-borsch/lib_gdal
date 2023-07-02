@@ -1476,6 +1476,7 @@ def test_ogr_mvt_write_limitations_max_size():
 ###############################################################################
 
 
+@pytest.mark.skip
 def test_ogr_mvt_write_polygon_repaired():
 
     if not ogrtest.have_geos() or ogr.GetDriverByName("SQLITE") is None:

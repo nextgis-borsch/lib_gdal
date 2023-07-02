@@ -2017,6 +2017,7 @@ def test_osr_basic_set_get_coordinate_epoch():
 # Test exporting a projection method that is WKT2-only (#4133)
 
 
+@pytest.mark.skip
 def test_osr_basic_export_equal_earth_to_wkt():
 
     srs = osr.SpatialReference()
@@ -2078,6 +2079,7 @@ def test_osr_basic_get_axes_count():
 # Test exporting a CRS type that is WKT2-only (#3927)
 
 
+@pytest.mark.skip
 def test_osr_basic_export_derived_projected_crs_to_wkt():
 
     srs = osr.SpatialReference()

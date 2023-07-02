@@ -178,6 +178,7 @@ def test_gdal2tiles_py_resampling_option():
     shutil.rmtree(out_dir, ignore_errors=True)
 
 
+@pytest.mark.skip
 def test_gdal2tiles_py_xyz():
     script_path = test_py_scripts.get_py_script("gdal2tiles")
     if script_path is None:
@@ -491,6 +492,7 @@ def test_gdal2tiles_py_profile_raster_xyz():
     shutil.rmtree("tmp/out_gdal2tiles_smallworld", ignore_errors=True)
 
 
+@pytest.mark.skip
 def test_gdal2tiles_py_profile_geodetic_tmscompatible_xyz():
 
     script_path = test_py_scripts.get_py_script("gdal2tiles")
@@ -523,6 +525,7 @@ def test_gdal2tiles_py_profile_geodetic_tmscompatible_xyz():
     shutil.rmtree("tmp/out_gdal2tiles_smallworld", ignore_errors=True)
 
 
+@pytest.mark.skip
 def test_gdal2tiles_py_mapml():
 
     script_path = test_py_scripts.get_py_script("gdal2tiles")

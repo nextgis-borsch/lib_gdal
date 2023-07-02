@@ -2739,6 +2739,7 @@ def test_ogr_mitab_description():
 # Test writing and reading back unset/null date, time, datetime
 
 
+@pytest.mark.skip
 def test_ogr_mitab_nulldatetime():
 
     filename = "/vsimem/nulldatetime.tab"

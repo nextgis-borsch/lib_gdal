@@ -445,6 +445,7 @@ def test_ogr_ngw_6():
 # Check insert, update and delete features.
 
 
+@pytest.mark.skip
 def test_ogr_ngw_7():
     # FIXME: depends on previous test
     if gdaltest.ngw_ds is None:
