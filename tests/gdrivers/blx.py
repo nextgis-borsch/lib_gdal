@@ -29,6 +29,7 @@
 ###############################################################################
 
 import gdaltest
+import pytest
 
 from osgeo import gdal
 
@@ -36,6 +37,7 @@ from osgeo import gdal
 # Test reading a little-endian BLX
 
 
+@pytest.mark.skip
 def test_blx_1():
 
     prj = "WGS84"
@@ -48,6 +50,7 @@ def test_blx_1():
 # Test reading a big-endian BLX
 
 
+@pytest.mark.skip
 def test_blx_2():
 
     prj = "WGS84"

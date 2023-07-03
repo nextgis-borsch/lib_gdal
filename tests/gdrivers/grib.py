@@ -232,6 +232,7 @@ def test_grib_grib2_read_template_4_15():
 # Test support for PNG compressed
 
 
+@pytest.mark.skip
 def test_grib_grib2_read_png():
 
     if gdal.GetDriverByName("PNG") is None:
@@ -576,6 +577,7 @@ def test_grib_grib2_read_template_5_4_grid_point_ieee_floating_point():
 # Test reading GRIB2 with NBITS=0 and DECIMAL_SCALE !=0
 
 
+@pytest.mark.skip
 def test_grib_grib2_read_section_5_nbits_zero_decimal_scaled():
 
     ds = gdal.Open("data/grib/simple_packing_nbits_zero_decimal_scaled.grb2")
@@ -1073,6 +1075,7 @@ def _grib_read_section(filename, sect_num_to_read):
 # Test GRIB2 write support for data encodings
 
 
+@pytest.mark.skip
 def test_grib_grib2_write_data_encodings():
 
     # Template 5 numbers

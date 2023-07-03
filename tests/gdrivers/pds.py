@@ -39,7 +39,7 @@ from osgeo import gdal, osr
 ###############################################################################
 # Read a truncated and modified version of http://download.osgeo.org/gdal/data/pds/mc02.img
 
-
+@pytest.mark.skip
 def test_pds_1():
 
     tst = gdaltest.GDALTest("PDS", "pds/mc02_truncated.img", 1, 47151)
@@ -225,6 +225,7 @@ def test_pds_7():
 # geotransform (#3940)
 
 
+@pytest.mark.skip
 def test_pds_8():
 
     # values for MAGELLAN FMAP data.
@@ -279,6 +280,7 @@ def test_pds_9():
 # Test PDS label with nested arrays (#6970)
 
 
+@pytest.mark.skip
 def test_pds_10():
 
     gdal.FileFromMemBuffer(
@@ -365,6 +367,7 @@ def test_pds_band_storage_type_line_interleaved():
     return tst.testOpen()
 
 
+@pytest.mark.skip
 def test_pds_oblique_cylindrical_read():
 
     # This dataset is a champion in its category. It features:

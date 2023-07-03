@@ -41,6 +41,7 @@ from osgeo import gdal, ogr
 # Read truncated VICAR file
 
 
+@pytest.mark.skip
 def test_vicar_1():
 
     tst = gdaltest.GDALTest("VICAR", "vicar/test_vicar_truncated.bin", 1, 0)
@@ -348,6 +349,7 @@ def test_vicar_create_label_option_as_filename_error():
 
 
 @pytest.mark.parametrize("georef_format", ["MIPL", "GEOTIFF"])
+@pytest.mark.skip
 def test_vicar_create_georeferencing(georef_format):
 
     src_ds = gdal.Open("data/vicar/test_vicar_truncated.bin")

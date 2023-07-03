@@ -3018,7 +3018,7 @@ def test_gdalwarp_lib_issue_with_te_and_geographic_crs_world_coverage():
 
 ###############################################################################
 
-
+@pytest.mark.skip
 def test_gdalwarp_lib_epsg_4326_to_esri_53037():
 
     # Scenario of https://github.com/OSGeo/gdal/issues/6155

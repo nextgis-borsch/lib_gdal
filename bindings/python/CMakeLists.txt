@@ -387,4 +387,9 @@ endif()
 if(NOT SKIP_INSTALL_EXECUTABLES AND NOT SKIP_INSTALL_ALL )
     #install scripts
     install(PROGRAMS ${PY_COMMANDS} DESTINATION ${INSTALL_BIN_DIR} COMPONENT applications)
+    
+    #install examples
+    install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/osgeo_utils/samples/
+            DESTINATION ${INSTALL_DOC_DIR}/python-samples
+            COMPONENT documents)
 endif()

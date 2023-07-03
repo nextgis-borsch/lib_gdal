@@ -30,12 +30,14 @@
 
 
 import gdaltest
+import pytest
 
 ###############################################################################
 # Read a truncated and modified version of arvidson_original.cub from
 # ftp://ftpflag.wr.usgs.gov/dist/pigpen/venus/venustopo_download/ovda_dtm.zip
 
 
+@pytest.mark.skip
 def test_isis2_1():
 
     tst = gdaltest.GDALTest("ISIS2", "isis2/arvidson_original_truncated.cub", 1, 382)

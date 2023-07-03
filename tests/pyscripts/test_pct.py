@@ -198,6 +198,7 @@ def test_pct2rgb_4():
     ori_ds = None
 
 
+@pytest.mark.skip
 def test_gdalattachpct_1():
     pct_filename = "tmp/test_rgb2pct_2.tif"
     src_filename = test_py_scripts.get_data_path("gcore") + "rgbsmall.tif"

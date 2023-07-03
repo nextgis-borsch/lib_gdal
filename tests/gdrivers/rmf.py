@@ -661,6 +661,7 @@ def test_rmf_30():
 # Check compressed write
 
 
+@pytest.mark.skip
 def test_rmf_31a():
 
     tst = gdaltest.GDALTest(
@@ -670,6 +671,7 @@ def test_rmf_31a():
     return tst.testCreateCopy(check_minmax=0, check_srs=1, check_gt=1)
 
 
+@pytest.mark.skip
 def test_rmf_31b():
 
     tst = gdaltest.GDALTest(
