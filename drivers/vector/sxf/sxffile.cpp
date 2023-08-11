@@ -847,7 +847,7 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         }
         GByte buff[24];
         VSIFReadL(buff, 24, 1, fpSXF);
-        sheetNomk = SXF::ReadEncString(buff, 24, osEncoding.c_str());
+        sheetNomk = SXF::ReadEncString(buff, 24, DEFAULT_ENC_ASCIIZ); // osEncoding.c_str());
     }
     else if (nVersion == 4)
     {
@@ -857,7 +857,7 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         }
         GByte buff[32];
         VSIFReadL(buff, 32, 1, fpSXF);
-        sheetNomk = SXF::ReadEncString(buff, 32, osEncoding.c_str());
+        sheetNomk = SXF::ReadEncString(buff, 32, DEFAULT_ENC_ANSI); // osEncoding.c_str());
     }
 
     // Read sheet scale
@@ -871,13 +871,13 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
     {
         GByte buff[26];
         VSIFReadL(buff, 26, 1, fpSXF);
-        sheetName = SXF::ReadEncString(buff, 26, osEncoding.c_str());
+        sheetName = SXF::ReadEncString(buff, 26, DEFAULT_ENC_ASCIIZ);
     }
     else if (nVersion == 4)
     {
         GByte buff[32];
         VSIFReadL(buff, 32, 1, fpSXF);
-        sheetName = SXF::ReadEncString(buff, 32, osEncoding.c_str());
+        sheetName = SXF::ReadEncString(buff, 32, DEFAULT_ENC_ANSI);
     }
 
     // Read information flags
@@ -906,19 +906,19 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
         CPL_LSBPTR32(&epsgCode);
 
         /* Override file set encoding in favour of defaults or input options
-            if (val.textEncoding == 0)
-            {
-                osEncoding = DEFAULT_ASCIIZ;
-            }
-            else if (val.textEncoding == 1)
-            {
-                osEncoding = DEFAULT_ANSI;
-            }
-            else if (val.textEncoding == 2)
-            {
-                osEncoding = "KOI8-R";
-            }
         */
+        if (val.textEncoding == 0)
+        {
+            osEncoding = DEFAULT_ENC_ASCIIZ;
+        }
+        else if (val.textEncoding == 1)
+        {
+            osEncoding = DEFAULT_ENC_ANSI;
+        }
+        else if (val.textEncoding == 2)
+        {
+            osEncoding = DEFAULT_ENC_KOI8;
+        }
     }
 
     // Read sheet corners

@@ -54,7 +54,7 @@
 // All notes from sxf4bin.pdf
 constexpr GUInt32 IDSXFOBJ = 0X7FFF7FFF;
 constexpr const char * DEFAULT_ENC_ASCIIZ = "CP866";
-constexpr const char * DEFAULT_ENC_ANSI = "CP1251";
+constexpr const char * DEFAULT_ENC_ANSI = "CP1251"; // https://stackoverflow.com/a/701920
 constexpr const char * DEFAULT_ENC_KOI8 = "KOI8-R";
 
 constexpr const char * MD_SCALE_KEY = "SCALE";
