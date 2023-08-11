@@ -1056,43 +1056,6 @@ CPLErr RMFDataset::WriteHeader()
         VSIFWriteL(abyHeader, 1, sizeof(abyHeader), fp);
     }
     
-    if (sHeader.nROIOffset && sHeader.nROISize)
-    {
-        VSIFSeekL(fp, GetFileOffset(sHeader.nROIOffset), SEEK_SET);
-        auto nPointCount = astFrameCoords.size();
-        RSWFrame stFrame = { 2147385342,
-            static_cast<GInt32>((4 + nPointCount * 2) * 4), 0,
-            static_cast<GInt32>(32768 * nPointCount * 2) };
-        VSIFWriteL(&stFrame, 1, sizeof(RSWFrame), fp);
-
-        // Write points
-        for (size_t i = 0; i < nPointCount; i++)
-        {
-            VSIFWriteL(&astFrameCoords[i], 1, sizeof(RSWFrameCoord), fp);
-        }
-
-        RSWFrameCoord stTmp = { 0, 0 };
-        for (size_t i = 0; i < (nMaxFramePointCount - nPointCount); i++)
-        {
-            VSIFWriteL(&stTmp, 1, sizeof(RSWFrameCoord), fp);
-        }
-    }
-
-    if (sHeader.nFlagsTblOffset && sHeader.nFlagsTblSize)
-    {
-        VSIFSeekL(fp, GetFileOffset(sHeader.nFlagsTblOffset), SEEK_SET);
-        GByte nValue = 0;
-        if (sHeader.iFrameFlag == 0)
-        {
-            // TODO: Add more strictly check for flag value
-            nValue = 2; // Mark all blocks as intersected with ROI. 0 - complete outside, 1 - complete inside.
-        }
-        for (GUInt32 i = 0; i < sHeader.nFlagsTblSize; i += sizeof(GByte))
-        {
-            VSIFWriteL(&nValue, 1, sizeof(nValue), fp);
-        }
-    }
-
     /* -------------------------------------------------------------------- */
     /*  Write out the extended header.                                      */
     /* -------------------------------------------------------------------- */
@@ -1130,6 +1093,43 @@ CPLErr RMFDataset::WriteHeader()
     {
         VSIFSeekL(fp, GetFileOffset(sHeader.nClrTblOffset), SEEK_SET);
         VSIFWriteL(pabyColorTable, 1, sHeader.nClrTblSize, fp);
+    }
+
+    if (sHeader.nROIOffset && sHeader.nROISize)
+    {
+        VSIFSeekL(fp, GetFileOffset(sHeader.nROIOffset), SEEK_SET);
+        auto nPointCount = astFrameCoords.size();
+        RSWFrame stFrame = { 2147385342,
+            static_cast<GInt32>((4 + nPointCount * 2) * 4), 0,
+            static_cast<GInt32>(32768 * nPointCount * 2) };
+        VSIFWriteL(&stFrame, 1, sizeof(RSWFrame), fp);
+
+        // Write points
+        for (size_t i = 0; i < nPointCount; i++)
+        {
+            VSIFWriteL(&astFrameCoords[i], 1, sizeof(RSWFrameCoord), fp);
+        }
+
+        RSWFrameCoord stTmp = { 0, 0 };
+        for (size_t i = 0; i < (nMaxFramePointCount - nPointCount); i++)
+        {
+            VSIFWriteL(&stTmp, 1, sizeof(RSWFrameCoord), fp);
+        }
+    }
+
+    if (sHeader.nFlagsTblOffset && sHeader.nFlagsTblSize)
+    {
+        VSIFSeekL(fp, GetFileOffset(sHeader.nFlagsTblOffset), SEEK_SET);
+        GByte nValue = 0;
+        if (sHeader.iFrameFlag == 0)
+        {
+            // TODO: Add more strictly check for flag value
+            nValue = 2; // Mark all blocks as intersected with ROI. 0 - complete outside, 1 - complete inside.
+        }
+        for (GUInt32 i = 0; i < sHeader.nFlagsTblSize; i += sizeof(GByte))
+        {
+            VSIFWriteL(&nValue, 1, sizeof(nValue), fp);
+        }
     }
 
     /* -------------------------------------------------------------------- */
