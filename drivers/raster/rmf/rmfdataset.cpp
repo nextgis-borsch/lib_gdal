@@ -1804,7 +1804,6 @@ RMFDataset *RMFDataset::Open(GDALOpenInfo *poOpenInfo, RMFDataset *poParentDS,
     /*  georeferencing information, assume Gauss-Kruger projection.         */
     /* -------------------------------------------------------------------- */
     
-    OGRSpatialReference oSRS;
     double adfGeoTransformTmp[6] = {0.0};
     adfGeoTransformTmp[0] = poDS->sHeader.dfLLX;
     adfGeoTransformTmp[3] = poDS->sHeader.dfLLY
@@ -1870,7 +1869,7 @@ RMFDataset *RMFDataset::Open(GDALOpenInfo *poOpenInfo, RMFDataset *poParentDS,
         }
         
         // Fix for geographic CS
-        if (oSRS.IsGeographic() || oSRS.IsGeocentric())
+        if (poDS->m_oSRS.IsGeographic() || poDS->m_oSRS.IsGeocentric())
         {
             poDS->sHeader.dfLLX *= RMF_M2D;
             poDS->sHeader.dfLLY *= RMF_M2D;
