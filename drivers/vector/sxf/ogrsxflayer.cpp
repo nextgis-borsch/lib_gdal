@@ -1323,7 +1323,7 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 
                 // Expected here that input encoding set by parameters or from 
                 // SXF header is ASCIIZ
-                auto val = SXF::ReadEncString(attributesBuff.get() +
+                auto val = SXF::(attributesBuff.get() +
                     nOffset, nLen, oSXF.Encoding().c_str()); 
                 if (!HasField(GetLayerDefn(), oFieldName))
                 {
@@ -1456,26 +1456,21 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                     nSemanticsSize = 0;
                     break;
                 }
-                auto src = static_cast<wchar_t*>(CPLMalloc(nLen + 2));
-                memset(src, 0, nLen + 2);
-                memcpy(src, attributesBuff.get() + nOffset, nLen);
-                auto dst = CPLRecodeFromWChar(src, CPL_ENC_UCS2, CPL_ENC_UTF8);
+                auto val =
+                    SXF::ReadEncString(attributesBuff.get() + nOffset,
+                        nLen, CPL_ENC_UCS2);
                 if (!HasField(GetLayerDefn(), oFieldName))
                 {
                     OGRFieldDefn oField(oFieldName.c_str(), OFTString);
-                    oField.SetWidth(255);
+                    oField.SetWidth(1024);
                     CreateField(&oField);
                 }
-                mFieldValues[oFieldName].emplace_back( OFTString , dst, 0, 0.0 );
-                CPLFree(dst);
-                CPLFree(src);
-
+                mFieldValues[oFieldName].emplace_back( OFTString , val, 0, 0.0 );
                 nOffset += nLen;
                 break;
             }
             case 128: // SXF_RAT_BIGTEXT
             {
-                // FIXME: Need example of UTF16 encoded data
                 if (nOffset + 4 > nSemanticsSize)
                 {
                     nSemanticsSize = 0;
@@ -1492,23 +1487,13 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                     break;
                 }
 
-                std::string val;
-                if (nTextLen > 0)
-                {
-                    auto *pBuff = static_cast<wchar_t*>(CPLMalloc(nTextLen + 4));
-                    memset(pBuff, 0, nTextLen + 4);
-                    memcpy(pBuff, attributesBuff.get() + nOffset, nTextLen);
-                    auto pszRecodedText = 
-                        CPLRecodeFromWChar(pBuff, CPL_ENC_UTF16, CPL_ENC_UTF8);
-                    val = pszRecodedText;
-                    CPLFree(pszRecodedText);
-                    CPLFree(pBuff);
-                }
-                
+                auto val =
+                    SXF::ReadEncString(attributesBuff.get() + nOffset,
+                        nTextLen, CPL_ENC_UTF16);                
                 if (!HasField(GetLayerDefn(), oFieldName))
                 {
                     OGRFieldDefn oField(oFieldName.c_str(), OFTString);
-                    oField.SetWidth(255);
+                    oField.SetWidth(2048);
                     CreateField(&oField);
                 }
                 mFieldValues[oFieldName].emplace_back( OFTString , val, 0, 0.0 );
