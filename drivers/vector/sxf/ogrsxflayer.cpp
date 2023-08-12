@@ -1323,7 +1323,7 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 
                 // Expected here that input encoding set by parameters or from 
                 // SXF header is ASCIIZ
-                auto val = SXF::(attributesBuff.get() +
+                auto val = SXF::ReadEncStrin(attributesBuff.get() +
                     nOffset, nLen, oSXF.Encoding().c_str()); 
                 if (!HasField(GetLayerDefn(), oFieldName))
                 {
