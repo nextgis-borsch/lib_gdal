@@ -1364,7 +1364,33 @@ CPLHTTPResult *CPLHTTPFetchEx(const char *pszURL, CSLConstList papszOptions,
         std::string osAuthHeader = gpsHTTPAuthHeaderCallbackFunc(pszURL);
         if (!osAuthHeader.empty())
         {
-            headers = curl_slist_append(headers, osAuthHeader.c_str());
+            // Replace old auth header if it exists
+            curl_slist *current = headers;
+            curl_slist *prev = nullptr;
+            bool found = false;
+            while (current)
+            {
+                if (strcmp(current->data, osAuthHeader.c_str()) == 0)
+                {
+                    auto* newNode = curl_slist_append(nullptr, osAuthHeader.c_str());
+                    if (prev)
+                        prev->next = newNode;
+                    else
+                        headers = newNode;
+
+                    newNode->next = current->next;
+                    free(current);
+                    found = true;
+                    break;
+                }
+                prev = current;
+                current = current->next;
+            }
+
+            if (!found)
+            {
+                headers = curl_slist_append(headers, osAuthHeader.c_str());
+            }
         }
     }
     
