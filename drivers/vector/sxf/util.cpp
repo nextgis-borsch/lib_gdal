@@ -66,12 +66,12 @@ namespace SXF {
             return "";
         }
         char *pszRecoded;
-        if (EQUAL(pszSrcEncoding, CPL_ENC_UTF16))
+        if (EQUAL(pszSrcEncoding, CPL_ENC_UTF16) || EQUAL(pszSrcEncoding, CPL_ENC_UCS2))
         {
             auto value = static_cast<wchar_t*>(CPLMalloc(nLen + 2));
             memset(value, 0, nLen + 2);
             memcpy(value, pBuffer, nLen);
-            pszRecoded = CPLRecodeFromWChar(value, CPL_ENC_UCS2, CPL_ENC_UTF8);
+            pszRecoded = CPLRecodeFromWChar(value, pszSrcEncoding, CPL_ENC_UTF8);
             CPLFree(value);
         }
         else
