@@ -68,11 +68,37 @@ namespace SXF {
         char *pszRecoded;
         if (EQUAL(pszSrcEncoding, CPL_ENC_UTF16) || EQUAL(pszSrcEncoding, CPL_ENC_UCS2))
         {
-            auto value = static_cast<wchar_t*>(CPLMalloc(nLen + 2));
-            memset(value, 0, nLen + 2);
-            memcpy(value, pBuffer, nLen);
-            pszRecoded = CPLRecodeFromWChar(value, pszSrcEncoding, CPL_ENC_UTF8);
-            CPLFree(value);
+			nLen = (nLen - 2) / 2;
+			wchar_t *pwszSource = new wchar_t[nLen + 1];
+			int j = 0;
+			const char *pabySrc = static_cast<const char *>(pBuffer);
+			for (int i = 0; i < nLen; i++, j++)
+			{
+				pwszSource[j] = (pabySrc[2 * i + 1] << 8) + pabySrc[2 * i];
+#ifndef _WIN32
+				/* Is there a surrogate pair ? See http://en.wikipedia.org/wiki/UTF-16
+				 */
+				/* On Windows, CPLRecodeFromWChar does this for us, because wchar_t is
+				 * only */
+				/* 2 bytes wide, whereas on Unix it is 32bits */
+				if (pwszSource[j] >= 0xD800 && pwszSource[j] <= 0xDBFF && i + 1 < nLen)
+				{
+					/* should be in the range 0xDC00... 0xDFFF */
+					wchar_t nTrailSurrogate =
+							(pabySrc[2 * (i + 1) + 1] << 8) + pabySrc[2 * (i + 1)];
+					if (nTrailSurrogate >= 0xDC00 && nTrailSurrogate <= 0xDFFF)
+					{
+						pwszSource[j] = ((pwszSource[j] - 0xD800) << 10) +
+										(nTrailSurrogate - 0xDC00) + 0x10000;
+						i++;
+					}
+				}
+#endif
+			}
+			pwszSource[j] = 0;
+
+            pszRecoded = CPLRecodeFromWChar(pwszSource, pszSrcEncoding, CPL_ENC_UTF8);
+            CPLFree(pwszSource);
         }
         else
         {
