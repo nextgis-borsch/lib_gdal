@@ -924,7 +924,11 @@ CPLErr RMFDataset::WriteHeader()
     // Frame if present
     std::vector<RSWFrameCoord> astFrameCoords;
     auto pszFrameWKT = GetMetadataItem(MD_FRAME_KEY);
-    if (pszFrameWKT != nullptr)
+
+    const int epsg = m_oSRS.GetEPSGGeogCS();
+    const bool ignoreFrame = (epsg == 4326 || epsg == 3857);
+
+    if (pszFrameWKT != nullptr && !ignoreFrame)
     {
         CPLDebug("RMF", "Write to header frame: %s", pszFrameWKT);
         OGRGeometry *poFrameGeom = nullptr;
