@@ -1012,7 +1012,7 @@ CPLErr RMFDataset::WriteHeader()
         RMF_WRITE_LONG(abyHeader, sHeader.iProjection, 128);
         RMF_WRITE_LONG(abyHeader, sHeader.iEPSGCode, 132);
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfScale, 136);
-        
+
         double dfLLX = sHeader.dfLLX;
         double dfLLY = sHeader.dfLLY;
         double dfResolution = sHeader.dfResolution;
@@ -1025,9 +1025,9 @@ CPLErr RMFDataset::WriteHeader()
             dfPixelSize *= RMF_D2M;
             dfResolution = sHeader.dfScale / dfPixelSize;
         }
-        
-        RMF_WRITE_DOUBLE(abyHeader, sHeader.dfResolution, 144);
-        RMF_WRITE_DOUBLE(abyHeader, sHeader.dfPixelSize, 152);
+
+        RMF_WRITE_DOUBLE(abyHeader, dfResolution, 144);
+        RMF_WRITE_DOUBLE(abyHeader, dfPixelSize, 152);
         RMF_WRITE_DOUBLE(abyHeader, dfLLY, 160);
         RMF_WRITE_DOUBLE(abyHeader, dfLLX, 168);
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfStdP1, 176);
