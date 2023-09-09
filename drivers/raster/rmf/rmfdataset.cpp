@@ -1023,7 +1023,7 @@ CPLErr RMFDataset::WriteHeader()
             dfLLX *= RMF_D2M;
             dfLLY *= RMF_D2M;
             dfPixelSize *= RMF_D2M;
-            dfResolution = sHeader.dfScale / dfPixelSize;
+            dfResolution = sHeader.dfScale / dfPixelSize * 0.9;
         }
 
         RMF_WRITE_DOUBLE(abyHeader, dfResolution, 144);
