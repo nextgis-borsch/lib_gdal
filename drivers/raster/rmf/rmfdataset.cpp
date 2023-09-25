@@ -924,7 +924,11 @@ CPLErr RMFDataset::WriteHeader()
     // Frame if present
     std::vector<RSWFrameCoord> astFrameCoords;
     auto pszFrameWKT = GetMetadataItem(MD_FRAME_KEY);
-    if (pszFrameWKT != nullptr)
+
+    const int epsg = m_oSRS.GetEPSGGeogCS();
+    const bool ignoreFrame = (epsg == 4326 || epsg == 3857);
+
+    if (pszFrameWKT != nullptr && !ignoreFrame)
     {
         CPLDebug("RMF", "Write to header frame: %s", pszFrameWKT);
         OGRGeometry *poFrameGeom = nullptr;
@@ -1008,7 +1012,7 @@ CPLErr RMFDataset::WriteHeader()
         RMF_WRITE_LONG(abyHeader, sHeader.iProjection, 128);
         RMF_WRITE_LONG(abyHeader, sHeader.iEPSGCode, 132);
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfScale, 136);
-        
+
         double dfLLX = sHeader.dfLLX;
         double dfLLY = sHeader.dfLLY;
         double dfResolution = sHeader.dfResolution;
@@ -1019,11 +1023,11 @@ CPLErr RMFDataset::WriteHeader()
             dfLLX *= RMF_D2M;
             dfLLY *= RMF_D2M;
             dfPixelSize *= RMF_D2M;
-            dfResolution = sHeader.dfScale / dfPixelSize;
+            dfResolution = sHeader.dfScale / dfPixelSize * 0.9; // 0.9 - reduce resolution by 10% for visualization
         }
-        
-        RMF_WRITE_DOUBLE(abyHeader, sHeader.dfResolution, 144);
-        RMF_WRITE_DOUBLE(abyHeader, sHeader.dfPixelSize, 152);
+
+        RMF_WRITE_DOUBLE(abyHeader, dfResolution, 144);
+        RMF_WRITE_DOUBLE(abyHeader, dfPixelSize, 152);
         RMF_WRITE_DOUBLE(abyHeader, dfLLY, 160);
         RMF_WRITE_DOUBLE(abyHeader, dfLLX, 168);
         RMF_WRITE_DOUBLE(abyHeader, sHeader.dfStdP1, 176);
