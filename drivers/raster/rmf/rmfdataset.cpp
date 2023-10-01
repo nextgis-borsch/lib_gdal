@@ -926,9 +926,8 @@ CPLErr RMFDataset::WriteHeader()
     auto pszFrameWKT = GetMetadataItem(MD_FRAME_KEY);
 
     const int epsg = m_oSRS.GetEPSGGeogCS();
-    const bool ignoreFrame = (epsg == 4326 || epsg == 3857);
 
-    if (pszFrameWKT != nullptr && !ignoreFrame)
+    if (pszFrameWKT != nullptr)
     {
         CPLDebug("RMF", "Write to header frame: %s", pszFrameWKT);
         OGRGeometry *poFrameGeom = nullptr;
@@ -937,6 +936,17 @@ CPLErr RMFDataset::WriteHeader()
             if (poFrameGeom->getGeometryType() == wkbPolygon)
             {
                 double adfReverseGeoTransform[6] = { 0 };
+//                double adfGeoTransformCorrected[6];
+//                memcpy(adfGeoTransformCorrected, adfGeoTransform, sizeof(double) * 6);
+//                if (m_oSRS.IsGeographic() || m_oSRS.IsGeocentric())
+//                {
+//                    adfGeoTransformCorrected[0] *= RMF_D2M;
+//                    adfGeoTransformCorrected[1] *= RMF_D2M;
+//                    adfGeoTransformCorrected[3] *= RMF_D2M;
+//                    adfGeoTransformCorrected[5] *= RMF_D2M;
+//                }
+//                
+//                if (GDALInvGeoTransform(adfGeoTransformCorrected, adfReverseGeoTransform) == TRUE)
                 if (GDALInvGeoTransform(adfGeoTransform, adfReverseGeoTransform) == TRUE)
                 {
                     OGRPolygon *poFramePoly = reinterpret_cast<OGRPolygon *>(poFrameGeom);
@@ -1020,10 +1030,13 @@ CPLErr RMFDataset::WriteHeader()
 
         if (m_oSRS.IsGeographic() || m_oSRS.IsGeocentric())
         {
-            dfLLX *= RMF_D2M;
-            dfLLY *= RMF_D2M;
-            dfPixelSize *= RMF_D2M;
-            dfResolution = sHeader.dfScale / dfPixelSize * 0.9; // 0.9 - reduce resolution by 10% for visualization
+            if (dfLLX >= -180.0 && dfLLX <= 180.0 && dfLLY >= -90.0 && dfLLY <= 90.0) // Check already recalc from degree to meters
+            {
+                dfLLX *= RMF_D2M;
+                dfLLY *= RMF_D2M;
+                dfPixelSize *= RMF_D2M;
+                dfResolution = sHeader.dfScale / dfPixelSize;
+            }
         }
 
         RMF_WRITE_DOUBLE(abyHeader, dfResolution, 144);
