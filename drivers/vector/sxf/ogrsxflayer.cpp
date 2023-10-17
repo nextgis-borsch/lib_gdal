@@ -1426,6 +1426,15 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 nOffset += 8;
                 break;
             }
+//            case 16: // SXF_RAT_SIXTYBYTE
+//            {
+//                if (nOffset + 16 > nSemanticsSize)
+//                {
+//                    nSemanticsSize = 0;
+//                    break;
+//                }
+//                break;
+//            }
             case 126: // SXF_RAT_ANSI_WIN
             {
                 size_t nLen = size_t(stAttInfo.nScale) + 1;
@@ -1450,8 +1459,8 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
             }
             case 127: // SXF_RAT_UNICODE
             {
-                size_t nLen = size_t(stAttInfo.nScale);// +2); // *2;
-                if (nLen < 2 || nLen + nOffset > nSemanticsSize)
+                size_t nLen = size_t(stAttInfo.nScale) + 2;
+                if (nLen + nOffset > nSemanticsSize)
                 {
                     nSemanticsSize = 0;
                     break;
@@ -1509,7 +1518,7 @@ OGRFeature *OGRSXFLayer::GetRawFeature(const SXFFile &oSXF,
                 }
                 // SetUpdatable(bIsUpdatable);
                 //return nullptr;
-                CPLError(CE_Warning, CPLE_AppDefined, "SXF. Unsupported attribute type.");
+                CPLError(CE_Warning, CPLE_AppDefined, "SXF. Unsupported attribute type %d.", stAttInfo.nType);
                 nOffset += nLen;
             }
         }

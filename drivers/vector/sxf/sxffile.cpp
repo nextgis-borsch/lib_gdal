@@ -1300,7 +1300,7 @@ bool SXFFile::Read(OGRSXFDataSource *poDS, CSLConstList papszOpenOpts)
 
     if (SetSRS(stProjInfo.nEllipsoidType, stProjInfo.nProjectionType, 
         stProjInfo.nSrsType, stProjInfo.nHeightSrsType, eUnitInPlan, geogCoords, 
-        adfPrjParams, papszOpenOpts))
+        adfPrjParams, papszOpenOpts) != OGRERR_NONE)
     {
         // Try set from EPSG code
         if (epsgCode >= MIN_EPSG && epsgCode <= MAX_EPSG) // Check epsg valid range
