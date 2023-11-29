@@ -1419,6 +1419,7 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
 
     // Write scale
     GUInt32 nScale = 1000000;
+    auto pSRS = poDS->GetSpatialRef();
     auto pszScale = poDS->GetMetadataItem(MD_SCALE_KEY);        
     if (pszScale != nullptr && CPLStrnlen(pszScale, 255) > 4)
     {
