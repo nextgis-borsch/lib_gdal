@@ -1419,19 +1419,10 @@ bool SXFFile::Write(OGRSXFDataSource *poDS)
 
     // Write scale
     GUInt32 nScale = 1000000;
-    auto pSRS = poDS->GetSpatialRef();
-    if (pSRS && (pSRS->IsGeographic() || pSRS->IsGeocentric()))
+    auto pszScale = poDS->GetMetadataItem(MD_SCALE_KEY);        
+    if (pszScale != nullptr && CPLStrnlen(pszScale, 255) > 4)
     {
-        // Force scale for Geographic
-        nScale = 100000;
-    }
-    else
-    {
-        auto pszScale = poDS->GetMetadataItem(MD_SCALE_KEY);        
-        if (pszScale != nullptr && CPLStrnlen(pszScale, 255) > 4)
-        {
-            nScale = atoi(pszScale + 4);
-        }
+        nScale = atoi(pszScale + 4);
     }
     CPL_LSBPTR32(&nScale);
     VSIFWriteL(&nScale, 4, 1, fpSXF);
