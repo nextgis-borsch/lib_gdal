@@ -553,12 +553,18 @@ void RegisterOGRNGW()
         "   <Option name='EXTENSIONS' scope='vector' type='string' "
         "description='Comma separated extensions list. Available are "
         "description and attachment' default=''/>"
-        "</OpenOptionList>"
-        "   <Option name='CONNECTTIMEOUT' scope='raster,vector' type='integer' description='Maximum delay for the connection to be established before being aborted in seconds'/>"
-        "   <Option name='TIMEOUT' scope='raster,vector' type='integer' description='Maximum delay for the whole request to complete before being aborted in seconds'/>"
-        "   <Option name='MAX_RETRY' scope='raster,vector' type='integer' description='Maximum number of retry attempts if a 429, 502, 503 or 504 HTTP error occurs'/>"
-        "   <Option name='RETRY_DELAY' scope='raster,vector' type='integer' description='Number of seconds between retry attempts'/>"  
-        "</CreationOptionList>");
+        "   <Option name='CONNECTTIMEOUT' scope='raster,vector' type='integer' "
+        "description='Maximum delay for the connection to be established before "
+        "being aborted in seconds'/>"
+        "   <Option name='TIMEOUT' scope='raster,vector' type='integer' "
+        "description='Maximum delay for the whole request to complete before "
+        "being aborted in seconds'/>"
+        "   <Option name='MAX_RETRY' scope='raster,vector' type='integer' "
+        "description='Maximum number of retry attempts if a 429, 502, 503 or 504 "
+        "HTTP error occurs'/>"
+        "   <Option name='RETRY_DELAY' scope='raster,vector' type='integer' "
+        "description='Number of seconds between retry attempts'/>"  
+        "</OpenOptionList>");
 
     poDriver->SetMetadataItem(
         GDAL_DMD_CREATIONOPTIONLIST,
@@ -600,10 +606,17 @@ void RegisterOGRNGW()
         "   <Option name='EXTENSIONS' scope='vector' type='string' "
         "description='Comma separated extensions list. Available are "
         "description and attachment' default=''/>"
-        "   <Option name='CONNECTTIMEOUT' scope='raster,vector' type='integer' description='Maximum delay for the connection to be established before being aborted in seconds'/>"
-        "   <Option name='TIMEOUT' scope='raster,vector' type='integer' description='Maximum delay for the whole request to complete before being aborted in seconds'/>"
-        "   <Option name='MAX_RETRY' scope='raster,vector' type='integer' description='Maximum number of retry attempts if a 429, 502, 503 or 504 HTTP error occurs'/>"
-        "   <Option name='RETRY_DELAY' scope='raster,vector' type='integer' description='Number of seconds between retry attempts'/>"  
+        "   <Option name='CONNECTTIMEOUT' scope='raster,vector' type='integer' "
+        "description='Maximum delay for the connection to be established before "
+        "being aborted in seconds'/>"
+        "   <Option name='TIMEOUT' scope='raster,vector' type='integer' "
+        "description='Maximum delay for the whole request to complete before "
+        "being aborted in seconds'/>"
+        "   <Option name='MAX_RETRY' scope='raster,vector' type='integer' "
+        "description='Maximum number of retry attempts if a 429, 502, 503 or 504 "
+        "HTTP error occurs'/>"
+        "   <Option name='RETRY_DELAY' scope='raster,vector' type='integer' "
+        "description='Number of seconds between retry attempts'/>"
         "</CreationOptionList>");
 
     poDriver->SetMetadataItem(
