@@ -67,13 +67,14 @@ class SXFLimits
         typedef struct {
             double dfStart;
             double dfEnd;
+            int nNo;
             int nExt;
         } Range;
 
     public:
         explicit SXFLimits(int nSC1In = -1, int nSC2In = -1);
-        void AddRange(double dfStart, double dfEnd, int nExt);
-        void SetDefaultExt(int nExt);
+        void AddRange(double dfStart, double dfEnd, int nNo, int nExt);
+        void SetDefaultExt(int nNo, int nExt);
         int GetExtention(double dfnSC1Val, double dfSC2Val) const;
         std::pair<int, int> GetLimitCodes() const;
         void AddSemanticLimits(int nSem, const std::vector<double> &vLimits);
@@ -82,6 +83,7 @@ class SXFLimits
 		int nSC1, nSC2;
 		std::vector<Range> aRanges;
         int nDefaultExt = 0;
+        int nDefaultNo = 0;
         std::unordered_map<int, std::vector<double>> mSemLimits;
 };
 

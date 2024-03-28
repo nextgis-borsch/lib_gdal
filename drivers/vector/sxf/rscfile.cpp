@@ -939,7 +939,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             {
                 stLim.nSC2LimCount = 1;
             }
-
+            
             for (int j = 0; j < stLim.nSC1LimCount * stLim.nSC2LimCount; j++)
             {
                 GByte nExt;
@@ -952,9 +952,9 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
                 for (size_t j = 0; j < aSC2Def.size(); j++)
                 {                
                     for (size_t k = 0; k < aSC1Def.size(); k++)
-                    {
+                    {   
                         size_t nMatrixIndex = j * aSC1Def.size() + k;
-                        oLim.AddRange(aSC1Def[k], aSC2Def[j], aMatrix[nMatrixIndex]);
+                        oLim.AddRange(aSC1Def[k], aSC2Def[j], nMatrixIndex + 1, aMatrix[nMatrixIndex]);
                     }
                 }
             }
@@ -962,21 +962,23 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             {
                 for (size_t j = 0; j < aSC1Def.size(); j++)
                 {
-                    oLim.AddRange(aSC1Def[j], 0.0, aMatrix[j]);
+                    oLim.AddRange(aSC1Def[j], 0.0, j+ 1, aMatrix[j]);
                 }
             }
 
-            int nDefaultExt;
+            int nDefaultExt, nDefaultNo;
             if (aSC2Def.size() > 0)
             {
                 size_t nMatrixIndex = (stLim.nSC2LimDefIndex - 1) * aSC1Def.size() + (stLim.nSC1LimDefIndex - 1);
                 nDefaultExt = aMatrix[nMatrixIndex];
+                nDefaultNo = stLim.nSC1LimDefIndex * aSC1Def.size() + stLim.nSC2LimDefIndex - 1;
             }
             else
             {
                 nDefaultExt = aMatrix[stLim.nSC1LimDefIndex - 1];
+                nDefaultNo = stLim.nSC1LimDefIndex;
             }
-            oLim.SetDefaultExt(nDefaultExt);
+            oLim.SetDefaultExt(nDefaultNo, nDefaultExt);
 
             auto eGeomType = SXFFile::CodeToGeometryType(stLim.nLocalization);
             auto osFullCode = SXFFile::ToStringCode(eGeomType, stLim.nObjectCode);

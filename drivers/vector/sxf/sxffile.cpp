@@ -424,14 +424,15 @@ SXFLimits::SXFLimits(int nSC1In, int nSC2In) : nSC1(nSC1In), nSC2(nSC2In)
 
 }
 
-void SXFLimits::AddRange(double dfStart, double dfEnd, int nExt)
+void SXFLimits::AddRange(double dfStart, double dfEnd, int nNo, int nExt)
 {
-    aRanges.push_back({ dfStart, dfEnd, nExt });
+    aRanges.push_back({ dfStart, dfEnd, nNo, nExt });
 }
 
-void SXFLimits::SetDefaultExt(int nExt)
+void SXFLimits::SetDefaultExt(int nNo, int nExt)
 {
     nDefaultExt = nExt;
+    nDefaultNo = nNo;
 }
 
 static bool IsDoubleEqual(double v1, double v2)
@@ -453,12 +454,12 @@ int SXFLimits::GetExtention(double dfSC1Val, double dfSC2Val) const
                 IsDoubleEqual(dfSC2Val, stRange.dfEnd))
             {
                 {
-                    return stRange.nExt;
+                    return stRange.nNo; // Ext;
                 }
             }
         }
     }
-    return nDefaultExt;
+    return nDefaultNo; // nDefaultExt;
 }
 
 std::pair<int, int> SXFLimits::GetLimitCodes() const
