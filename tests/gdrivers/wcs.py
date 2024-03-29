@@ -50,14 +50,15 @@ from osgeo import gdal
 def test_wcs_1():
 
     # Disable wcs tests till we have a more reliable test server.
-    gdaltest.wcs_drv = gdal.GetDriverByName("WCS")
+    gdaltest.wcs_drv = None
+    # gdaltest.wcs_drv = gdal.GetDriverByName("WCS")
 
     # NOTE - mloskot:
     # This is a dirty hack checking if remote WCS service is online.
     # Nothing genuine but helps to keep the buildbot waterfall green.
-    srv = "http://demo.opengeo.org/geoserver/wcs?"
-    if gdaltest.gdalurlopen(srv) is None:
-        gdaltest.wcs_drv = None
+    #srv = "http://demo.opengeo.org/geoserver/wcs?"
+    #if gdaltest.gdalurlopen(srv) is None:
+    #    gdaltest.wcs_drv = None
 
     gdaltest.wcs_ds = None
     if gdaltest.wcs_drv is None:
