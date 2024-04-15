@@ -454,12 +454,12 @@ int SXFLimits::GetExtention(double dfSC1Val, double dfSC2Val) const
                 IsDoubleEqual(dfSC2Val, stRange.dfEnd))
             {
                 {
-                    return stRange.nNo; // Ext;
+                    return stRange.nExt; // nNo; // 
                 }
             }
         }
     }
-    return nDefaultNo; // nDefaultExt;
+    return nDefaultExt; // nDefaultNo; // 
 }
 
 std::pair<int, int> SXFLimits::GetLimitCodes() const

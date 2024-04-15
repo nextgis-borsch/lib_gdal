@@ -962,7 +962,7 @@ bool RSCFile::Read(const std::string &osPath, CSLConstList papszOpenOpts)
             {
                 for (size_t j = 0; j < aSC1Def.size(); j++)
                 {
-                    oLim.AddRange(aSC1Def[j], 0.0, j+ 1, aMatrix[j]);
+                    oLim.AddRange(aSC1Def[j], 0.0, j + 1, aMatrix[j]);
                 }
             }
 
