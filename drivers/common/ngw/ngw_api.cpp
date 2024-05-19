@@ -278,7 +278,7 @@ void ReportError(const GByte *pabyData, int nDataLen, const std::string &osError
     }
     else
     {
-        CPLError(CE_Failure, CPLE_AppDefined, osErrorMessage.c_str());
+        CPLError(CE_Failure, CPLE_AppDefined, "%s" ,osErrorMessage.c_str());
     }
 }
 
