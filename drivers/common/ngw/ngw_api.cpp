@@ -62,7 +62,7 @@ bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
             std::string osErrorMessageInt = oRoot.GetString("message", osErrorMessage);
             if( !osErrorMessageInt.empty() )
             {
-                return ReportError(osErrorMessageInt, nTryCount, bReportError);
+                return ReportErrorToCPL(osErrorMessageInt, nTryCount, bReportError);
             }
         }
         return ReportErrorToCPL(osErrorMessage, nTryCount, bReportError);
