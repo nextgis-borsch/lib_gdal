@@ -6,7 +6,7 @@
  *******************************************************************************
  *  The MIT License (MIT)
  *
- *  Copyright (c) 2018-2023, NextGIS
+ *  Copyright (c) 2018-2024, NextGIS
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to
@@ -35,14 +35,26 @@
 
 namespace NGWAPI
 {
-    
+
+bool ReportErrorToCPL(const std::string &osErrorMessage, int nTryCount, bool bReportError)
+{
+    if(bReportError)
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, 
+            "NGW driver failed to fetch data %d times with error: %s",
+                nTryCount, osErrorMessage.c_str());
+    } 
+    else 
+    {
+        CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
+            nTryCount, osErrorMessage.c_str());
+    }
+    return false;    
+}
+
 bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot, 
     const std::string &osErrorMessage, int nTryCount, bool bReportError)
 {
-    CPLDebug("NGW", 
-        "CheckRequestResult(bResult: %d, oRoot is valid %d, osErrorMessage: %s, "
-        "nTryCount %d, bReportError %d)",
-    bResult, oRoot.IsValid(), osErrorMessage.c_str(), nTryCount, bReportError);
     if( !bResult )
     {
         if( oRoot.IsValid() )
@@ -50,49 +62,15 @@ bool CheckRequestResult(bool bResult, const CPLJSONObject &oRoot,
             std::string osErrorMessageInt = oRoot.GetString("message", osErrorMessage);
             if( !osErrorMessageInt.empty() )
             {
-                if(bReportError)
-                {
-                    CPLError(CE_Failure, CPLE_AppDefined, 
-                        "NGW driver failed to fetch data %d times with error: %s",
-                        nTryCount, osErrorMessageInt.c_str());
-                } 
-                else 
-                {
-                    CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
-                        nTryCount, osErrorMessageInt.c_str());
-                }
-                return false;
+                return ReportError(osErrorMessageInt, nTryCount, bReportError);
             }
         }
-        if(bReportError)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined, 
-                "NGW driver failed to fetch data %d times with error: %s",
-                nTryCount, osErrorMessage.c_str());
-        }
-        else 
-        {
-            CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
-                nTryCount, osErrorMessage.c_str());
-        }
-
-        return false;
+        return ReportErrorToCPL(osErrorMessage, nTryCount, bReportError);
     }
 
     if( !oRoot.IsValid() )
     {
-        if(bReportError)
-        {
-            CPLError(CE_Failure, CPLE_AppDefined, 
-                "NGW driver failed to fetch data %d times with error: %s", 
-                nTryCount, osErrorMessage.c_str());
-        }
-        else 
-        {
-            CPLDebug("NGW", "Failed to fetch data %d times with error: %s",
-                nTryCount, osErrorMessage.c_str());
-        }
-        return false;
+        return ReportErrorToCPL(osErrorMessage, nTryCount, bReportError);
     }
 
     return true;
@@ -290,7 +268,7 @@ Uri ParseUri(const std::string &osUrl)
     return stOut;
 }
 
-static void ReportError(const GByte *pabyData, int nDataLen, const std::string &osErrorMessage)
+void ReportError(const GByte *pabyData, int nDataLen, const std::string &osErrorMessage)
 {
     CPLJSONDocument oResult;
     if (oResult.LoadMemory(pabyData, nDataLen))
@@ -300,7 +278,7 @@ static void ReportError(const GByte *pabyData, int nDataLen, const std::string &
     }
     else
     {
-        CPLError(CE_Failure, CPLE_AppDefined, "%s", osErrorMessage.c_str());
+        CPLError(CE_Failure, CPLE_AppDefined, osErrorMessage.c_str());
     }
 }
 
@@ -353,7 +331,8 @@ bool UpdateResource(const std::string &osUrl, const std::string &osResourceId,
         // Get error message.
         if (!bResult)
         {
-            ReportError(psResult->pabyData, psResult->nDataLen, "UpdateResource request failed");
+            ReportError(psResult->pabyData, psResult->nDataLen, 
+                "UpdateResource request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -381,7 +360,8 @@ bool DeleteResource(const std::string &osUrl, const std::string &osResourceId,
         // Get error message.
         if (!bResult)
         {
-            ReportError(psResult->pabyData, psResult->nDataLen, "DeleteResource request failed");
+            ReportError(psResult->pabyData, psResult->nDataLen, 
+                "DeleteResource request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -523,7 +503,8 @@ Permissions CheckPermissions(const std::string &osUrl,
         bool bResult = oPermissionReq.LoadUrl( osUrlNew, aosHTTPOptions );
 
         CPLJSONObject oRoot = oPermissionReq.GetRoot();
-        if(CheckRequestResult(bResult, oRoot, "Get permissions failed", 1, true))
+        if(CheckRequestResult(bResult, oRoot, "Get permissions failed", nRetryCount, 
+            nRetryCount >= nMaxRetries))
         {
             stOut.bResourceCanRead = oRoot.GetBool("resource/read", true);
             stOut.bResourceCanCreate =
@@ -553,10 +534,6 @@ Permissions CheckPermissions(const std::string &osUrl,
             return stOut;
         }
         
-        CPLDebug("NGW",
-                "Failed to fetch JSON from URL [%d of %d tries]: %s. "
-                "Retrying again in %.1f secs", nRetryCount, nMaxRetries,
-                osUrlNew.c_str(), dfRetryDelaySecs);
         CPLSleep(dfRetryDelaySecs);
         nRetryCount++;
     }
@@ -659,7 +636,8 @@ bool DeleteFeature(const std::string &osUrl, const std::string &osResourceId,
         // Get error message.
         if (!bResult)
         {
-            ReportError(psResult->pabyData, psResult->nDataLen, "DeleteFeature request failed");
+            ReportError(psResult->pabyData, psResult->nDataLen, 
+                "DeleteFeature request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -686,7 +664,8 @@ bool DeleteFeatures(const std::string &osUrl, const std::string &osResourceId,
         // Get error message.
         if( !bResult )
         {
-            ReportError(psResult->pabyData, psResult->nDataLen, "DeleteFeatures request failed");
+            ReportError(psResult->pabyData, psResult->nDataLen, 
+                "DeleteFeatures request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -748,7 +727,8 @@ bool UpdateFeature(const std::string &osUrl,
         // Get error message.
         if (!bResult)
         {
-            ReportError(psResult->pabyData, psResult->nDataLen, "UpdateFeature request failed");
+            ReportError(psResult->pabyData, psResult->nDataLen, 
+                "UpdateFeature request failed");
         }
         CPLHTTPDestroyResult(psResult);
     }
@@ -803,7 +783,8 @@ bool GetExtent(const std::string &osUrl, const std::string &osResourceId,
         bool bResult = oExtentReq.LoadUrl( osUrlNew, aosHTTPOptions );
 
         CPLJSONObject oRoot = oExtentReq.GetRoot();
-        if( CheckRequestResult(bResult, oRoot, "Get extent failed", 1, true) )
+        if( CheckRequestResult(bResult, oRoot, "Get extent failed", nRetryCount, 
+            nRetryCount >= nMaxRetries) )
         {
             // Response extent spatial reference is EPSG:4326.
 
@@ -830,7 +811,8 @@ bool GetExtent(const std::string &osUrl, const std::string &osResourceId,
             o3857SRS.SetAxisMappingStrategy(OAMS_TRADITIONAL_GIS_ORDER);
             if( o3857SRS.importFromEPSG(nEPSG) != OGRERR_NONE )
             {
-                CPLError(CE_Failure, CPLE_AppDefined, "Project extent SRS to EPSG:3857 failed");
+                CPLError(CE_Failure, CPLE_AppDefined, 
+                    "Transform extent SRS to EPSG:3857 failed");
                 return false;
             }
             
@@ -875,10 +857,7 @@ bool GetExtent(const std::string &osUrl, const std::string &osResourceId,
         {
             return false;
         }
-        CPLDebug("NGW",
-                "Failed to fetch JSON from URL [%d of %d tries]: %s. "
-                "Retrying again in %.1f secs", nRetryCount, nMaxRetries,
-                osUrlNew.c_str(), dfRetryDelaySecs);
+
         CPLSleep(dfRetryDelaySecs);
         nRetryCount++;
     }
@@ -910,7 +889,8 @@ CPLJSONObject UploadFile(const std::string &osUrl,
         // Get error message.
         if (!bResult)
         {
-            ReportError(psResult->pabyData, psResult->nDataLen, "Upload file request failed");
+            ReportError(psResult->pabyData, psResult->nDataLen, 
+                "Upload file request failed");
         }
         else
         {
