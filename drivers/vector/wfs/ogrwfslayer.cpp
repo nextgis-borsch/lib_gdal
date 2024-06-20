@@ -29,6 +29,7 @@
 #include "cpl_port.h"
 #include "ogr_wfs.h"
 #include "ogr_api.h"
+#include "ogr_p.h"
 #include "cpl_minixml.h"
 #include "cpl_http.h"
 #include "parsexsd.h"
@@ -1948,6 +1949,21 @@ OGRErr OGRWFSLayer::ICreateFeature(OGRFeature *poFeature)
                     CPLSPrintf(CPL_FRMT_GIB, poFeature->GetFieldAsInteger64(i));
             else if (poFDefn->GetType() == OFTReal)
                 osPost += CPLSPrintf("%.16g", poFeature->GetFieldAsDouble(i));
+            else if (poFDefn->GetType() == OFTDate)
+            {
+                const OGRField* poField = poFeature->GetRawFieldRef(i);
+                const char* pszXML = CPLSPrintf("%04d-%02d-%02d",
+                    poField->Date.Year,
+                    poField->Date.Month,
+                    poField->Date.Day);
+                osPost += CPLSPrintf(pszXML);
+            }
+            else if (poFDefn->GetType() == OFTDateTime)
+            {
+                const OGRField* poField = poFeature->GetRawFieldRef(i);
+                char* pszXML = OGRGetXMLDateTime(poFeature->GetRawFieldRef(i));
+                osPost += CPLSPrintf(pszXML);
+            }
             else
             {
                 char *pszXMLEncoded = CPLEscapeString(
