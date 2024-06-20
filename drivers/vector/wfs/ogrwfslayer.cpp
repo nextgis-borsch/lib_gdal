@@ -1956,13 +1956,13 @@ OGRErr OGRWFSLayer::ICreateFeature(OGRFeature *poFeature)
                     poField->Date.Year,
                     poField->Date.Month,
                     poField->Date.Day);
-                osPost += CPLSPrintf(pszXML);
+                osPost += pszXML;
             }
             else if (poFDefn->GetType() == OFTDateTime)
             {
                 const OGRField* poField = poFeature->GetRawFieldRef(i);
                 char* pszXML = OGRGetXMLDateTime(poFeature->GetRawFieldRef(i));
-                osPost += CPLSPrintf(pszXML);
+                osPost += pszXML;
             }
             else
             {
