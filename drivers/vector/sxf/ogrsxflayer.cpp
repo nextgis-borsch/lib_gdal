@@ -1887,7 +1887,7 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
         bool bIsExternalRing = true;
         for (auto poPolygon : apoPolygons)
         {
-            if (poLS->Within(poPolygon))
+            if (poLS->Within(poPolygon->getExteriorRing()))
             {
                 poLR = new OGRLinearRing();
                 poLR->addSubLineString( poLS, 0 );
