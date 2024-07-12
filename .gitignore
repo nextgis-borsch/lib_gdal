@@ -32,8 +32,13 @@
 *.dSYM/
 
 # Build
-/build*
+/*build*
 /inst
+
+# Visual Studio / Visual Studio Code
+/.vs
+/.vscode
+/CMakeSettings.json
 
 # Temp
 *~
