@@ -1837,19 +1837,19 @@ OGRFeature *OGRSXFLayer::TranslateVetorAngle(const SXFFile &oSXF,
     return poFeature;
 }
 
-OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF, 
+OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
     const SXFRecordHeader &header, GByte *psRecordBuf)
 {
     auto poFeatureDefn = GetLayerDefn();
     OGRFeature *poFeature = new OGRFeature(poFeatureDefn);
     auto poSpaRef = poFeatureDefn->GetGeomFieldDefn(0)->GetSpatialRef();
 
-    std::vector<OGRPolygon*> apoPolygons;
+    std::vector<OGRGeometry*> apoPolygons;
     OGRPolygon *poPoly = new OGRPolygon();
 
 /*---------------------- Reading Primary Polygon --------------------------*/
     OGRLineString* poLS = new OGRLineString();
-    GUInt32 nOffset = TranslateLine(oSXF, poLS, header, psRecordBuf, 
+    GUInt32 nOffset = TranslateLine(oSXF, poLS, header, psRecordBuf,
         header.nGeometryLength, header.nPointCount);
     OGRLinearRing *poLR = new OGRLinearRing();
     poLR->addSubLineString( poLS, 0 );
@@ -1872,7 +1872,7 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
         CPL_LSBPTR16(&nSubObj);
         memcpy(&nCoords, psRecordBuf + nOffset + 2, 2);
         CPL_LSBPTR16(&nCoords);
-        
+
         if (header.nPointCount > 65535)
         {
             nCoords += nSubObj << 16;
@@ -1881,53 +1881,39 @@ OGRFeature *OGRSXFLayer::TranslatePolygon(const SXFFile &oSXF,
         nOffset +=4;
 
         poLS->empty();
-        nOffset += TranslateLine(oSXF, poLS, header, psRecordBuf + nOffset, 
+        nOffset += TranslateLine(oSXF, poLS, header, psRecordBuf + nOffset,
             header.nGeometryLength - nOffset, nCoords);
 
-        bool bIsExternalRing = true;
+        poLR = new OGRLinearRing();
+        poLR->addSubLineString(poLS, 0);
+        poLR->closeRings();
+
+        poPoly = new OGRPolygon();
+        poPoly->addRingDirectly(poLR);
+        apoPolygons.emplace_back(poPoly);
+    }
+
+    OGRGeometry* poOrganizedPolygons = OGRGeometryFactory::organizePolygons(
+        apoPolygons.data(),
+        static_cast<int>(apoPolygons.size()),
+        nullptr
+    );
+
+    if (!poOrganizedPolygons)
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "Failed to organize polygons");
+        delete poFeature;
         for (auto poPolygon : apoPolygons)
         {
-            if (poLS->Within(poPolygon->getExteriorRing()))
-            {
-                poLR = new OGRLinearRing();
-                poLR->addSubLineString( poLS, 0 );
-                poLR->closeRings();
-
-                poPolygon->addRingDirectly( poLR );
-                bIsExternalRing = false;
-                break;
-            }
+            delete poPolygon;
         }
-
-        if (bIsExternalRing)
-        {
-            OGRPolygon *poPoly2 = new OGRPolygon();
-            poLR = new OGRLinearRing();
-            poLR->addSubLineString(poLS, 0);
-            poLR->closeRings();
-            poPoly2->addRingDirectly(poLR);
-
-            apoPolygons.emplace_back(poPoly2);
-        }
+        return nullptr;
     }
 
-    if (apoPolygons.size() > 1)
-    {
-        OGRMultiPolygon *poMultiPoly = new OGRMultiPolygon();
-        for (auto poPolygon : apoPolygons)
-        {
-            poMultiPoly->addGeometryDirectly(poPolygon);
-        }
-        poMultiPoly->assignSpatialReference( poSpaRef );
-        poFeature->SetGeometryDirectly( poMultiPoly );
-    }
-    else
-    {
-        poPoly->assignSpatialReference( poSpaRef );
-        poFeature->SetGeometryDirectly( poPoly );
-    }
+    poOrganizedPolygons->assignSpatialReference(poSpaRef);
+    poFeature->SetGeometryDirectly(poOrganizedPolygons);
+
     delete poLS;
-
     return poFeature;
 }
 
