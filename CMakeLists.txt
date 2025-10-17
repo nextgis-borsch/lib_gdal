@@ -98,7 +98,7 @@ include(util)
 
 check_version(GDAL_MAJOR_VERSION GDAL_MINOR_VERSION GDAL_REV_VERSION)
 set(VERSION ${GDAL_MAJOR_VERSION}.${GDAL_MINOR_VERSION}.${GDAL_REV_VERSION})
-set(SOVERSION 31)
+set(SOVERSION ${GDAL_MAJOR_VERSION}${GDAL_MINOR_VERSION})
 
 if(OSX_FRAMEWORK)
     set(FRAMEWORK_VERSION "${GDAL_MAJOR_VERSION}")
@@ -206,7 +206,7 @@ if(PROJ_FOUND)
     add_definitions(-DHAVE_PROJ_H=1)
     # if(NOT BUILD_STATIC_LIBS)
     #     add_definitions(-DPROJ_RENAME_SYMBOLS)
-    # endif()    
+    # endif()
 endif()
 
 ## Options goes to config.h and gdal-config ####################################
