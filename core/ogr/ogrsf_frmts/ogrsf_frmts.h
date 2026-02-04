@@ -617,7 +617,6 @@ void CPL_DLL RegisterOGRElastic();
 void CPL_DLL RegisterOGRGeoPackage();
 void CPL_DLL RegisterOGRCarto();
 void CPL_DLL RegisterOGRAmigoCloud();
-void CPL_DLL RegisterOGRSXF();
 void CPL_DLL RegisterOGROpenFileGDB();
 void CPL_DLL RegisterOGRSelafin();
 void CPL_DLL RegisterOGRJML();
