@@ -134,7 +134,7 @@ set(LIB_CSOURCES ${LIB_CSOURCES}
 if(WITH_PYTHON)
     # TODO: 
 else()
-    add_definitions(-DGDAL_VRT_DISABLE_PYTHON -DGDAL_NO_AUTOLOAD)
+    add_definitions(-DGDAL_VRT_DISABLE_PYTHON)
 endif()
 
 if(WIN32)
