@@ -180,7 +180,11 @@ if(LIBXML2_FOUND)
 endif()
 
 # This is here as geos used in core/ogr and apps
+
+
 find_anyproject(GEOS DEFAULT ON)
+
+
 if(GEOS_FOUND)
     add_definitions(-DHAVE_GEOS=1)
 else()
@@ -217,6 +221,7 @@ endif(GDAL_USE_CPL)
 
 set(GDAL_ENABLE_OGR ON) # Always on
 option(GDAL_ENABLE_GNM "Build GNM module" OFF)
+option(ENABLE_SXF "Build Storage and eXchange Format - SXF" ON)
 ################################################################################
 
 include(configure)
