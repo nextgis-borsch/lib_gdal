@@ -1,0 +1,32 @@
+name: Clang Static Analyzer
+
+on:
+    push:
+        paths-ignore:
+            - 'doc/**'
+            - 'docker/**'
+        branches-ignore:
+            - 'backport**'
+            - 'dependabot**'
+    pull_request:
+        paths-ignore:
+            - 'doc/**'
+            - 'docker/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  clang_static_analyzer:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Run
+        run: docker run --rm -v $PWD:$PWD ubuntu:24.04 sh -c "cd $PWD && apt update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends sudo software-properties-common && DEBIAN_FRONTEND=noninteractive sh ./ci/travis/csa_common/before_install.sh && sh ./ci/travis/csa_common/install.sh && sh ./ci/travis/csa_common/script.sh"

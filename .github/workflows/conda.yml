@@ -1,0 +1,89 @@
+name: Conda
+
+on:
+    push:
+        paths-ignore:
+            - 'doc/**'
+            - 'docker/**'
+        branches-ignore:
+            - 'backport**'
+            - 'dependabot**'
+
+    # Disabled because run is quite slow, especially for Mac
+    #pull_request:
+    #    paths-ignore:
+    #        - 'doc/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read  #  to fetch code (actions/checkout)
+
+jobs:
+  build:
+    name: Conda ${{ matrix.platform }}
+
+    runs-on: ${{ matrix.platform }}
+    strategy:
+      fail-fast: true
+      matrix:
+        # macos-15-intel: Intel
+        # macos-14: arm64
+        platform: ['ubuntu-latest','windows-latest','macos-15-intel','macos-14','ubuntu-24.04-arm']
+
+    env:
+      GHA_CI_PLATFORM: ${{ matrix.platform }}
+      CACHE_NUMBER: 0
+
+    steps:
+    - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    - name: Support longpaths
+      run: git config --system core.longpaths true
+      if: matrix.platform == 'windows-latest'
+
+    - name: Cache Conda Environment
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      with:
+        path: ~/conda_pkgs_dir
+        key: ${{ runner.os }}-${{ steps.get-date.outputs.today }}-conda-${{ env.CACHE_NUMBER }}
+
+    - uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f # v3.2.0
+      with:
+        miniforge-version: latest
+        use-mamba: true
+        channels: conda-forge
+        auto-update-conda: true
+
+    - name: Remove conflicting libraries
+      shell: bash -l {0}
+      if: matrix.platform == 'windows-latest'
+      run: |
+          rm -rf C:/Strawberry || /bin/true
+
+    - name: Setup
+      shell: bash -l {0}
+      run: |
+          source ./ci/travis/conda/setup.sh
+
+    - name: Build
+      shell: bash -l {0}
+      run: |
+          source ../ci/travis/conda/compile.sh
+      working-directory: ./gdal-feedstock
+
+    - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+      with:
+        name: ${{ matrix.platform }}-conda-package
+        path: ./gdal-feedstock/packages/
+
+    - name: Deploy to gdal-master Conda channel
+      if: github.repository == 'OSGeo/GDAL' && github.ref == 'refs/heads/master'
+      shell: bash -l {0}
+      env:
+        ANACONDA_TOKEN: ${{ secrets.ANACONDA_TOKEN }}
+      run: |
+          source ../ci/travis/conda/upload.sh
+      working-directory: ./gdal-feedstock

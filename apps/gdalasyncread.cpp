@@ -7,23 +7,7 @@
  ******************************************************************************
  * Copyright (c) 2010, Frank Warmerdam
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  ****************************************************************************/
 
 #include "cpl_vsi.h"
@@ -40,18 +24,18 @@
 static void Usage()
 
 {
-    printf("Usage: gdalasyncread [--help-general]\n"
+    printf("Usage: gdalasyncread [--help] [--help-general]\n"
            "       [-ot {Byte/Int16/UInt16/UInt32/Int32/Float32/Float64/\n"
            "             CInt16/CInt32/CFloat32/CFloat64}]\n"
-           "       [-of format] [-b band]\n"
-           "       [-outsize xsize[%%] ysize[%%]]\n"
-           "       [-srcwin xoff yoff xsize ysize]\n"
-           "       [-co \"NAME=VALUE\"]* [-ao \"NAME=VALUE\"]\n"
-           "       [-to timeout] [-multi]\n"
-           "       src_dataset dst_dataset\n\n");
+           "       [-of <format>] [-b <band>]\n"
+           "       [-outsize <xsize>[%%] <ysize>[%%]]\n"
+           "       [-srcwin <xoff> <yoff> <xsize> <ysize>]\n"
+           "       [-co <NAME>=<VALUE>]... [-ao <NAME>=<VALUE>]...\n"
+           "       [-to <timeout>] [-multi]\n"
+           "       <src_dataset> <dst_dataset>\n\n");
 
     printf("%s\n\n", GDALVersionInfo("--version"));
-    printf("The following format drivers are configured and support output:\n");
+    printf("The following format drivers are enabled and support writing:\n");
     for (int iDr = 0; iDr < GDALGetDriverCount(); iDr++)
     {
         GDALDriverH hDriver = GDALGetDriver(iDr);
@@ -122,6 +106,10 @@ int main(int argc, char **argv)
                    "GDAL %s\n",
                    argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
             return 0;
+        }
+        else if (EQUAL(argv[i], "--help"))
+        {
+            Usage();
         }
         else if ((EQUAL(argv[i], "-of") || EQUAL(argv[i], "-f")) &&
                  i < argc - 1)
@@ -367,8 +355,8 @@ int main(int argc, char **argv)
 
     if (hDriver == nullptr)
     {
-        printf("The following format drivers are configured and support "
-               "output:\n");
+        printf("The following format drivers are enabled and support "
+               "writing:\n");
         for (int iDr = 0; iDr < GDALGetDriverCount(); iDr++)
         {
             GDALDriverH hDriver = GDALGetDriver(iDr);

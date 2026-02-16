@@ -1,0 +1,240 @@
+/******************************************************************************
+ *
+ * Project:  Feather Translator
+ * Purpose:  Implements OGRFeatherDriver.
+ * Author:   Even Rouault, <even.rouault at spatialys.com>
+ *
+ ******************************************************************************
+ * Copyright (c) 2022, Planet Labs
+ *
+ * SPDX-License-Identifier: MIT
+ ****************************************************************************/
+
+#ifndef OGR_FEATHER_H
+#define OGR_FEATHER_H
+
+#include "ogrsf_frmts.h"
+
+#include <map>
+
+#include "../arrow_common/ogr_arrow.h"
+
+#ifdef _MSC_VER
+#pragma warning(push)
+// warning 4244: 'initializing': conversion from 'int32_t' to 'int16_t',
+// possible loss of data
+#pragma warning(disable : 4244)
+// warning 4458: declaration of 'type_id' hides class member
+#pragma warning(disable : 4458)
+#endif
+
+#include "arrow/ipc/writer.h"
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
+constexpr const char *GDAL_GEO_FOOTER_KEY = "gdal:geo";
+constexpr const char *ARROW_DRIVER_NAME_UC = "ARROW";
+
+/************************************************************************/
+/*                        OGRFeatherLayer                               */
+/************************************************************************/
+
+class OGRFeatherDataset;
+
+class OGRFeatherLayer final : public OGRArrowLayer
+
+{
+    OGRFeatherLayer(const OGRFeatherLayer &) = delete;
+    OGRFeatherLayer &operator=(const OGRFeatherLayer &) = delete;
+
+    OGRFeatherDataset *m_poDS = nullptr;
+
+    // Variable only for seekable file format
+    std::shared_ptr<arrow::ipc::RecordBatchFileReader>
+        m_poRecordBatchFileReader{};
+
+    // Variables only for streamable IPC format
+    std::shared_ptr<arrow::io::RandomAccessFile> m_poFile{};
+    bool m_bSeekable = true;
+    arrow::ipc::IpcReadOptions m_oOptions{};
+    std::shared_ptr<arrow::ipc::RecordBatchStreamReader>
+        m_poRecordBatchReader{};
+    bool m_bResetRecordBatchReaderAsked = false;
+    bool m_bSingleBatch = false;
+    std::shared_ptr<arrow::RecordBatch> m_poBatchIdx0{};
+    std::shared_ptr<arrow::RecordBatch> m_poBatchIdx1{};
+
+    CPLStringList m_aosFeatherMetadata{};
+
+    std::string GetDriverUCName() const override
+    {
+        return ARROW_DRIVER_NAME_UC;
+    }
+
+    bool ResetRecordBatchReader();
+
+    void EstablishFeatureDefn();
+    void LoadGeoMetadata(const arrow::KeyValueMetadata *kv_metadata,
+                         const std::string &key);
+    OGRwkbGeometryType ComputeGeometryColumnType(int iGeomCol, int iCol) const;
+    bool ReadNextBatch() override;
+
+    void InvalidateCachedBatches() override;
+
+    OGRFeature *GetNextRawFeature();
+
+    bool CanRunNonForcedGetExtent() override;
+
+    bool
+    CanPostFilterArrowArray(const struct ArrowSchema *schema) const override;
+
+    bool ReadNextBatchFile();
+    bool ReadNextBatchStream();
+    void TryToCacheFirstTwoBatches();
+
+  public:
+    OGRFeatherLayer(OGRFeatherDataset *poDS, const char *pszLayerName,
+                    std::shared_ptr<arrow::ipc::RecordBatchFileReader>
+                        &poRecordBatchFileReader,
+                    CSLConstList papszOpenOptions);
+    OGRFeatherLayer(OGRFeatherDataset *poDS, const char *pszLayerName,
+                    std::shared_ptr<arrow::io::RandomAccessFile> poFile,
+                    bool bSeekable, const arrow::ipc::IpcReadOptions &oOptions,
+                    std::shared_ptr<arrow::ipc::RecordBatchStreamReader>
+                        &poRecordBatchStreamReader,
+                    CSLConstList papszOpenOptions);
+
+    void ResetReading() override;
+    int TestCapability(const char *pszCap) const override;
+    GIntBig GetFeatureCount(int bForce) override;
+    const char *GetMetadataItem(const char *pszName,
+                                const char *pszDomain = "") override;
+    char **GetMetadata(const char *pszDomain = "") override;
+
+    GDALDataset *GetDataset() override;
+
+    std::unique_ptr<OGRFieldDomain> BuildDomain(const std::string &osDomainName,
+                                                int iFieldIndex) const override;
+};
+
+/************************************************************************/
+/*                         OGRFeatherDataset                            */
+/************************************************************************/
+
+class OGRFeatherDataset final : public OGRArrowDataset
+{
+  public:
+    explicit OGRFeatherDataset(
+        const std::shared_ptr<arrow::MemoryPool> &poMemoryPool);
+
+    int TestCapability(const char *) const override;
+};
+
+/************************************************************************/
+/*                        OGRFeatherWriterLayer                         */
+/************************************************************************/
+
+class OGRFeatherWriterLayer final : public OGRArrowWriterLayer
+
+{
+    OGRFeatherWriterLayer(const OGRFeatherWriterLayer &) = delete;
+    OGRFeatherWriterLayer &operator=(const OGRFeatherWriterLayer &) = delete;
+
+    GDALDataset *m_poDS = nullptr;
+    bool m_bStreamFormat = false;
+    std::shared_ptr<arrow::ipc::RecordBatchWriter> m_poFileWriter{};
+    std::shared_ptr<arrow::KeyValueMetadata> m_poFooterKeyValueMetadata{};
+
+    bool IsFileWriterCreated() const override
+    {
+        return m_poFileWriter != nullptr;
+    }
+
+    void CreateWriter() override;
+    bool CloseFileWriter() override;
+
+    void CreateSchema() override;
+    void PerformStepsBeforeFinalFlushGroup() override;
+
+    bool FlushGroup() override;
+
+    std::string GetDriverUCName() const override
+    {
+        return ARROW_DRIVER_NAME_UC;
+    }
+
+    virtual bool
+    IsSupportedGeometryType(OGRwkbGeometryType eGType) const override;
+
+    bool IsSRSRequired() const override
+    {
+        return true;
+    }
+
+    friend class OGRFeatherWriterDataset;
+    bool Close();
+
+  public:
+    OGRFeatherWriterLayer(
+        GDALDataset *poDS, arrow::MemoryPool *poMemoryPool,
+        const std::shared_ptr<arrow::io::OutputStream> &poOutputStream,
+        const char *pszLayerName);
+
+    bool SetOptions(const std::string &osFilename, CSLConstList papszOptions,
+                    const OGRSpatialReference *poSpatialRef,
+                    OGRwkbGeometryType eGType);
+
+    bool WriteArrowBatch(const struct ArrowSchema *schema,
+                         struct ArrowArray *array,
+                         CSLConstList papszOptions = nullptr) override;
+
+    GDALDataset *GetDataset() override
+    {
+        return m_poDS;
+    }
+};
+
+/************************************************************************/
+/*                        OGRFeatherWriterDataset                       */
+/************************************************************************/
+
+class OGRFeatherWriterDataset final : public GDALPamDataset
+{
+    const std::string m_osFilename{};
+    std::unique_ptr<arrow::MemoryPool> m_poMemoryPool{};
+    std::unique_ptr<OGRFeatherWriterLayer> m_poLayer{};
+    std::shared_ptr<arrow::io::OutputStream> m_poOutputStream{};
+
+  public:
+    explicit OGRFeatherWriterDataset(
+        const char *pszFilename,
+        const std::shared_ptr<arrow::io::OutputStream> &poOutputStream);
+
+    ~OGRFeatherWriterDataset() override;
+
+    CPLErr Close() override;
+
+    arrow::MemoryPool *GetMemoryPool() const
+    {
+        return m_poMemoryPool.get();
+    }
+
+    int GetLayerCount() const override;
+    const OGRLayer *GetLayer(int idx) const override;
+    int TestCapability(const char *pszCap) const override;
+    std::vector<std::string> GetFieldDomainNames(
+        CSLConstList /*papszOptions*/ = nullptr) const override;
+    const OGRFieldDomain *
+    GetFieldDomain(const std::string &name) const override;
+    bool AddFieldDomain(std::unique_ptr<OGRFieldDomain> &&domain,
+                        std::string &failureReason) override;
+
+  protected:
+    OGRLayer *ICreateLayer(const char *pszName,
+                           const OGRGeomFieldDefn *poGeomFieldDefn,
+                           CSLConstList papszOptions) override;
+};
+
+#endif  // OGR_FEATHER_H

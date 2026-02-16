@@ -1,0 +1,1 @@
+See https://gdal.org/user/migration_guide.html

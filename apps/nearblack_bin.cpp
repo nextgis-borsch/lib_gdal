@@ -7,23 +7,7 @@
  ******************************************************************************
  * Copyright (c) 2015, Even Rouault <even dot rouault at spatialys dot com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  ****************************************************************************/
 
 #include "cpl_string.h"
@@ -37,10 +21,7 @@
 
 static void Usage(const char *pszErrorMsg = nullptr)
 {
-    printf("nearblack [-of format] [-white | [-color c1,c2,c3...cn]*] [-near "
-           "dist] [-nb non_black_pixels]\n"
-           "          [-setalpha] [-setmask] [-o outfile] [-q] [-co "
-           "\"NAME=VALUE\"]* infile\n");
+    fprintf(stderr, "%s\n\n", GDALNearblackGetParserUsage().c_str());
 
     if (pszErrorMsg != nullptr)
         fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
@@ -48,30 +29,6 @@ static void Usage(const char *pszErrorMsg = nullptr)
     exit(1);
 }
 
-/************************************************************************/
-/*                       GDALNearblackOptionsForBinaryNew()             */
-/************************************************************************/
-
-static GDALNearblackOptionsForBinary *GDALNearblackOptionsForBinaryNew()
-{
-    return static_cast<GDALNearblackOptionsForBinary *>(
-        CPLCalloc(1, sizeof(GDALNearblackOptionsForBinary)));
-}
-
-/************************************************************************/
-/*                       GDALNearblackOptionsForBinaryFree()            */
-/************************************************************************/
-
-static void GDALNearblackOptionsForBinaryFree(
-    GDALNearblackOptionsForBinary *psOptionsForBinary)
-{
-    if (psOptionsForBinary)
-    {
-        CPLFree(psOptionsForBinary->pszInFile);
-        CPLFree(psOptionsForBinary->pszOutFile);
-        CPLFree(psOptionsForBinary);
-    }
-}
 /************************************************************************/
 /*                                main()                                */
 /************************************************************************/
@@ -95,26 +52,9 @@ MAIN_START(argc, argv)
     if (argc < 1)
         exit(-argc);
 
-    for (int i = 0; i < argc; i++)
-    {
-        if (EQUAL(argv[i], "--utility_version"))
-        {
-            printf("%s was compiled against GDAL %s and "
-                   "is running against GDAL %s\n",
-                   argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
-            CSLDestroy(argv);
-            return 0;
-        }
-        else if (EQUAL(argv[i], "--help"))
-        {
-            Usage();
-        }
-    }
-
-    GDALNearblackOptionsForBinary *psOptionsForBinary =
-        GDALNearblackOptionsForBinaryNew();
+    GDALNearblackOptionsForBinary sOptionsForBinary;
     GDALNearblackOptions *psOptions =
-        GDALNearblackOptionsNew(argv + 1, psOptionsForBinary);
+        GDALNearblackOptionsNew(argv + 1, &sOptionsForBinary);
     CSLDestroy(argv);
 
     if (psOptions == nullptr)
@@ -122,17 +62,13 @@ MAIN_START(argc, argv)
         Usage();
     }
 
-    if (!(psOptionsForBinary->bQuiet))
+    if (!(sOptionsForBinary.bQuiet))
     {
         GDALNearblackOptionsSetProgress(psOptions, GDALTermProgress, nullptr);
     }
 
-    if (psOptionsForBinary->pszInFile == nullptr)
-        Usage("No input file specified.");
-
-    if (psOptionsForBinary->pszOutFile == nullptr)
-        psOptionsForBinary->pszOutFile =
-            CPLStrdup(psOptionsForBinary->pszInFile);
+    if (sOptionsForBinary.osOutFile.empty())
+        sOptionsForBinary.osOutFile = sOptionsForBinary.osInFile;
 
     /* -------------------------------------------------------------------- */
     /*      Open input file.                                                */
@@ -141,15 +77,14 @@ MAIN_START(argc, argv)
     GDALDatasetH hOutDS = nullptr;
     bool bCloseRetDS = false;
 
-    if (strcmp(psOptionsForBinary->pszOutFile, psOptionsForBinary->pszInFile) ==
-        0)
+    if (sOptionsForBinary.osOutFile == sOptionsForBinary.osInFile)
     {
-        hInDS = GDALOpen(psOptionsForBinary->pszInFile, GA_Update);
+        hInDS = GDALOpen(sOptionsForBinary.osInFile.c_str(), GA_Update);
         hOutDS = hInDS;
     }
     else
     {
-        hInDS = GDALOpen(psOptionsForBinary->pszInFile, GA_ReadOnly);
+        hInDS = GDALOpen(sOptionsForBinary.osInFile.c_str(), GA_ReadOnly);
         bCloseRetDS = true;
     }
 
@@ -157,20 +92,24 @@ MAIN_START(argc, argv)
         exit(1);
 
     int bUsageError = FALSE;
-    GDALDatasetH hRetDS = GDALNearblack(psOptionsForBinary->pszOutFile, hOutDS,
-                                        hInDS, psOptions, &bUsageError);
+    GDALDatasetH hRetDS = GDALNearblack(sOptionsForBinary.osOutFile.c_str(),
+                                        hOutDS, hInDS, psOptions, &bUsageError);
     if (bUsageError)
         Usage();
-    const int nRetCode = hRetDS ? 0 : 1;
+    int nRetCode = hRetDS ? 0 : 1;
 
-    GDALClose(hInDS);
+    if (GDALClose(hInDS) != CE_None)
+        nRetCode = 1;
     if (bCloseRetDS)
-        GDALClose(hRetDS);
+    {
+        if (GDALClose(hRetDS) != CE_None)
+            nRetCode = 1;
+    }
     GDALNearblackOptionsFree(psOptions);
-    GDALNearblackOptionsForBinaryFree(psOptionsForBinary);
 
     GDALDestroyDriverManager();
 
     return nRetCode;
 }
+
 MAIN_END

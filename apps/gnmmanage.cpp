@@ -8,23 +8,7 @@
  * Copyright (c) 2014, Mikhail Gusev
  * Copyright (c) 2014-2015, NextGIS <info@nextgis.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  ****************************************************************************/
 
 #include "commonutils.h"
@@ -56,38 +40,50 @@ enum operation
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char *pszAdditionalMsg,
-                  int bShort = TRUE) CPL_NO_RETURN;
+static void Usage(bool bIsError, const char *pszAdditionalMsg = nullptr,
+                  bool bShort = true, bool bHelpDoc = false) CPL_NO_RETURN;
 
-static void Usage(const char *pszAdditionalMsg, int bShort)
+static void Usage(bool bIsError, const char *pszAdditionalMsg, bool bShort,
+                  bool bHelpDoc)
 {
-    printf("Usage: gnmmanage [--help][-q][-quiet][--long-usage]\n"
-           "                 [info]\n"
-           "                 [create [-f format_name] [-t_srs srs_name] [-dsco "
-           "NAME=VALUE]... ]\n"
-           "                 [import src_dataset_name] [-l layer_name]\n"
-           "                 [connect gfid_src gfid_tgt gfid_con [-c cost] "
-           "[-ic inv_cost] [-dir dir]]\n"
-           "                 [disconnect gfid_src gfid_tgt gfid_con]\n"
-           "                 [rule rule_str]\n"
-           "                 [autoconnect tolerance]\n"
-           "                 [delete]\n"
-           "                 [change [-bl gfid][-unbl gfid][-unblall]]\n"
-           "                 gnm_name [layer [layer ...]]\n");
+    fprintf(
+        bIsError ? stderr : stdout,
+        "Usage: gnmmanage [--help][--help-general][-q][-quiet][--long-usage]\n"
+        "                 [info]\n"
+        "                 [create [-f <format_name>] [-t_srs <srs_name>] "
+        "[-dsco "
+        "<NAME>=<VALUE>]... ]\n"
+        "                 [import <src_dataset_name>] [-l <layer_name>]\n"
+        "                 [connect <gfid_src> <gfid_tgt> <gfid_con> [-c "
+        "<cost>] "
+        "[-ic <inv_cost>] [-dir <dir>]]\n"
+        "                 [disconnect <gfid_src> <gfid_tgt> <gfid_con>]\n"
+        "                 [rule <rule_str>]\n"
+        "                 [autoconnect <tolerance>]\n"
+        "                 [delete]\n"
+        "                 [change [-bl <gfid>][-unbl <gfid>][-unblall]]\n"
+        "                 <gnm_name> [<layer> [<layer>]...]\n");
+
+    if (bHelpDoc)
+    {
+        exit(0);
+    }
 
     if (bShort)
     {
-        printf("\nNote: gnmmanage --long-usage for full help.\n");
+        fprintf(bIsError ? stderr : stdout,
+                "\nNote: gnmmanage --long-usage for full help.\n");
         if (pszAdditionalMsg)
             fprintf(stderr, "\nFAILURE: %s\n", pszAdditionalMsg);
         exit(1);
     }
 
-    printf("\n   info: different information about network: system and class "
-           "layers, network metadata, network spatial reference\n"
-           "   create: create network\n"
-           "      -f format_name: output file format name, possible values "
-           "are:\n");
+    fprintf(bIsError ? stderr : stdout,
+            "\n   info: different information about network: system and class "
+            "layers, network metadata, network spatial reference\n"
+            "   create: create network\n"
+            "      -f format_name: output file format name, possible values "
+            "are:\n");
 
     int nGNMDriverCounter = 1;
     for (int iDr = 0; iDr < GDALGetDriverCount(); iDr++)
@@ -122,12 +118,14 @@ static void Usage(const char *pszAdditionalMsg, int bShort)
         else
             pszSubdatasets = "";
 
-        printf("          %d. %s (%s%s%s%s): %s\n", nGNMDriverCounter++,
-               GDALGetDriverShortName(hDriver), pszRFlag, pszWFlag,
-               pszVirtualIO, pszSubdatasets, GDALGetDriverLongName(hDriver));
+        fprintf(bIsError ? stderr : stdout, "          %d. %s (%s%s%s%s): %s\n",
+                nGNMDriverCounter++, GDALGetDriverShortName(hDriver), pszRFlag,
+                pszWFlag, pszVirtualIO, pszSubdatasets,
+                GDALGetDriverLongName(hDriver));
     }
 
-    printf(
+    fprintf(
+        bIsError ? stderr : stdout,
         "      -t_srs srs_name: spatial reference input\n"
         "      -dsco NAME=VALUE: network creation option set as pair=value\n"
         "   import src_dataset_name: import external layer where "
@@ -147,7 +145,7 @@ static void Usage(const char *pszAdditionalMsg, int bShort)
         "   autoconnect tolerance: create topology automatically with the "
         "given double tolerance\n"
         "   delete: delete network\n"
-        "   change: modify blocking state of vertices and edges ans save them "
+        "   change: modify blocking state of vertices and edges and save them "
         "in the network"
         "   -bl gfid: block feature before the main operation. Blocking "
         "features are saved in the special layer\n"
@@ -158,12 +156,7 @@ static void Usage(const char *pszAdditionalMsg, int bShort)
     if (pszAdditionalMsg)
         fprintf(stderr, "\nFAILURE: %s\n", pszAdditionalMsg);
 
-    exit(1);
-}
-
-static void Usage(int bShort = TRUE)
-{
-    Usage(nullptr, bShort);
+    exit(bIsError ? 1 : 0);
 }
 
 /************************************************************************/
@@ -174,8 +167,8 @@ static void Usage(int bShort = TRUE)
     do                                                                         \
     {                                                                          \
         if (iArg + nExtraArg >= nArgc)                                         \
-            Usage(CPLSPrintf("%s option requires %d argument(s)",              \
-                             papszArgv[iArg], nExtraArg));                     \
+            Usage(true, CPLSPrintf("%s option requires %d argument(s)",        \
+                                   papszArgv[iArg], nExtraArg));               \
     } while (false)
 
 MAIN_START(nArgc, papszArgv)
@@ -239,12 +232,17 @@ MAIN_START(nArgc, papszArgv)
 
         else if (EQUAL(papszArgv[iArg], "--help"))
         {
-            Usage();
+            Usage(false);
+        }
+
+        else if (EQUAL(papszArgv[iArg], "--help-doc"))
+        {
+            Usage(false, nullptr, true, true);
         }
 
         else if (EQUAL(papszArgv[iArg], "--long-usage"))
         {
-            Usage(FALSE);
+            Usage(false, nullptr, false);
         }
 
         else if (EQUAL(papszArgv[iArg], "-q") ||
@@ -389,7 +387,8 @@ MAIN_START(nArgc, papszArgv)
 
         else if (papszArgv[iArg][0] == '-')
         {
-            Usage(CPLSPrintf("Unknown option name '%s'", papszArgv[iArg]));
+            Usage(true,
+                  CPLSPrintf("Unknown option name '%s'", papszArgv[iArg]));
         }
 
         else if (pszDataSource == nullptr)
@@ -404,7 +403,7 @@ MAIN_START(nArgc, papszArgv)
     if (stOper == op_info)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         // TODO for output:
         //  stats about graph and blocked features
@@ -519,26 +518,28 @@ MAIN_START(nArgc, papszArgv)
     }
     else if (stOper == op_create)
     {
-        const char *pszPath;
-        const char *pszNetworkName = CSLFetchNameValue(papszDSCO, GNM_MD_NAME);
+        std::string osPath;
+        std::string osNetworkName =
+            CSLFetchNameValueDef(papszDSCO, GNM_MD_NAME, "");
 
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         // the DSCO have priority on input keys
-        if (nullptr == pszNetworkName)
+        if (osNetworkName.empty())
         {
-            pszPath = CPLGetPath(pszDataSource);
-            pszNetworkName = CPLGetBasename(pszDataSource);
-            papszDSCO = CSLAddNameValue(papszDSCO, GNM_MD_NAME, pszNetworkName);
+            osPath = CPLGetPathSafe(pszDataSource);
+            osNetworkName = CPLGetBasenameSafe(pszDataSource);
+            papszDSCO =
+                CSLAddNameValue(papszDSCO, GNM_MD_NAME, osNetworkName.c_str());
         }
         else
         {
-            pszPath = pszDataSource;
+            osPath = pszDataSource;
         }
 
-        if (pszNetworkName == nullptr)
-            Usage("No dataset name provided");
+        if (osNetworkName.empty())
+            Usage(true, "No dataset name provided");
 
         const char *pszFinalSRS = CSLFetchNameValue(papszDSCO, GNM_MD_SRS);
         if (nullptr == pszFinalSRS)
@@ -548,25 +549,25 @@ MAIN_START(nArgc, papszArgv)
         }
 
         if (nullptr == pszFinalSRS)
-            Usage("No spatial reference provided");
+            Usage(true, "No spatial reference provided");
         if (pszFormat == nullptr)
-            Usage("No output format provided");
+            Usage(true, "No output format provided");
 
         GDALDriver *poDriver =
             GetGDALDriverManager()->GetDriverByName(pszFormat);
         if (poDriver == nullptr)
         {
-            Usage(CPLSPrintf("%s driver not available", pszFormat));
+            Usage(true, CPLSPrintf("%s driver not available", pszFormat));
         }
         else
         {
             char **papszMD = poDriver->GetMetadata();
 
             if (!CPLFetchBool(papszMD, GDAL_DCAP_GNM, false))
-                Usage("not a GNM driver");
+                Usage(true, "not a GNM driver");
 
-            poDS = cpl::down_cast<GNMNetwork *>(
-                poDriver->Create(pszPath, 0, 0, 0, GDT_Unknown, papszDSCO));
+            poDS = cpl::down_cast<GNMNetwork *>(poDriver->Create(
+                osPath.c_str(), 0, 0, 0, GDT_Unknown, papszDSCO));
 
             if (nullptr == poDS)
             {
@@ -574,7 +575,9 @@ MAIN_START(nArgc, papszArgv)
                     stderr,
                     "\nFAILURE: Failed to create network in a new dataset at "
                     "%s and with driver %s\n",
-                    CPLFormFilename(pszPath, pszNetworkName, nullptr),
+                    CPLFormFilenameSafe(osPath.c_str(), osNetworkName.c_str(),
+                                        nullptr)
+                        .c_str(),
                     pszFormat);
                 nRet = 1;
             }
@@ -583,17 +586,19 @@ MAIN_START(nArgc, papszArgv)
                 if (bQuiet == FALSE)
                     printf("\nNetwork created successfully in a "
                            "new dataset at %s\n",
-                           CPLFormFilename(pszPath, pszNetworkName, nullptr));
+                           CPLFormFilenameSafe(osPath.c_str(),
+                                               osNetworkName.c_str(), nullptr)
+                               .c_str());
             }
         }
     }
     else if (stOper == op_import)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         if (pszInputDataset == nullptr)
-            Usage("No input dataset name provided");
+            Usage(true, "No input dataset name provided");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -671,7 +676,7 @@ MAIN_START(nArgc, papszArgv)
     else if (stOper == op_connect)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -713,7 +718,7 @@ MAIN_START(nArgc, papszArgv)
     else if (stOper == op_disconnect)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -754,7 +759,7 @@ MAIN_START(nArgc, papszArgv)
     else if (stOper == op_rule)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -794,7 +799,7 @@ MAIN_START(nArgc, papszArgv)
     else if (stOper == op_autoconnect)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -854,7 +859,7 @@ MAIN_START(nArgc, papszArgv)
     else if (stOper == op_delete)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -900,7 +905,7 @@ MAIN_START(nArgc, papszArgv)
     else if (stOper == op_change_st)
     {
         if (pszDataSource == nullptr)
-            Usage("No dataset in input");
+            Usage(true, "No dataset in input");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -973,9 +978,10 @@ MAIN_START(nArgc, papszArgv)
     }
     else
     {
-        printf(
-            "\nNeed an operation. See help what you can do with gnmmanage:\n");
-        Usage();
+        fprintf(
+            stderr,
+            "Need an operation. See help what you can do with gnmmanage:\n");
+        Usage(true);
     }
 
 exit:
@@ -984,10 +990,14 @@ exit:
     CSLDestroy(papszLayers);
 
     if (poDS != nullptr)
-        GDALClose(poDS);
+    {
+        if (GDALClose(poDS) != CE_None)
+            nRet = 1;
+    }
 
     GDALDestroyDriverManager();
 
     return nRet;
 }
+
 MAIN_END

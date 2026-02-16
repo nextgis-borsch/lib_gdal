@@ -1,0 +1,51 @@
+/******************************************************************************
+ *
+ * Purpose:  Documentation for the PCIDSKMutex class.
+ * 
+ ******************************************************************************
+ * Copyright (c) 2009
+ * PCI Geomatics, 50 West Wilmot Street, Richmond Hill, Ont, Canada
+ *
+ * SPDX-License-Identifier: MIT
+ ****************************************************************************/
+
+/** 
+
+******************************************************************************
+\class PCIDSK::Mutex
+
+\brief Mutex interface class.
+
+The Mutex class is the standard interface for mutexes in the PCIDSK library.
+A mutex provides critical section locking in multi-threaded applications.  
+Applications may provide custom mutex implementations by passing their own
+CreateMutex() implementation in PCIDSK::PCIDSKInterfaces instead of the
+default one provided by the library (CreateDefaultMutex()).  The library 
+will create mutexes using the PCIDSK::PCIDSKInterfaces::CreateMutex() function.
+
+Note that mutexes are created in the unlocked condition.
+
+Mutexes may be destroyed with delete when no longer required.
+
+******************************************************************************
+\fn int PCIDSK::Mutex::Acquire()
+  
+\brief Acquire the mutex.
+
+Note that control will block in Acquire() until such time as the mutex can
+be acquired for this thread.  
+
+@return TRUE on success.
+
+******************************************************************************
+\fn int PCIDSK::Mutex::Release()
+  
+\brief Release the mutex.
+
+Release this mutex so that it may be acquired by another thread. 
+
+@return TRUE on success.
+
+
+*/
+

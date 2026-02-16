@@ -1,0 +1,55 @@
+name: MacOS build
+
+on:
+    push:
+        paths-ignore:
+            - 'doc/**'
+            - 'docker/**'
+        branches-ignore:
+            - 'backport**'
+            - 'dependabot**'
+    pull_request:
+        paths-ignore:
+            - 'doc/**'
+            - 'docker/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read  #  to fetch code (actions/checkout)
+
+jobs:
+
+  macos_build:
+    # Arm64
+    runs-on: macos-14
+    steps:
+
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: conda-incubator/setup-miniconda@835234971496cad1653abb28a638a281cf32541f # v3.2.0
+        with:
+            channels: conda-forge
+            auto-update-conda: true
+
+      - name: Install Requirements
+        shell: bash -l {0}
+        run: |
+          source ./ci/travis/osx/before_install.sh
+
+      - name: Build
+        shell: bash -l {0}
+        run: |
+          source ./ci/travis/osx/install.sh
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          source ./ci/travis/osx/script.sh
+        env:
+            # Emulate a few Travis-CI env variable so that some tests get properly skipped
+            TRAVIS: true
+            TRAVIS_OS_NAME: osx
+            BUILD_NAME: macos_build_conda

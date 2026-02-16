@@ -8,23 +8,7 @@
  * Copyright (c) 1999, Frank Warmerdam
  * Copyright (c) 2009-2014, Even Rouault <even dot rouault at spatialys.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  ****************************************************************************/
 
 #include "cpl_conv.h"
@@ -34,8 +18,10 @@
 #include "ogr_p.h"
 #include "ogrsf_frmts.h"
 #include "ogr_swq.h"
+#include "ogr_recordbatch.h"
 #include "commonutils.h"
 
+#include <cinttypes>
 #include <algorithm>
 #include <limits>
 
@@ -159,8 +145,7 @@ MAIN_START(nArgc, papszArgv)
         {
             pszSQLStatement = papszArgv[++iArg];
         }
-        else if (EQUAL(papszArgv[iArg], "-dialect") &&
-                 papszArgv[iArg + 1] != nullptr)
+        else if (EQUAL(papszArgv[iArg], "-dialect") && iArg + 1 < nArgc)
         {
             pszDialect = papszArgv[++iArg];
         }
@@ -262,6 +247,7 @@ MAIN_START(nArgc, papszArgv)
 
     return (bRet) ? 0 : 1;
 }
+
 MAIN_END
 
 /************************************************************************/
@@ -625,8 +611,8 @@ static int TestCreateLayer(GDALDriver *poDriver, OGRwkbGeometryType eGeomType)
     const char *pszExt = poDriver->GetMetadataItem(GDAL_DMD_EXTENSION);
 
     static int nCounter = 0;
-    CPLString osFilename =
-        CPLFormFilename("/vsimem", CPLSPrintf("test%d", ++nCounter), pszExt);
+    CPLString osFilename = CPLFormFilenameSafe(
+        "/vsimem", CPLSPrintf("test%d", ++nCounter), pszExt);
     GDALDataset *poDS = LOG_ACTION(
         poDriver->Create(osFilename, 0, 0, 0, GDT_Unknown, papszDSCO));
     if (poDS == nullptr)
@@ -659,6 +645,22 @@ static int TestCreateLayer(GDALDriver *poDriver, OGRwkbGeometryType eGeomType)
                    "creation.\n",
                    poDriver->GetDescription());
             bRet = FALSE;
+        }
+
+        auto poLyrDS = LOG_ACTION(poLayer->GetDataset());
+        if (!poLyrDS)
+        {
+            printf("ERROR: %s: GetDataset() returns NUL just after layer "
+                   "creation.\n",
+                   poDriver->GetDescription());
+            bRet = FALSE;
+        }
+        else if (poLyrDS != poDS)
+        {
+            printf("WARNING: %s: GetDataset()->GetDescription() (=%s) != %s"
+                   "creation.\n",
+                   poDriver->GetDescription(), poLyrDS->GetDescription(),
+                   poDS->GetDescription());
         }
 
         // Create fields of various types
@@ -820,9 +822,8 @@ static int TestCreateLayer(GDALDriver *poDriver, OGRwkbGeometryType eGeomType)
         const char *pszWKT = GetWKT(eGeomType);
         if (pszWKT != nullptr)
         {
-            OGRGeometry *poGeom = nullptr;
-            OGRGeometryFactory::createFromWkt(pszWKT, nullptr, &poGeom);
-            poFeature->SetGeometryDirectly(poGeom);
+            auto [poGeom, _] = OGRGeometryFactory::createFromWkt(pszWKT);
+            poFeature->SetGeometry(std::move(poGeom));
         }
 
         CPLErrorReset();
@@ -862,9 +863,8 @@ static int TestCreateLayer(GDALDriver *poDriver, OGRwkbGeometryType eGeomType)
         pszWKT = GetWKT(eOtherGeomType);
         if (pszWKT != nullptr)
         {
-            OGRGeometry *poGeom = nullptr;
-            OGRGeometryFactory::createFromWkt(pszWKT, nullptr, &poGeom);
-            poFeature->SetGeometryDirectly(poGeom);
+            auto [poGeom, _] = OGRGeometryFactory::createFromWkt(pszWKT);
+            poFeature->SetGeometry(std::move(poGeom));
         }
 
         CPLErrorReset();
@@ -906,16 +906,15 @@ static int TestCreateLayer(GDALDriver *poDriver, OGRwkbGeometryType eGeomType)
         {
             OGRFieldDefn oFieldStr("str", OFTString);
             CPLPushErrorHandler(CPLQuietErrorHandler);
-            LOG_ACTION(poLayer2->CreateField(&oFieldStr));
+            CPL_IGNORE_RET_VAL(LOG_ACTION(poLayer2->CreateField(&oFieldStr)));
             CPLPopErrorHandler();
 
             poFeature = new OGRFeature(poLayer2->GetLayerDefn());
             pszWKT = GetWKT(eGeomType);
             if (pszWKT != nullptr)
             {
-                OGRGeometry *poGeom = nullptr;
-                OGRGeometryFactory::createFromWkt(pszWKT, nullptr, &poGeom);
-                poFeature->SetGeometryDirectly(poGeom);
+                auto [poGeom, _] = OGRGeometryFactory::createFromWkt(pszWKT);
+                poFeature->SetGeometry(std::move(poGeom));
             }
             CPLErrorReset();
             CPLPushErrorHandler(CPLQuietErrorHandler);
@@ -981,6 +980,7 @@ static int TestCreateLayer(GDALDriver *poDriver, OGRwkbGeometryType eGeomType)
         !EQUAL(poDriver->GetDescription(), "LIBKML") &&
         !EQUAL(poDriver->GetDescription(), "PDF") &&
         !EQUAL(poDriver->GetDescription(), "GeoJSON") &&
+        !EQUAL(poDriver->GetDescription(), "JSONFG") &&
         !EQUAL(poDriver->GetDescription(), "OGR_GMT") &&
         !EQUAL(poDriver->GetDescription(), "PDS4") &&
         !EQUAL(poDriver->GetDescription(), "FlatGeobuf"))
@@ -1016,8 +1016,8 @@ static int TestCreateLayer(GDALDriver *poDriver, OGRwkbGeometryType eGeomType)
     if (poLayer != nullptr)
     {
         /* Test creating empty layer */
-        osFilename = CPLFormFilename("/vsimem",
-                                     CPLSPrintf("test%d", ++nCounter), pszExt);
+        osFilename = CPLFormFilenameSafe(
+            "/vsimem", CPLSPrintf("test%d", ++nCounter), pszExt);
         poDS = LOG_ACTION(
             poDriver->Create(osFilename, 0, 0, 0, GDT_Unknown, nullptr));
         if (poDS != nullptr)
@@ -1059,7 +1059,7 @@ static int TestCreate(GDALDriver *poDriver, int bFromAllDrivers)
                                       poDriver->GetDescription())));
 
     const char *pszExt = poDriver->GetMetadataItem(GDAL_DMD_EXTENSION);
-    CPLString osFilename = CPLFormFilename("/foo", "test", pszExt);
+    CPLString osFilename = CPLFormFilenameSafe("/foo", "test", pszExt);
     CPLPushErrorHandler(CPLQuietErrorHandler);
     GDALDataset *poDS =
         LOG_ACTION(poDriver->Create(osFilename, 0, 0, 0, GDT_Unknown, nullptr));
@@ -1372,6 +1372,23 @@ static int TestBasic(GDALDataset *poDS, OGRLayer *poLayer)
                    "GDAL_DMD_ALTER_FIELD_DEFN_FLAGS but layer capability does "
                    "not advertise OLCAlterFieldDefn!\n");
         }
+
+        if (poLayer->TestCapability(OLCUpsertFeature) &&
+            !poDriver->GetMetadataItem(GDAL_DCAP_UPSERT))
+        {
+            bRet = FALSE;
+            printf("FAILURE: Layer advertises OLCUpsertFeature capability but "
+                   "driver metadata does not advertise GDAL_DCAP_UPSERT!\n");
+        }
+        if (bLayerShouldHaveEditCapabilities &&
+            poDriver->GetMetadataItem(GDAL_DCAP_UPSERT) &&
+            !poLayer->TestCapability(OLCUpsertFeature))
+        {
+            bRet = FALSE;
+            printf(
+                "FAILURE: Driver metadata advertises GDAL_DCAP_UPSERT "
+                "but layer capability does not advertise OLCUpsertFeature!\n");
+        }
     }
 
     return bRet;
@@ -1384,7 +1401,7 @@ static int TestBasic(GDALDataset *poDS, OGRLayer *poLayer)
 static int TestLayerErrorConditions(OGRLayer *poLyr)
 {
     int bRet = TRUE;
-    OGRFeature *poFeat = nullptr;
+    std::unique_ptr<OGRFeature> poFeat;
 
     CPLPushErrorHandler(CPLQuietErrorHandler);
 
@@ -1422,18 +1439,16 @@ static int TestLayerErrorConditions(OGRLayer *poLyr)
     }
 
     poLyr->ResetReading();
-    poFeat = poLyr->GetNextFeature();
+    poFeat.reset(poLyr->GetNextFeature());
     if (poFeat)
     {
         poFeat->SetFID(-10);
-        if (poLyr->SetFeature(poFeat) == OGRERR_NONE)
+        if (poLyr->SetFeature(poFeat.get()) == OGRERR_NONE)
         {
             printf("ERROR: SetFeature(-10) should have returned an error\n");
-            delete poFeat;
             bRet = FALSE;
             goto bye;
         }
-        delete poFeat;
     }
 
     if (poLyr->DeleteFeature(-10) == OGRERR_NONE)
@@ -1451,18 +1466,40 @@ static int TestLayerErrorConditions(OGRLayer *poLyr)
         goto bye;
     }
 
-    if (LOG_ACTION(poLyr->SetNextByIndex(-10)) != OGRERR_FAILURE)
+    if (LOG_ACTION(poLyr->SetNextByIndex(-1)) != OGRERR_NON_EXISTING_FEATURE)
     {
-        printf("ERROR: SetNextByIndex(-10) should have "
-               "returned OGRERR_FAILURE\n");
+        printf("ERROR: SetNextByIndex(-1) should have "
+               "returned OGRERR_NON_EXISTING_FEATURE\n");
+        bRet = FALSE;
+        goto bye;
+    }
+    if (LOG_ACTION(std::unique_ptr<OGRFeature>(poLyr->GetNextFeature())) !=
+        nullptr)
+    {
+        printf("ERROR: GetNextFeature() after SetNextByIndex(-1) "
+               "should have returned NULL\n");
         bRet = FALSE;
         goto bye;
     }
 
-    if (LOG_ACTION(poLyr->SetNextByIndex(2000000000)) == OGRERR_NONE &&
-        LOG_ACTION(poLyr->GetNextFeature()) != nullptr)
+    if (poFeat)
     {
-        printf("ERROR: SetNextByIndex(2000000000) and then GetNextFeature() "
+        poLyr->ResetReading();
+        poFeat.reset(poLyr->GetNextFeature());
+        if (!poFeat)
+        {
+            printf("ERROR: GetNextFeature() after SetNextByIndex(-1) and "
+                   "ResetReading() should have returned a non-NULL feature\n");
+            bRet = FALSE;
+            goto bye;
+        }
+    }
+
+    CPL_IGNORE_RET_VAL(LOG_ACTION(poLyr->SetNextByIndex(2000000000)));
+    if (LOG_ACTION(std::unique_ptr<OGRFeature>(poLyr->GetNextFeature())) !=
+        nullptr)
+    {
+        printf("ERROR: GetNextFeature() after SetNextByIndex(2000000000) "
                "should have returned NULL\n");
         bRet = FALSE;
         goto bye;
@@ -1480,20 +1517,30 @@ bye:
 static const char *GetLayerNameForSQL(GDALDataset *poDS,
                                       const char *pszLayerName)
 {
-    char ch;
-    for (int i = 0; (ch = pszLayerName[i]) != 0; i++)
+    /* Only quote if needed. Quoting conventions depend on the driver... */
+    if (!EQUAL(pszLayerName, "SELECT") && !EQUAL(pszLayerName, "AS") &&
+        !EQUAL(pszLayerName, "CAST") && !EQUAL(pszLayerName, "FROM") &&
+        !EQUAL(pszLayerName, "JOIN") && !EQUAL(pszLayerName, "WHERE") &&
+        !EQUAL(pszLayerName, "ON") && !EQUAL(pszLayerName, "USING") &&
+        !EQUAL(pszLayerName, "ORDER") && !EQUAL(pszLayerName, "BY") &&
+        !EQUAL(pszLayerName, "ASC") && !EQUAL(pszLayerName, "DESC") &&
+        !EQUAL(pszLayerName, "GROUP") && !EQUAL(pszLayerName, "LIMIT") &&
+        !EQUAL(pszLayerName, "OFFSET"))
     {
-        if (ch >= '0' && ch <= '9')
+        char ch;
+        for (int i = 0; (ch = pszLayerName[i]) != 0; i++)
         {
-            if (i == 0)
+            if (ch >= '0' && ch <= '9')
+            {
+                if (i == 0)
+                    break;
+            }
+            else if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')))
                 break;
         }
-        else if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')))
-            break;
+        if (ch == 0)
+            return pszLayerName;
     }
-    /* Only quote if needed. Quoting conventions depend on the driver... */
-    if (ch == 0)
-        return pszLayerName;
 
     if (EQUAL(poDS->GetDriverName(), "MYSQL"))
         return CPLSPrintf("`%s`", pszLayerName);
@@ -1585,7 +1632,7 @@ static int TestOGRLayerFeatureCount(GDALDataset *poDS, OGRLayer *poLayer,
                        "OLCZGeometries capability!\n");
             }
 
-            OGRSpatialReference *poGFldSRS =
+            const OGRSpatialReference *poGFldSRS =
                 poLayerDefn->GetGeomFieldDefn(iGeom)->GetSpatialRef();
 
             // Compatibility with old drivers anterior to RFC 41
@@ -1642,6 +1689,7 @@ static int TestOGRLayerFeatureCount(GDALDataset *poDS, OGRLayer *poLayer,
     }
     delete poFeat;
 
+    const auto nFCEndOfIter = LOG_ACTION(poLayer->GetFeatureCount());
     if (nFC != nClaimedFC)
     {
         bRet = FALSE;
@@ -1649,12 +1697,12 @@ static int TestOGRLayerFeatureCount(GDALDataset *poDS, OGRLayer *poLayer,
                " doesn't match actual, " CPL_FRMT_GIB ".\n",
                nClaimedFC, nFC);
     }
-    else if (nFC != LOG_ACTION(poLayer->GetFeatureCount()))
+    else if (nFC != nFCEndOfIter)
     {
         bRet = FALSE;
         printf("ERROR: Feature count at end of layer, " CPL_FRMT_GIB
                ", differs from at start, " CPL_FRMT_GIB ".\n",
-               poLayer->GetFeatureCount(), nFC);
+               nFCEndOfIter, nFC);
     }
     else if (bVerbose)
         printf("INFO: Feature count verified.\n");
@@ -1982,7 +2030,7 @@ static int TestOGRLayerRandomWrite(OGRLayer *poLayer)
 
 {
     int bRet = TRUE;
-    OGRFeature *papoFeatures[5], *poFeature;
+    OGRFeature *papoFeatures[5];
 
     memset(papoFeatures, 0, sizeof(papoFeatures));
 
@@ -2012,7 +2060,8 @@ static int TestOGRLayerRandomWrite(OGRLayer *poLayer)
     CPLString os_Id2;
     CPLString os_Id5;
 
-    const bool bHas_Id = poLayer->GetLayerDefn()->GetFieldIndex("_id") == 0;
+    const bool bHas_Id = poLayer->GetLayerDefn()->GetFieldIndex("_id") == 0 ||
+                         poLayer->GetLayerDefn()->GetFieldIndex("id") == 0;
 
     /* -------------------------------------------------------------------- */
     /*      Fetch five features.                                            */
@@ -2067,25 +2116,27 @@ static int TestOGRLayerRandomWrite(OGRLayer *poLayer)
     /* -------------------------------------------------------------------- */
     /*      Now re-read feature 2 to verify the effect stuck.               */
     /* -------------------------------------------------------------------- */
-    poFeature = LOG_ACTION(poLayer->GetFeature(nFID5));
-    if (poFeature == nullptr)
     {
-        bRet = FALSE;
-        printf("ERROR: Attempt to GetFeature( nFID5 ) failed.\n");
-        goto end;
+        auto poFeature =
+            std::unique_ptr<OGRFeature>(LOG_ACTION(poLayer->GetFeature(nFID5)));
+        if (poFeature == nullptr)
+        {
+            bRet = FALSE;
+            printf("ERROR: Attempt to GetFeature( nFID5 ) failed.\n");
+            goto end;
+        }
+        if (!poFeature->Equal(papoFeatures[1]))
+        {
+            bRet = FALSE;
+            poFeature->DumpReadable(stderr);
+            papoFeatures[1]->DumpReadable(stderr);
+            printf("ERROR: Written feature didn't seem to retain value.\n");
+        }
+        else if (bVerbose)
+        {
+            printf("INFO: Random write test passed.\n");
+        }
     }
-    if (!poFeature->Equal(papoFeatures[1]))
-    {
-        bRet = FALSE;
-        poFeature->DumpReadable(stderr);
-        papoFeatures[1]->DumpReadable(stderr);
-        printf("ERROR: Written feature didn't seem to retain value.\n");
-    }
-    else if (bVerbose)
-    {
-        printf("INFO: Random write test passed.\n");
-    }
-    DestroyFeatureAndNullify(poFeature);
 
     /* -------------------------------------------------------------------- */
     /*      Re-invert the features to restore to original state             */
@@ -2109,6 +2160,156 @@ static int TestOGRLayerRandomWrite(OGRLayer *poLayer)
     {
         bRet = FALSE;
         printf("ERROR: Attempt to restore SetFeature(4) failed.\n");
+    }
+
+    /* -------------------------------------------------------------------- */
+    /*      Test UpdateFeature()                                            */
+    /* -------------------------------------------------------------------- */
+
+    if (bRet)
+    {
+        int nOldVal = 0;
+        std::string osOldVal;
+        int iUpdatedFeature = -1;
+        int iUpdatedField = -1;
+        std::unique_ptr<OGRFeature> poUpdatedFeature;
+
+        for (int iFeature = 0; iUpdatedFeature < 0 && iFeature < 5; iFeature++)
+        {
+            for (int iField = 0;
+                 iField < poLayer->GetLayerDefn()->GetFieldCount(); ++iField)
+            {
+                if (papoFeatures[iFeature]->IsFieldSetAndNotNull(iField))
+                {
+                    if (poLayer->GetLayerDefn()
+                            ->GetFieldDefn(iField)
+                            ->GetType() == OFTInteger)
+                    {
+                        iUpdatedFeature = iFeature;
+                        iUpdatedField = iField;
+                        nOldVal =
+                            papoFeatures[iFeature]->GetFieldAsInteger(iField);
+                        poUpdatedFeature.reset(papoFeatures[iFeature]->Clone());
+                        poUpdatedFeature->SetField(iField, 0xBEEF);
+                        break;
+                    }
+                    else if (poLayer->GetLayerDefn()
+                                 ->GetFieldDefn(iField)
+                                 ->GetType() == OFTString)
+                    {
+                        iUpdatedFeature = iFeature;
+                        iUpdatedField = iField;
+                        osOldVal =
+                            papoFeatures[iFeature]->GetFieldAsString(iField);
+                        poUpdatedFeature.reset(papoFeatures[iFeature]->Clone());
+                        poUpdatedFeature->SetField(iField, "0xBEEF");
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (poUpdatedFeature)
+        {
+            if (LOG_ACTION(poLayer->UpdateFeature(poUpdatedFeature.get(), 1,
+                                                  &iUpdatedField, 0, nullptr,
+                                                  false)) != OGRERR_NONE)
+            {
+                bRet = FALSE;
+                printf("ERROR: UpdateFeature() failed.\n");
+            }
+            if (bRet)
+            {
+                LOG_ACTION(poLayer->ResetReading());
+                for (int iFeature = 0; iFeature < 5; iFeature++)
+                {
+                    auto poFeature = std::unique_ptr<OGRFeature>(LOG_ACTION(
+                        poLayer->GetFeature(papoFeatures[iFeature]->GetFID())));
+                    if (iFeature != iUpdatedFeature)
+                    {
+                        if (!poFeature ||
+                            !poFeature->Equal(papoFeatures[iFeature]))
+                        {
+                            bRet = false;
+                            printf("ERROR: UpdateFeature() test: "
+                                   "!poFeature->Equals(papoFeatures[iFeature]) "
+                                   "unexpected.\n");
+                            if (poFeature)
+                                poFeature->DumpReadable(stdout);
+                            papoFeatures[iFeature]->DumpReadable(stdout);
+                        }
+                    }
+                }
+
+                auto poFeature =
+                    std::unique_ptr<OGRFeature>(LOG_ACTION(poLayer->GetFeature(
+                        papoFeatures[iUpdatedFeature]->GetFID())));
+                if (!poFeature)
+                {
+                    bRet = FALSE;
+                    printf("ERROR: at line %d", __LINE__);
+                    goto end;
+                }
+                if (poLayer->GetLayerDefn()
+                        ->GetFieldDefn(iUpdatedField)
+                        ->GetType() == OFTInteger)
+                {
+                    if (poFeature->GetFieldAsInteger(iUpdatedField) != 0xBEEF)
+                    {
+                        bRet = FALSE;
+                        printf("ERROR: Did not get expected field value after "
+                               "UpdateFeature().\n");
+                    }
+                    poFeature->SetField(iUpdatedField, nOldVal);
+                }
+                else if (poLayer->GetLayerDefn()
+                             ->GetFieldDefn(iUpdatedField)
+                             ->GetType() == OFTString)
+                {
+                    if (!EQUAL(poFeature->GetFieldAsString(iUpdatedField),
+                               "0xBEEF"))
+                    {
+                        bRet = FALSE;
+                        printf("ERROR: Did not get expected field value after "
+                               "UpdateFeature().\n");
+                    }
+                    poFeature->SetField(iUpdatedField, osOldVal.c_str());
+                }
+                else
+                {
+                    CPLAssert(false);
+                }
+
+                if (LOG_ACTION(poLayer->UpdateFeature(
+                        poFeature.get(), 1, &iUpdatedField, 0, nullptr,
+                        false)) != OGRERR_NONE)
+                {
+                    bRet = FALSE;
+                    printf("ERROR: UpdateFeature() failed.\n");
+                }
+
+                poFeature.reset(LOG_ACTION(poLayer->GetFeature(
+                    papoFeatures[iUpdatedFeature]->GetFID())));
+                if (!poFeature)
+                {
+                    bRet = FALSE;
+                    printf("ERROR: at line %d", __LINE__);
+                    goto end;
+                }
+                if (!poFeature->Equal(papoFeatures[iUpdatedFeature]))
+                {
+                    bRet = false;
+                    printf("ERROR: UpdateFeature() test: "
+                           "!poFeature->Equals(papoFeatures[iUpdatedFeature]) "
+                           "unexpected.\n");
+                }
+            }
+        }
+        else
+        {
+            if (bVerbose)
+                printf("INFO: Could not test UpdateFeature().\n");
+        }
     }
 
 end:
@@ -2296,7 +2497,7 @@ static int TestSpatialFilter(OGRLayer *poLayer, int iGeomField)
     if (poUniquePtrFeature != nullptr)
     {
         bRet = FALSE;
-        printf("ERROR: Spatial filter (%d) failed to eliminate"
+        printf("ERROR: Spatial filter (%d) failed to eliminate "
                "a feature unexpectedly!\n",
                iGeomField);
     }
@@ -2618,25 +2819,43 @@ static int TestSpatialFilter(OGRLayer *poLayer)
 }
 
 /************************************************************************/
-/*                      TestAttributeFilter()                           */
-/*                                                                      */
-/*      This is intended to be a simple test of the attribute           */
-/*      filtering.  We read the first feature.  Then construct a        */
-/*      attribute filter which includes it, install and                 */
-/*      verify that we get the feature.  Next install a attribute       */
-/*      filter that doesn't include this feature, and test again.       */
+/*                  GetQuotedIfNeededIdentifier()                       */
 /************************************************************************/
 
-static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
-
+static std::string GetQuotedIfNeededIdentifier(const char *pszFieldName)
 {
-    int bRet = TRUE;
+    std::string osIdentifier;
+    const bool bMustQuoteAttrName =
+        pszFieldName[0] == '\0' || strchr(pszFieldName, '_') ||
+        strchr(pszFieldName, ' ') || swq_is_reserved_keyword(pszFieldName);
+    if (bMustQuoteAttrName)
+    {
+        osIdentifier = "\"";
+        osIdentifier += pszFieldName;
+        osIdentifier += "\"";
+    }
+    else
+    {
+        osIdentifier = pszFieldName;
+    }
+    return osIdentifier;
+}
+
+/************************************************************************/
+/*                       GetAttributeFilters()                         */
+/************************************************************************/
+
+static bool GetAttributeFilters(OGRLayer *poLayer,
+                                std::unique_ptr<OGRFeature> &poTargetFeature,
+                                std::string &osInclusiveFilter,
+                                std::string &osExclusiveFilter)
+{
 
     /* -------------------------------------------------------------------- */
     /*      Read the target feature.                                        */
     /* -------------------------------------------------------------------- */
     LOG_ACTION(poLayer->ResetReading());
-    OGRFeature *poTargetFeature = LOG_ACTION(poLayer->GetNextFeature());
+    poTargetFeature.reset(LOG_ACTION(poLayer->GetNextFeature()));
 
     if (poTargetFeature == nullptr)
     {
@@ -2646,7 +2865,7 @@ static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
                    "      No features in layer.\n",
                    poLayer->GetName());
         }
-        return bRet;
+        return false;
     }
 
     int i = 0;
@@ -2668,11 +2887,10 @@ static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
                    "      Could not find non NULL field.\n",
                    poLayer->GetName());
         }
-        DestroyFeatureAndNullify(poTargetFeature);
-        return bRet;
+        return false;
     }
 
-    const char *pszFieldName =
+    const std::string osFieldName =
         poTargetFeature->GetFieldDefnRef(i)->GetNameRef();
     CPLString osValue = poTargetFeature->GetFieldAsString(i);
     if (eType == OFTReal)
@@ -2693,32 +2911,64 @@ static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
     /* -------------------------------------------------------------------- */
     /*      Construct inclusive filter.                                     */
     /* -------------------------------------------------------------------- */
-
-    CPLString osAttributeFilter;
-    const bool bMustQuoteAttrName =
-        pszFieldName[0] == '\0' || strchr(pszFieldName, '_') ||
-        strchr(pszFieldName, ' ') || swq_is_reserved_keyword(pszFieldName);
-    if (bMustQuoteAttrName)
-    {
-        osAttributeFilter = "\"";
-        osAttributeFilter += pszFieldName;
-        osAttributeFilter += "\"";
-    }
-    else
-    {
-        osAttributeFilter = pszFieldName;
-    }
-    osAttributeFilter += " = ";
+    osInclusiveFilter = GetQuotedIfNeededIdentifier(osFieldName.c_str());
+    osInclusiveFilter += " = ";
     if (eType == OFTString)
-        osAttributeFilter += "'";
-    osAttributeFilter += osValue;
+        osInclusiveFilter += "'";
+    osInclusiveFilter += osValue;
     if (eType == OFTString)
-        osAttributeFilter += "'";
+        osInclusiveFilter += "'";
     /* Make sure that the literal will be recognized as a float value */
     /* to avoid int underflow/overflow */
     else if (eType == OFTReal && strchr(osValue, '.') == nullptr)
-        osAttributeFilter += ".";
-    LOG_ACTION(poLayer->SetAttributeFilter(osAttributeFilter));
+        osInclusiveFilter += ".";
+
+    /* -------------------------------------------------------------------- */
+    /*      Construct exclusive filter.                                     */
+    /* -------------------------------------------------------------------- */
+    osExclusiveFilter = GetQuotedIfNeededIdentifier(osFieldName.c_str());
+    osExclusiveFilter += " <> ";
+    if (eType == OFTString)
+        osExclusiveFilter += "'";
+    osExclusiveFilter += osValue;
+    if (eType == OFTString)
+        osExclusiveFilter += "'";
+    /* Make sure that the literal will be recognized as a float value */
+    /* to avoid int underflow/overflow */
+    else if (eType == OFTReal && strchr(osValue, '.') == nullptr)
+        osExclusiveFilter += ".";
+
+    return true;
+}
+
+/************************************************************************/
+/*                      TestAttributeFilter()                           */
+/*                                                                      */
+/*      This is intended to be a simple test of the attribute           */
+/*      filtering.  We read the first feature.  Then construct a        */
+/*      attribute filter which includes it, install and                 */
+/*      verify that we get the feature.  Next install a attribute       */
+/*      filter that doesn't include this feature, and test again.       */
+/************************************************************************/
+
+static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
+
+{
+    int bRet = TRUE;
+
+    std::unique_ptr<OGRFeature> poTargetFeature;
+    std::string osInclusiveFilter;
+    std::string osExclusiveFilter;
+    if (!GetAttributeFilters(poLayer, poTargetFeature, osInclusiveFilter,
+                             osExclusiveFilter))
+    {
+        return true;
+    }
+
+    /* -------------------------------------------------------------------- */
+    /*      Apply inclusive filter.                                         */
+    /* -------------------------------------------------------------------- */
+    LOG_ACTION(poLayer->SetAttributeFilter(osInclusiveFilter.c_str()));
 
     /* -------------------------------------------------------------------- */
     /*      Verify that we can find the target feature.                     */
@@ -2729,7 +2979,7 @@ static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
     OGRFeature *poFeature = nullptr;
     while ((poFeature = LOG_ACTION(poLayer->GetNextFeature())) != nullptr)
     {
-        if (poFeature->Equal(poTargetFeature))
+        if (poFeature->Equal(poTargetFeature.get()))
         {
             bFoundFeature = true;
             DestroyFeatureAndNullify(poFeature);
@@ -2754,29 +3004,9 @@ static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
     const GIntBig nInclusiveCount = LOG_ACTION(poLayer->GetFeatureCount());
 
     /* -------------------------------------------------------------------- */
-    /*      Construct exclusive filter.                                     */
+    /*      Apply exclusive filter.                                         */
     /* -------------------------------------------------------------------- */
-    if (bMustQuoteAttrName)
-    {
-        osAttributeFilter = "\"";
-        osAttributeFilter += pszFieldName;
-        osAttributeFilter += "\"";
-    }
-    else
-    {
-        osAttributeFilter = pszFieldName;
-    }
-    osAttributeFilter += " <> ";
-    if (eType == OFTString)
-        osAttributeFilter += "'";
-    osAttributeFilter += osValue;
-    if (eType == OFTString)
-        osAttributeFilter += "'";
-    /* Make sure that the literal will be recognized as a float value */
-    /* to avoid int underflow/overflow */
-    else if (eType == OFTReal && strchr(osValue, '.') == nullptr)
-        osAttributeFilter += ".";
-    LOG_ACTION(poLayer->SetAttributeFilter(osAttributeFilter));
+    LOG_ACTION(poLayer->SetAttributeFilter(osExclusiveFilter.c_str()));
 
     /* -------------------------------------------------------------------- */
     /*      Verify that we can find the target feature.                     */
@@ -2786,7 +3016,7 @@ static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
     GIntBig nExclusiveCountWhileIterating = 0;
     while ((poFeature = LOG_ACTION(poLayer->GetNextFeature())) != nullptr)
     {
-        if (poFeature->Equal(poTargetFeature))
+        if (poFeature->Equal(poTargetFeature.get()))
         {
             DestroyFeatureAndNullify(poFeature);
             break;
@@ -2802,13 +3032,13 @@ static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
 
     // Check that GetFeature() ignores the attribute filter
     OGRFeature *poFeature2 =
-        LOG_ACTION(poLayer->GetFeature(poTargetFeature->GetFID()));
+        LOG_ACTION(poLayer->GetFeature(poTargetFeature.get()->GetFID()));
 
     poLayer->ResetReading();
     OGRFeature *poFeature3 = nullptr;
     while ((poFeature3 = LOG_ACTION(poLayer->GetNextFeature())) != nullptr)
     {
-        if (poFeature3->Equal(poTargetFeature))
+        if (poFeature3->Equal(poTargetFeature.get()))
         {
             DestroyFeatureAndNullify(poFeature3);
             break;
@@ -2845,7 +3075,7 @@ static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
         printf("INFO: Attribute filter exclusion seems to work.\n");
     }
 
-    if (poFeature2 == nullptr || !poFeature2->Equal(poTargetFeature))
+    if (poFeature2 == nullptr || !poFeature2->Equal(poTargetFeature.get()))
     {
         bRet = FALSE;
         printf("ERROR: Attribute filter has been taken into account "
@@ -2866,8 +3096,6 @@ static int TestAttributeFilter(CPL_UNUSED GDALDataset *poDS, OGRLayer *poLayer)
 
     if (poFeature2 != nullptr)
         DestroyFeatureAndNullify(poFeature2);
-
-    DestroyFeatureAndNullify(poTargetFeature);
 
     return bRet;
 }
@@ -3634,9 +3862,9 @@ static int TestLayerSQL(GDALDataset *poDS, OGRLayer *poLayer)
                     else if (poLayerFeatGeom != nullptr &&
                              poSQLFeatGeom != nullptr)
                     {
-                        OGRSpatialReference *poLayerFeatSRS =
+                        const OGRSpatialReference *poLayerFeatSRS =
                             poLayerFeatGeom->getSpatialReference();
-                        OGRSpatialReference *poSQLFeatSRS =
+                        const OGRSpatialReference *poSQLFeatSRS =
                             poSQLFeatGeom->getSpatialReference();
                         if (poLayerFeatSRS == nullptr &&
                             poSQLFeatSRS != nullptr)
@@ -3745,17 +3973,38 @@ static int TestLayerSQL(GDALDataset *poDS, OGRLayer *poLayer)
     oPoly.addRing(&oRing);
 
     CPLErrorReset();
-    poSQLLyr = LOG_ACTION(poDS->ExecuteSQL(osSQL.c_str(), &oPoly, nullptr));
-    if (CPLGetLastErrorType() != CE_None)
+    if (poLayer->GetLayerDefn()->GetGeomFieldCount() == 0)
     {
-        bRet = FALSE;
-        printf("ERROR: ExecuteSQL() triggered an unexpected error.\n");
+        CPLPushErrorHandler(CPLQuietErrorHandler);
+        poSQLLyr = LOG_ACTION(poDS->ExecuteSQL(osSQL.c_str(), &oPoly, nullptr));
+        CPLPopErrorHandler();
+        if (poSQLLyr)
+        {
+            printf("WARNING: ExecuteSQL() with a spatial filter on a "
+                   "non-spatial layer should have triggered an error.\n");
+        }
+    }
+    else
+    {
+        poSQLLyr = LOG_ACTION(poDS->ExecuteSQL(osSQL.c_str(), &oPoly, nullptr));
+        if (CPLGetLastErrorType() == CE_Failure &&
+            poLayer->GetLayerDefn()->GetGeomFieldCount() > 0)
+        {
+            bRet = FALSE;
+            printf("ERROR: ExecuteSQL() triggered an unexpected error.\n");
+        }
+        if (!poSQLLyr)
+        {
+            printf("ERROR: ExecuteSQL() should have returned a non-NULL "
+                   "result.\n");
+            bRet = FALSE;
+        }
     }
     if (poSQLLyr)
     {
         CPLErrorReset();
         poSQLFeat = LOG_ACTION(poSQLLyr->GetNextFeature());
-        if (CPLGetLastErrorType() != CE_None)
+        if (CPLGetLastErrorType() == CE_Failure)
         {
             bRet = FALSE;
             printf("ERROR: GetNextFeature() triggered an unexpected error.\n");
@@ -3769,14 +4018,387 @@ static int TestLayerSQL(GDALDataset *poDS, OGRLayer *poLayer)
         DestroyFeatureAndNullify(poSQLFeat);
         LOG_ACTION(poDS->ReleaseResultSet(poSQLLyr));
     }
-    else
-    {
-        printf("ERROR: ExecuteSQL() should have returned a non-NULL result.\n");
-        bRet = FALSE;
-    }
 
     if (bRet && bVerbose)
         printf("INFO: TestLayerSQL passed.\n");
+
+    return bRet;
+}
+
+/************************************************************************/
+/*                  CountFeaturesUsingArrowStream()                     */
+/************************************************************************/
+
+static int64_t CountFeaturesUsingArrowStream(OGRLayer *poLayer,
+                                             int64_t nExpectedFID,
+                                             int64_t nUnexpectedFID, bool &bOK)
+{
+    struct ArrowArrayStream stream;
+    if (!LOG_ACTION(poLayer->GetArrowStream(&stream)))
+    {
+        printf("ERROR: GetArrowStream() failed\n");
+        return -1;
+    }
+    struct ArrowSchema schema;
+    if (stream.get_schema(&stream, &schema) != 0)
+    {
+        printf("ERROR: stream.get_schema() failed\n");
+        stream.release(&stream);
+        return -1;
+    }
+    int iFIDColumn = -1;
+    if (schema.n_children > 0 &&
+        (strcmp(schema.children[0]->name, "OGC_FID") == 0 ||
+         strcmp(schema.children[0]->name, poLayer->GetFIDColumn()) == 0) &&
+        strcmp(schema.children[0]->format, "l") == 0)
+    {
+        iFIDColumn = 0;
+    }
+    schema.release(&schema);
+    int64_t nFeatureCountFiltered = 0;
+    bool bExpectedFIDFound = false;
+    bool bUnexpectedFIDFound = false;
+    while (true)
+    {
+        struct ArrowArray array;
+        if (stream.get_next(&stream, &array) != 0)
+        {
+            printf("ERROR: stream.get_next() is NULL\n");
+            stream.release(&stream);
+            return -1;
+        }
+        if (!array.release)
+            break;
+        if (iFIDColumn >= 0 && (nExpectedFID >= 0 || nUnexpectedFID >= 0))
+        {
+            const int64_t *panIds =
+                static_cast<const int64_t *>(
+                    array.children[iFIDColumn]->buffers[1]) +
+                array.children[iFIDColumn]->offset;
+            for (int64_t i = 0; i < array.length; ++i)
+            {
+                if (nExpectedFID >= 0 && panIds[i] == nExpectedFID)
+                    bExpectedFIDFound = true;
+                if (nUnexpectedFID >= 0 && panIds[i] == nUnexpectedFID)
+                    bUnexpectedFIDFound = true;
+            }
+        }
+        nFeatureCountFiltered += array.length;
+        array.release(&array);
+    }
+    if (iFIDColumn >= 0)
+    {
+        if (nExpectedFID >= 0 && !bExpectedFIDFound)
+        {
+            bOK = false;
+            printf("ERROR: CountFeaturesUsingArrowStream() :"
+                   "expected to find feature of id %" PRId64
+                   ", but did not get it\n",
+                   nExpectedFID);
+        }
+        if (nUnexpectedFID >= 0 && bUnexpectedFIDFound)
+        {
+            bOK = false;
+            printf("ERROR: CountFeaturesUsingArrowStream(): "
+                   "expected *not* to find feature of id %" PRId64
+                   ", but did get it\n",
+                   nUnexpectedFID);
+        }
+    }
+    stream.release(&stream);
+    return nFeatureCountFiltered;
+}
+
+/************************************************************************/
+/*                   TestLayerGetArrowStream()                          */
+/************************************************************************/
+
+static int TestLayerGetArrowStream(OGRLayer *poLayer)
+{
+    LOG_ACTION(poLayer->SetSpatialFilter(nullptr));
+    LOG_ACTION(poLayer->SetAttributeFilter(nullptr));
+    LOG_ACTION(poLayer->ResetReading());
+
+    struct ArrowArrayStream stream;
+    if (!LOG_ACTION(poLayer->GetArrowStream(&stream)))
+    {
+        printf("ERROR: GetArrowStream() failed\n");
+        return false;
+    }
+
+    if (!stream.release)
+    {
+        printf("ERROR: stream.release is NULL\n");
+        return false;
+    }
+
+    struct ArrowSchema schema;
+    if (stream.get_schema(&stream, &schema) != 0)
+    {
+        printf("ERROR: stream.get_schema() failed\n");
+        stream.release(&stream);
+        return false;
+    }
+
+    if (!schema.release)
+    {
+        printf("ERROR: schema.release is NULL\n");
+        stream.release(&stream);
+        return false;
+    }
+
+    if (strcmp(schema.format, "+s") != 0)
+    {
+        printf("ERROR: expected schema.format to be '+s'. Got '%s'\n",
+               schema.format);
+        schema.release(&schema);
+        stream.release(&stream);
+        return false;
+    }
+
+    int64_t nFeatureCount = 0;
+    while (true)
+    {
+        struct ArrowArray array;
+        if (stream.get_next(&stream, &array) != 0)
+        {
+            printf("ERROR: stream.get_next() is NULL\n");
+            schema.release(&schema);
+            stream.release(&stream);
+            return false;
+        }
+        if (array.release == nullptr)
+        {
+            break;
+        }
+
+        if (array.n_children != schema.n_children)
+        {
+            printf("ERROR: expected array.n_children (=%d) to be "
+                   "schema.n_children (=%d)\n",
+                   int(array.n_children), int(schema.n_children));
+            array.release(&array);
+            schema.release(&schema);
+            stream.release(&stream);
+            return false;
+        }
+
+        int bRet = true;
+        for (int i = 0; i < array.n_children; ++i)
+        {
+            if (array.children[i]->length != array.length)
+            {
+                bRet = false;
+                printf("ERROR: expected array.children[i]->length (=%d) to be "
+                       "array.length (=%d)\n",
+                       int(array.children[i]->length), int(array.length));
+            }
+        }
+        if (!bRet)
+        {
+            array.release(&array);
+            schema.release(&schema);
+            stream.release(&stream);
+            return false;
+        }
+
+        nFeatureCount += array.length;
+
+        array.release(&array);
+
+        if (array.release)
+        {
+            printf("ERROR: array.release should be NULL after release\n");
+            schema.release(&schema);
+            stream.release(&stream);
+            return false;
+        }
+    }
+
+    bool bRet = true;
+    // We are a bit in non-specified behavior below by calling get_next()
+    // after end of iteration.
+    {
+        struct ArrowArray array;
+        if (stream.get_next(&stream, &array) == 0)
+        {
+            if (array.length != 0)
+            {
+                printf("WARNING: get_next() return an array with length != 0 "
+                       "after end of iteration\n");
+            }
+            if (array.release)
+                array.release(&array);
+        }
+    }
+
+    schema.release(&schema);
+    if (schema.release)
+    {
+        printf("ERROR: schema.release should be NULL after release\n");
+        stream.release(&stream);
+        return false;
+    }
+
+    stream.release(&stream);
+    if (stream.release)
+    {
+        // Seems there's an issue in adbc_driver_bigquery implementation
+        if (EQUAL(CSLFetchNameValueDef(papszOpenOptions, "ADBC_DRIVER", ""),
+                  "adbc_driver_bigquery"))
+        {
+            printf("WARNING: stream.release should be NULL after release\n");
+        }
+        else
+        {
+            printf("ERROR: stream.release should be NULL after release\n");
+            return false;
+        }
+    }
+
+    const int64_t nFCClassic = poLayer->GetFeatureCount(true);
+    if (nFeatureCount != nFCClassic)
+    {
+        printf("ERROR: GetArrowStream() returned %" PRId64
+               " features, whereas GetFeatureCount() returned %" PRId64 "\n",
+               nFeatureCount, nFCClassic);
+        bRet = false;
+    }
+
+    {
+        LOG_ACTION(poLayer->SetAttributeFilter("1=1"));
+        const auto nFeatureCountFiltered =
+            CountFeaturesUsingArrowStream(poLayer, -1, -1, bRet);
+        LOG_ACTION(poLayer->SetAttributeFilter(nullptr));
+        if (nFeatureCount != nFeatureCountFiltered)
+        {
+            printf("ERROR: GetArrowStream() with 1=1 filter returned %" PRId64
+                   " features, whereas %" PRId64 " expected\n",
+                   nFeatureCountFiltered, nFeatureCount);
+            bRet = false;
+        }
+    }
+
+    {
+        LOG_ACTION(poLayer->SetAttributeFilter("1=0"));
+        const auto nFeatureCountFiltered =
+            CountFeaturesUsingArrowStream(poLayer, -1, -1, bRet);
+        LOG_ACTION(poLayer->SetAttributeFilter(nullptr));
+        if (nFeatureCountFiltered != 0)
+        {
+            printf("ERROR: GetArrowStream() with 1=0 filter returned %" PRId64
+                   " features, whereas 0 expected\n",
+                   nFeatureCountFiltered);
+            bRet = false;
+        }
+    }
+
+    std::unique_ptr<OGRFeature> poTargetFeature;
+    std::string osInclusiveFilter;
+    std::string osExclusiveFilter;
+    if (GetAttributeFilters(poLayer, poTargetFeature, osInclusiveFilter,
+                            osExclusiveFilter))
+    {
+        {
+            LOG_ACTION(poLayer->SetAttributeFilter(osInclusiveFilter.c_str()));
+            const auto nFeatureCountFiltered = CountFeaturesUsingArrowStream(
+                poLayer, poTargetFeature->GetFID(), -1, bRet);
+            LOG_ACTION(poLayer->SetAttributeFilter(nullptr));
+            if (nFeatureCountFiltered == 0)
+            {
+                printf(
+                    "ERROR: GetArrowStream() with %s filter returned %" PRId64
+                    " features, whereas at least one expected\n",
+                    osInclusiveFilter.c_str(), nFeatureCountFiltered);
+                bRet = false;
+            }
+            else if (bVerbose)
+            {
+                printf("INFO: Attribute filter inclusion with GetArrowStream "
+                       "seems to work.\n");
+            }
+        }
+
+        {
+            LOG_ACTION(poLayer->SetAttributeFilter(osExclusiveFilter.c_str()));
+            const auto nFeatureCountFiltered =
+                CountFeaturesUsingArrowStream(poLayer, -1, -1, bRet);
+            LOG_ACTION(poLayer->SetAttributeFilter(nullptr));
+            if (nFeatureCountFiltered >= nFCClassic)
+            {
+                printf(
+                    "ERROR: GetArrowStream() with %s filter returned %" PRId64
+                    " features, whereas less than %" PRId64 " expected\n",
+                    osExclusiveFilter.c_str(), nFeatureCountFiltered,
+                    nFCClassic);
+                bRet = false;
+            }
+            else if (bVerbose)
+            {
+                printf("INFO: Attribute filter exclusion with GetArrowStream "
+                       "seems to work.\n");
+            }
+        }
+
+        auto poGeom = poTargetFeature->GetGeometryRef();
+        if (poGeom && !poGeom->IsEmpty())
+        {
+            OGREnvelope sEnvelope;
+            poGeom->getEnvelope(&sEnvelope);
+
+            OGREnvelope sLayerExtent;
+            double epsilon = 10.0;
+            if (LOG_ACTION(poLayer->TestCapability(OLCFastGetExtent)) &&
+                LOG_ACTION(poLayer->GetExtent(&sLayerExtent)) == OGRERR_NONE &&
+                sLayerExtent.MinX < sLayerExtent.MaxX &&
+                sLayerExtent.MinY < sLayerExtent.MaxY)
+            {
+                epsilon = std::min(sLayerExtent.MaxX - sLayerExtent.MinX,
+                                   sLayerExtent.MaxY - sLayerExtent.MinY) /
+                          10.0;
+            }
+
+            /* -------------------------------------------------------------------- */
+            /*      Construct inclusive filter.                                     */
+            /* -------------------------------------------------------------------- */
+
+            OGRLinearRing oRing;
+            oRing.setPoint(0, sEnvelope.MinX - 2 * epsilon,
+                           sEnvelope.MinY - 2 * epsilon);
+            oRing.setPoint(1, sEnvelope.MinX - 2 * epsilon,
+                           sEnvelope.MaxY + 1 * epsilon);
+            oRing.setPoint(2, sEnvelope.MaxX + 1 * epsilon,
+                           sEnvelope.MaxY + 1 * epsilon);
+            oRing.setPoint(3, sEnvelope.MaxX + 1 * epsilon,
+                           sEnvelope.MinY - 2 * epsilon);
+            oRing.setPoint(4, sEnvelope.MinX - 2 * epsilon,
+                           sEnvelope.MinY - 2 * epsilon);
+
+            OGRPolygon oInclusiveFilter;
+            oInclusiveFilter.addRing(&oRing);
+
+            LOG_ACTION(poLayer->SetSpatialFilter(&oInclusiveFilter));
+            const auto nFeatureCountFiltered = CountFeaturesUsingArrowStream(
+                poLayer, poTargetFeature->GetFID(), -1, bRet);
+            LOG_ACTION(poLayer->SetSpatialFilter(nullptr));
+            if (nFeatureCountFiltered == 0)
+            {
+                printf("ERROR: GetArrowStream() with inclusive spatial filter "
+                       "returned %" PRId64
+                       " features, whereas at least 1 expected\n",
+                       nFeatureCountFiltered);
+                bRet = false;
+            }
+            else if (bVerbose)
+            {
+                printf("INFO: Spatial filter inclusion with GetArrowStream "
+                       "seems to work.\n");
+            }
+        }
+    }
+
+    if (bRet && bVerbose)
+        printf("INFO: TestLayerGetArrowStream passed.\n");
 
     return bRet;
 }
@@ -3830,6 +4452,11 @@ static int TestOGRLayer(GDALDataset *poDS, OGRLayer *poLayer, int bIsSQLLayer)
     bRet &= TestGetExtent(poLayer);
 
     /* -------------------------------------------------------------------- */
+    /*      Test GetArrowStream() interface                                 */
+    /* -------------------------------------------------------------------- */
+    bRet &= TestLayerGetArrowStream(poLayer);
+
+    /* -------------------------------------------------------------------- */
     /*      Test random reading.                                            */
     /* -------------------------------------------------------------------- */
     bRet &= TestOGRLayerRandomRead(poLayer);
@@ -3852,6 +4479,25 @@ static int TestOGRLayer(GDALDataset *poDS, OGRLayer *poLayer, int bIsSQLLayer)
     /* -------------------------------------------------------------------- */
     if (LOG_ACTION(poLayer->TestCapability(OLCRandomWrite)))
     {
+        if (!poDS->GetDriver()->GetMetadataItem(GDAL_DCAP_UPDATE))
+        {
+            printf("ERROR: Driver %s does not declare GDAL_DCAP_UPDATE\n",
+                   poDS->GetDriver()->GetDescription());
+            bRet = false;
+        }
+        else
+        {
+            const char *pszItems =
+                poDS->GetDriver()->GetMetadataItem(GDAL_DMD_UPDATE_ITEMS);
+            if (!pszItems || !strstr(pszItems, "Features"))
+            {
+                printf("ERROR: Driver %s does not declare Features in "
+                       "GDAL_DMD_UPDATE_ITEMS\n",
+                       poDS->GetDriver()->GetDescription());
+                bRet = false;
+            }
+        }
+
         bRet &= TestOGRLayerRandomWrite(poLayer);
     }
 
@@ -4135,48 +4781,47 @@ static int TestVirtualIO(GDALDataset *poDS)
         return TRUE;
     }
 
-    char **papszFileList = LOG_ACTION(poDS->GetFileList());
-    char **papszIter = papszFileList;
+    const CPLStringList aosFileList(LOG_ACTION(poDS->GetFileList()));
     CPLString osPath;
     int bAllPathIdentical = TRUE;
-    for (; *papszIter != nullptr; papszIter++)
+    for (const char *pszFilename : aosFileList)
     {
-        if (papszIter == papszFileList)
-            osPath = CPLGetPath(*papszIter);
-        else if (strcmp(osPath, CPLGetPath(*papszIter)) != 0)
+        if (pszFilename == aosFileList[0])
+            osPath = CPLGetPathSafe(pszFilename);
+        else if (osPath != CPLGetPathSafe(pszFilename))
         {
             bAllPathIdentical = FALSE;
             break;
         }
     }
     CPLString osVirtPath;
-    if (bAllPathIdentical && CSLCount(papszFileList) > 1)
+    if (bAllPathIdentical && aosFileList.size() > 1)
     {
         osVirtPath =
-            CPLFormFilename("/vsimem", CPLGetFilename(osPath), nullptr);
+            CPLFormFilenameSafe("/vsimem", CPLGetFilename(osPath), nullptr);
         VSIMkdir(osVirtPath, 0666);
     }
     else
         osVirtPath = "/vsimem";
-    papszIter = papszFileList;
-    for (; *papszIter != nullptr; papszIter++)
+
+    for (const char *pszFilename : aosFileList)
     {
-        const char *pszDestFile =
-            CPLFormFilename(osVirtPath, CPLGetFilename(*papszIter), nullptr);
-        /* CPLDebug("test_ogrsf", "Copying %s to %s", *papszIter, pszDestFile);
+        const std::string osDestFile = CPLFormFilenameSafe(
+            osVirtPath, CPLGetFilename(pszFilename), nullptr);
+        /* CPLDebug("test_ogrsf", "Copying %s to %s", pszFilename, osDestFile.c_str());
          */
-        CPLCopyFile(pszDestFile, *papszIter);
+        CPLCopyFile(osDestFile.c_str(), pszFilename);
     }
 
-    const char *pszVirtFile;
+    std::string osVirtFile;
     if (VSI_ISREG(sStat.st_mode))
-        pszVirtFile = CPLFormFilename(
+        osVirtFile = CPLFormFilenameSafe(
             osVirtPath, CPLGetFilename(poDS->GetDescription()), nullptr);
     else
-        pszVirtFile = osVirtPath;
-    CPLDebug("test_ogrsf", "Trying to open %s", pszVirtFile);
-    GDALDataset *poDS2 = LOG_ACTION(static_cast<GDALDataset *>(
-        GDALOpenEx(pszVirtFile, GDAL_OF_VECTOR, nullptr, nullptr, nullptr)));
+        osVirtFile = osVirtPath;
+    CPLDebug("test_ogrsf", "Trying to open %s", osVirtFile.c_str());
+    GDALDataset *poDS2 = LOG_ACTION(static_cast<GDALDataset *>(GDALOpenEx(
+        osVirtFile.c_str(), GDAL_OF_VECTOR, nullptr, nullptr, nullptr)));
     if (poDS2 != nullptr)
     {
         if (poDS->GetDriver()->GetMetadataItem(GDAL_DCAP_VIRTUALIO) == nullptr)
@@ -4209,13 +4854,12 @@ static int TestVirtualIO(GDALDataset *poDS)
         }
     }
 
-    papszIter = papszFileList;
-    for (; *papszIter != nullptr; papszIter++)
+    for (const char *pszFilename : aosFileList)
     {
-        VSIUnlink(
-            CPLFormFilename(osVirtPath, CPLGetFilename(*papszIter), nullptr));
+        VSIUnlink(CPLFormFilenameSafe(osVirtPath, CPLGetFilename(pszFilename),
+                                      nullptr)
+                      .c_str());
     }
-    CSLDestroy(papszFileList);
 
     return bRet;
 }

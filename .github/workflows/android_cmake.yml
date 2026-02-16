@@ -1,0 +1,41 @@
+name: Android CMake build
+
+on:
+    push:
+        paths-ignore:
+            - 'doc/**'
+            - 'docker/**'
+        branches-ignore:
+            - 'backport**'
+            - 'dependabot**'
+    pull_request:
+        paths-ignore:
+            - 'doc/**'
+            - 'docker/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  android_cmake_build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Cache
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        id: cache
+        with:
+          path: |
+                ${{ github.workspace }}/ccache.tar.gz
+          key: ${{ runner.os }}-cache-android-cmake-${{ github.run_id }}
+          restore-keys: ${{ runner.os }}-cache-android-cmake-
+
+      - name: Build
+        run: docker run -e WORK_DIR="$PWD" -v $PWD:$PWD ubuntu:20.04 $PWD/.github/workflows/android_cmake/start.sh

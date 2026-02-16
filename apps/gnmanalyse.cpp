@@ -8,23 +8,7 @@
  * Copyright (C) 2014 Mikhail Gusev
  * Copyright (c) 2014-2015, NextGIS <info@nextgis.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  ****************************************************************************/
 
 #include "commonutils.h"
@@ -44,17 +28,25 @@ enum operation
 /************************************************************************/
 /*                               Usage()                                */
 /************************************************************************/
-static void Usage(const char *pszAdditionalMsg, int bShort = TRUE)
+static void Usage(bool bIsError, const char *pszAdditionalMsg = nullptr,
+                  bool bShort = true, bool bHelpDoc = false)
 {
-    printf("Usage: gnmanalyse [--help][-q][-quiet][--long-usage]\n"
-           "                  [dijkstra start_gfid end_gfid [[-alo NAME=VALUE] "
-           "...]]\n"
-           "                  [kpaths start_gfid end_gfid k [[-alo NAME=VALUE] "
-           "...]]\n"
-           "                  [resource [[-alo NAME=VALUE] ...]]\n"
-           "                  [-ds ds_name][-f ds_format][-l layer_name]\n"
-           "                  [[-dsco NAME=VALUE] ...][-lco NAME=VALUE]\n"
-           "                  gnm_name\n");
+    fprintf(
+        bIsError ? stderr : stdout,
+        "Usage: gnmanalyse [--help][--help-general][-q][-quiet][--long-usage]\n"
+        "                  [dijkstra <start_gfid> <end_gfid "
+        "[-alo <NAME>=<VALUE>]...]\n"
+        "                  [kpaths <start_gfid> <end_gfid> <k> "
+        "[-alo NAME=VALUE]...]\n"
+        "                  [resource [-alo <NAME>=<VALUE>]...]\n"
+        "                  [-ds <ds_name>][-f <ds_format>][-l <layer_name>]\n"
+        "                  [-dsco <NAME>=<VALUE>]... [-lco <NAME>=<VALUE>]...\n"
+        "                  <gnm_name>\n");
+
+    if (bHelpDoc)
+    {
+        exit(0);
+    }
 
     if (bShort)
     {
@@ -64,39 +56,35 @@ static void Usage(const char *pszAdditionalMsg, int bShort = TRUE)
         exit(1);
     }
 
-    printf("\n   dijkstra start_gfid end_gfid: calculates the best path "
-           "between two points using Dijkstra algorithm from start_gfid point "
-           "to end_gfid point\n"
-           "   kpaths start_gfid end_gfid k: calculates k (up to 10) best "
-           "paths between two points using Yen\'s algorithm (which internally "
-           "uses Dijkstra algorithm for single path calculating) from "
-           "start_gfid point to end_gfid point\n"
-           "   resource: calculates the \"resource distribution\". The "
-           "connected components search is performed using breadth-first "
-           "search and starting from that features which are marked by rules "
-           "as \'EMITTERS\'\n"
-           "   -ds ds_name: the name&path of the dataset to save the layer "
-           "with resulting paths. Not need to be existed dataset\n"
-           "   -f ds_format: define this to set the format of newly created "
-           "dataset\n"
-           "   -l layer_name: the name of the resulting layer. If the layer "
-           "exists already - it will be rewritten. For K shortest paths "
-           "several layers are created in format layer_nameN, where N - is "
-           "number of the path (0 - is the most shortest one)\n"
-           "   -dsco NAME=VALUE: Dataset creation option (format specific)\n"
-           "   -lco  NAME=VALUE: Layer creation option (format specific)\n"
-           "   -alo  NAME=VALUE: Algorithm option (format specific)\n"
-           "   gnm_name: the network to work with (path and name)\n");
+    fprintf(bIsError ? stderr : stdout,
+            "\n   dijkstra start_gfid end_gfid: calculates the best path "
+            "between two points using Dijkstra algorithm from start_gfid point "
+            "to end_gfid point\n"
+            "   kpaths start_gfid end_gfid k: calculates k (up to 10) best "
+            "paths between two points using Yen\'s algorithm (which internally "
+            "uses Dijkstra algorithm for single path calculating) from "
+            "start_gfid point to end_gfid point\n"
+            "   resource: calculates the \"resource distribution\". The "
+            "connected components search is performed using breadth-first "
+            "search and starting from that features which are marked by rules "
+            "as \'EMITTERS\'\n"
+            "   -ds ds_name: the name&path of the dataset to save the layer "
+            "with resulting paths. Not need to be existed dataset\n"
+            "   -f ds_format: define this to set the format of newly created "
+            "dataset\n"
+            "   -l layer_name: the name of the resulting layer. If the layer "
+            "exists already - it will be rewritten. For K shortest paths "
+            "several layers are created in format layer_nameN, where N - is "
+            "number of the path (0 - is the most shortest one)\n"
+            "   -dsco NAME=VALUE: Dataset creation option (format specific)\n"
+            "   -lco  NAME=VALUE: Layer creation option (format specific)\n"
+            "   -alo  NAME=VALUE: Algorithm option (format specific)\n"
+            "   gnm_name: the network to work with (path and name)\n");
 
     if (pszAdditionalMsg)
         fprintf(stderr, "\nFAILURE: %s\n", pszAdditionalMsg);
 
-    exit(1);
-}
-
-static void Usage(int bShort = TRUE)
-{
-    Usage(nullptr, bShort);
+    exit(bIsError ? 1 : 0);
 }
 
 /************************************************************************/
@@ -285,7 +273,7 @@ static void ReportOnLayer(OGRLayer *poLayer, int bVerbose)
             {
                 OGRGeomFieldDefn *poGFldDefn =
                     poLayer->GetLayerDefn()->GetGeomFieldDefn(iGeom);
-                OGRSpatialReference *poSRS = poGFldDefn->GetSpatialRef();
+                const OGRSpatialReference *poSRS = poGFldDefn->GetSpatialRef();
                 if (poSRS == nullptr)
                     pszWKT = CPLStrdup("(unknown)");
                 else
@@ -365,8 +353,8 @@ static void ReportOnLayer(OGRLayer *poLayer, int bVerbose)
     do                                                                         \
     {                                                                          \
         if (iArg + nExtraArg >= nArgc)                                         \
-            Usage(CPLSPrintf("%s option requires %d argument(s)",              \
-                             papszArgv[iArg], nExtraArg));                     \
+            Usage(true, CPLSPrintf("%s option requires %d argument(s)",        \
+                                   papszArgv[iArg], nExtraArg));               \
     } while (false)
 
 MAIN_START(nArgc, papszArgv)
@@ -425,12 +413,17 @@ MAIN_START(nArgc, papszArgv)
 
         else if (EQUAL(papszArgv[iArg], "--help"))
         {
-            Usage();
+            Usage(false);
+        }
+
+        else if (EQUAL(papszArgv[iArg], "--help-doc"))
+        {
+            Usage(false, nullptr, true, true);
         }
 
         else if (EQUAL(papszArgv[iArg], "--long-usage"))
         {
-            Usage(FALSE);
+            Usage(false, nullptr, false);
         }
 
         else if (EQUAL(papszArgv[iArg], "-q") ||
@@ -496,7 +489,8 @@ MAIN_START(nArgc, papszArgv)
         }
         else if (papszArgv[iArg][0] == '-')
         {
-            Usage(CPLSPrintf("Unknown option name '%s'", papszArgv[iArg]));
+            Usage(true,
+                  CPLSPrintf("Unknown option name '%s'", papszArgv[iArg]));
         }
 
         else if (pszDataSource == nullptr)
@@ -509,10 +503,10 @@ MAIN_START(nArgc, papszArgv)
     if (stOper == op_dijkstra)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         if (nFromFID == -1 || nToFID == -1)
-            Usage("Invalid input from or to identificators");
+            Usage(true, "Invalid input from or to identificators");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -545,10 +539,10 @@ MAIN_START(nArgc, papszArgv)
     else if (stOper == op_kpaths)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         if (nFromFID == -1 || nToFID == -1)
-            Usage("Invalid input from or to identificators");
+            Usage(true, "Invalid input from or to identificators");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -589,7 +583,7 @@ MAIN_START(nArgc, papszArgv)
     else if (stOper == op_resource)
     {
         if (pszDataSource == nullptr)
-            Usage("No network dataset provided");
+            Usage(true, "No network dataset provided");
 
         // open
         poDS = cpl::down_cast<GNMNetwork *>(static_cast<GDALDataset *>(
@@ -622,9 +616,10 @@ MAIN_START(nArgc, papszArgv)
     }
     else
     {
-        printf(
-            "\nNeed an operation. See help what you can do with gnmanalyse:\n");
-        Usage();
+        fprintf(
+            stderr,
+            "Need an operation. See help what you can do with gnmanalyse:\n");
+        Usage(true);
     }
 
 exit:
@@ -636,11 +631,15 @@ exit:
     if (poResultLayer != nullptr)
         poDS->ReleaseResultSet(poResultLayer);
 
-    if (poDS != nullptr)
-        GDALClose(poDS);
+    if (poDS)
+    {
+        if (GDALClose(poDS) != CE_None)
+            nRet = 1;
+    }
 
     GDALDestroyDriverManager();
 
     return nRet;
 }
+
 MAIN_END

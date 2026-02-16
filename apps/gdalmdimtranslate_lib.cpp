@@ -7,23 +7,7 @@
  * ****************************************************************************
  * Copyright (c) 2019, Even Rouault <even.rouault at spatialys.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  ****************************************************************************/
 
 #include "cpl_port.h"
@@ -31,6 +15,7 @@
 #include "gdal_priv.h"
 #include "gdal_utils.h"
 #include "gdal_utils_priv.h"
+#include "gdalargumentparser.h"
 #include "vrtdataset.h"
 #include <algorithm>
 #include <map>
@@ -45,6 +30,7 @@ struct GDALMultiDimTranslateOptions
     std::string osFormat{};
     CPLStringList aosCreateOptions{};
     std::vector<std::string> aosArraySpec{};
+    CPLStringList aosArrayOptions{};
     std::vector<std::string> aosSubset{};
     std::vector<std::string> aosScaleFactor{};
     std::vector<std::string> aosGroup{};
@@ -52,7 +38,143 @@ struct GDALMultiDimTranslateOptions
     bool bStrict = false;
     void *pProgressData = nullptr;
     bool bUpdate = false;
+    bool bOverwrite = false;
+    bool bNoOverwrite = false;
 };
+
+/*************************************************************************/
+/*             GDALMultiDimTranslateAppOptionsGetParser()                */
+/************************************************************************/
+
+static std::unique_ptr<GDALArgumentParser>
+GDALMultiDimTranslateAppOptionsGetParser(
+    GDALMultiDimTranslateOptions *psOptions,
+    GDALMultiDimTranslateOptionsForBinary *psOptionsForBinary)
+{
+    auto argParser = std::make_unique<GDALArgumentParser>(
+        "gdalmdimtranslate", /* bForBinary=*/psOptionsForBinary != nullptr);
+
+    argParser->add_description(
+        _("Converts multidimensional data between different formats, and "
+          "performs subsetting."));
+
+    argParser->add_epilog(
+        _("For more details, consult "
+          "https://gdal.org/programs/gdalmdimtranslate.html"));
+
+    if (psOptionsForBinary)
+    {
+        argParser->add_input_format_argument(
+            &psOptionsForBinary->aosAllowInputDrivers);
+    }
+
+    argParser->add_output_format_argument(psOptions->osFormat);
+
+    argParser->add_creation_options_argument(psOptions->aosCreateOptions);
+
+    auto &group = argParser->add_mutually_exclusive_group();
+    group.add_argument("-array")
+        .metavar("<array_spec>")
+        .append()
+        .store_into(psOptions->aosArraySpec)
+        .help(_(
+            "Select a single array instead of converting the whole dataset."));
+
+    argParser->add_argument("-arrayoption")
+        .metavar("<NAME>=<VALUE>")
+        .append()
+        .action([psOptions](const std::string &s)
+                { psOptions->aosArrayOptions.AddString(s.c_str()); })
+        .help(_("Option passed to GDALGroup::GetMDArrayNames() to filter "
+                "arrays."));
+
+    group.add_argument("-group")
+        .metavar("<group_spec>")
+        .append()
+        .store_into(psOptions->aosGroup)
+        .help(_(
+            "Select a single group instead of converting the whole dataset."));
+
+    // Note: this is mutually exclusive with "view" option in -array
+    argParser->add_argument("-subset")
+        .metavar("<subset_spec>")
+        .append()
+        .store_into(psOptions->aosSubset)
+        .help(_("Select a subset of the data."));
+
+    // Note: this is mutually exclusive with "view" option in -array
+    argParser->add_argument("-scaleaxes")
+        .metavar("<scaleaxes_spec>")
+        .action(
+            [psOptions](const std::string &s)
+            {
+                CPLStringList aosScaleFactors(
+                    CSLTokenizeString2(s.c_str(), ",", 0));
+                for (int j = 0; j < aosScaleFactors.size(); j++)
+                {
+                    psOptions->aosScaleFactor.push_back(aosScaleFactors[j]);
+                }
+            })
+        .help(
+            _("Applies a integral scale factor to one or several dimensions."));
+
+    argParser->add_argument("-strict")
+        .flag()
+        .store_into(psOptions->bStrict)
+        .help(_("Turn warnings into failures."));
+
+    // Undocumented option used by gdal mdim convert
+    argParser->add_argument("--overwrite")
+        .store_into(psOptions->bOverwrite)
+        .hidden();
+
+    // Undocumented option used by gdal mdim convert
+    argParser->add_argument("--no-overwrite")
+        .store_into(psOptions->bNoOverwrite)
+        .hidden();
+
+    if (psOptionsForBinary)
+    {
+        argParser->add_open_options_argument(
+            psOptionsForBinary->aosOpenOptions);
+
+        argParser->add_argument("src_dataset")
+            .metavar("<src_dataset>")
+            .store_into(psOptionsForBinary->osSource)
+            .help(_("The source dataset name."));
+
+        argParser->add_argument("dst_dataset")
+            .metavar("<dst_dataset>")
+            .store_into(psOptionsForBinary->osDest)
+            .help(_("The destination file name."));
+
+        argParser->add_quiet_argument(&psOptionsForBinary->bQuiet);
+    }
+
+    return argParser;
+}
+
+/************************************************************************/
+/*            GDALMultiDimTranslateAppGetParserUsage()                  */
+/************************************************************************/
+
+std::string GDALMultiDimTranslateAppGetParserUsage()
+{
+    try
+    {
+        GDALMultiDimTranslateOptions sOptions;
+        GDALMultiDimTranslateOptionsForBinary sOptionsForBinary;
+        auto argParser = GDALMultiDimTranslateAppOptionsGetParser(
+            &sOptions, &sOptionsForBinary);
+        return argParser->usage();
+    }
+    catch (const std::exception &err)
+    {
+        CPLError(CE_Failure, CPLE_AppDefined, "Unexpected exception: %s",
+                 err.what());
+        return std::string();
+    }
+}
 
 /************************************************************************/
 /*                        FindMinMaxIdxNumeric()                        */
@@ -418,14 +540,15 @@ GetDimensionDesc(DimensionRemapper &oDimRemapper,
             if (aosTokens.size() != 1 && aosTokens.size() != 2)
             {
                 CPLError(CE_Failure, CPLE_AppDefined,
-                         "Invalid number of valus in subset specification.");
+                         "Invalid number of values in subset specification.");
                 return nullptr;
             }
 
             const bool bIsNumeric =
                 var->GetDataType().GetClass() == GEDTC_NUMERIC;
-            const auto dt(bIsNumeric ? GDALExtendedDataType::Create(GDT_Float64)
-                                     : GDALExtendedDataType::CreateString());
+            const GDALExtendedDataType dt(
+                bIsNumeric ? GDALExtendedDataType::Create(GDT_Float64)
+                           : GDALExtendedDataType::CreateString());
 
             double dfMin = 0;
             double dfMax = 0;
@@ -602,7 +725,7 @@ static bool ParseArraySpec(const std::string &arraySpec, std::string &srcName,
                            std::string &dstName, int &band,
                            std::vector<int> &anTransposedAxis,
                            std::string &viewExpr,
-                           GDALExtendedDataType &outputType)
+                           GDALExtendedDataType &outputType, bool &bResampled)
 {
     if (!STARTS_WITH(arraySpec.c_str(), "name=") &&
         !STARTS_WITH(arraySpec.c_str(), "band="))
@@ -675,7 +798,20 @@ static bool ParseArraySpec(const std::string &arraySpec, std::string &srcName,
                 CSLTokenizeString2(transposeExpr.c_str(), ",", 0));
             for (int i = 0; i < aosAxis.size(); ++i)
             {
-                anTransposedAxis.push_back(atoi(aosAxis[i]));
+                int iAxis = atoi(aosAxis[i]);
+                // check for non-integer characters
+                if (iAxis == 0)
+                {
+                    if (!EQUAL(aosAxis[i], "0"))
+                    {
+                        CPLError(CE_Failure, CPLE_AppDefined,
+                                 "Invalid value for axis in transpose: %s",
+                                 aosAxis[i]);
+                        return false;
+                    }
+                }
+
+                anTransposedAxis.push_back(iAxis);
             }
         }
         else if (STARTS_WITH(token.c_str(), "view="))
@@ -695,6 +831,10 @@ static bool ParseArraySpec(const std::string &arraySpec, std::string &srcName,
                 outputType = GDALExtendedDataType::Create(eDT);
             }
         }
+        else if (STARTS_WITH(token.c_str(), "resample="))
+        {
+            bResampled = CPLTestBool(token.c_str() + strlen("resample="));
+        }
         else
         {
             CPLError(CE_Failure, CPLE_AppDefined,
@@ -710,11 +850,13 @@ static bool ParseArraySpec(const std::string &arraySpec, std::string &srcName,
 /************************************************************************/
 
 static bool TranslateArray(
-    DimensionRemapper &oDimRemapper, const std::string &arraySpec,
+    DimensionRemapper &oDimRemapper,
+    const std::shared_ptr<GDALMDArray> &poSrcArrayIn,
+    const std::string &arraySpec,
     const std::shared_ptr<GDALGroup> &poSrcRootGroup,
     const std::shared_ptr<GDALGroup> &poSrcGroup,
-    const std::shared_ptr<GDALGroup> &poDstRootGroup,
-    std::shared_ptr<GDALGroup> &poDstGroup, GDALDataset *poSrcDS,
+    const std::shared_ptr<VRTGroup> &poDstRootGroup,
+    std::shared_ptr<VRTGroup> &poDstGroup, GDALDataset *poSrcDS,
     std::map<std::string, std::shared_ptr<GDALDimension>> &mapSrcToDstDims,
     std::map<std::string, std::shared_ptr<GDALDimension>> &mapDstDimFullNames,
     const GDALMultiDimTranslateOptions *psOptions)
@@ -724,14 +866,16 @@ static bool TranslateArray(
     int band = -1;
     std::vector<int> anTransposedAxis;
     std::string viewExpr;
+    bool bResampled = false;
     GDALExtendedDataType outputType(GDALExtendedDataType::Create(GDT_Unknown));
     if (!ParseArraySpec(arraySpec, srcArrayName, dstArrayName, band,
-                        anTransposedAxis, viewExpr, outputType))
+                        anTransposedAxis, viewExpr, outputType, bResampled))
     {
         return false;
     }
 
     std::shared_ptr<GDALMDArray> srcArray;
+    bool bSrcArrayAccessibleThroughSrcGroup = true;
     if (poSrcRootGroup && poSrcGroup)
     {
         if (!srcArrayName.empty() && srcArrayName[0] == '/')
@@ -740,10 +884,22 @@ static bool TranslateArray(
             srcArray = poSrcGroup->OpenMDArray(srcArrayName);
         if (!srcArray)
         {
-            CPLError(CE_Failure, CPLE_AppDefined, "Cannot find array %s",
-                     srcArrayName.c_str());
-            return false;
+            if (poSrcArrayIn && poSrcArrayIn->GetFullName() == arraySpec)
+            {
+                bSrcArrayAccessibleThroughSrcGroup = false;
+                srcArray = poSrcArrayIn;
+            }
+            else
+            {
+                CPLError(CE_Failure, CPLE_AppDefined, "Cannot find array %s",
+                         srcArrayName.c_str());
+                return false;
+            }
         }
+    }
+    else if (band < 0)
+    {
+        srcArray = poSrcDS->AsMDArray();
     }
     else
     {
@@ -754,11 +910,24 @@ static bool TranslateArray(
     }
 
     auto tmpArray = srcArray;
+
+    if (bResampled)
+    {
+        auto newTmpArray =
+            tmpArray->GetResampled(std::vector<std::shared_ptr<GDALDimension>>(
+                                       tmpArray->GetDimensionCount()),
+                                   GRIORA_NearestNeighbour, nullptr, nullptr);
+        if (!newTmpArray)
+            return false;
+        tmpArray = std::move(newTmpArray);
+    }
+
     if (!anTransposedAxis.empty())
     {
-        tmpArray = tmpArray->Transpose(anTransposedAxis);
-        if (!tmpArray)
+        auto newTmpArray = tmpArray->Transpose(anTransposedAxis);
+        if (!newTmpArray)
             return false;
+        tmpArray = std::move(newTmpArray);
     }
     const auto &srcArrayDims(tmpArray->GetDimensions());
     std::map<std::shared_ptr<GDALDimension>, std::shared_ptr<GDALDimension>>
@@ -774,9 +943,10 @@ static bool TranslateArray(
                      "with subset and/or scalefactor options");
             return false;
         }
-        tmpArray = tmpArray->GetView(viewExpr, true, viewSpecs);
-        if (!tmpArray)
+        auto newTmpArray = tmpArray->GetView(viewExpr, true, viewSpecs);
+        if (!newTmpArray)
             return false;
+        tmpArray = std::move(newTmpArray);
     }
     else if (!psOptions->aosSubset.empty() ||
              !psOptions->aosScaleFactor.empty())
@@ -822,7 +992,7 @@ static bool TranslateArray(
             auto tmpArrayNew = tmpArray->GetView(viewExpr, false, viewSpecs);
             if (!tmpArrayNew)
                 return false;
-            tmpArray = tmpArrayNew;
+            tmpArray = std::move(tmpArrayNew);
             size_t j = 0;
             const auto &tmpArrayDims(tmpArray->GetDimensions());
             for (size_t i = 0; i < srcArrayDims.size(); ++i)
@@ -872,8 +1042,7 @@ static bool TranslateArray(
 
         std::shared_ptr<GDALDimension> dstDim;
         {
-            CPLErrorHandlerPusher oHandlerPusher(CPLQuietErrorHandler);
-            CPLErrorStateBackuper oErrorStateBackuper;
+            CPLErrorStateBackuper oErrorStateBackuper(CPLQuietErrorHandler);
             if (!srcDimFullName.empty() && srcDimFullName[0] == '/')
             {
                 dstDim =
@@ -904,20 +1073,7 @@ static bool TranslateArray(
             }
         }
 
-        auto srcDimForGetDimensionDesc(srcDim);
-        if (idxSliceSpec >= 0)
-        {
-            const auto &viewSpec(viewSpecs[idxSliceSpec]);
-            auto iParentDim = viewSpec.m_mapDimIdxToParentDimIdx[i];
-            if (iParentDim != static_cast<size_t>(-1))
-                srcDimForGetDimensionDesc = srcArrayDims[iParentDim];
-        }
-
-        const auto poDimDesc = GetDimensionDesc(oDimRemapper, psOptions,
-                                                srcDimForGetDimensionDesc);
-        if (poDimDesc == nullptr)
-            return false;
-
+        const auto nDimSize = srcDim->GetSize();
         std::string newDimNameFullName(srcDimFullName);
         std::string newDimName(srcDim->GetName());
         int nIncr = 2;
@@ -927,7 +1083,7 @@ static bool TranslateArray(
         auto oIter2 = mapDstDimFullNames.find(osDstGroupFullName + '/' +
                                               srcDim->GetName());
         while (oIter2 != mapDstDimFullNames.end() &&
-               oIter2->second->GetSize() != poDimDesc->nSize)
+               oIter2->second->GetSize() != nDimSize)
         {
             newDimName = srcDim->GetName() + CPLSPrintf("_%d", nIncr);
             newDimNameFullName = osDstGroupFullName + '/' + srcDim->GetName() +
@@ -936,15 +1092,14 @@ static bool TranslateArray(
             oIter2 = mapDstDimFullNames.find(newDimNameFullName);
         }
         if (oIter2 != mapDstDimFullNames.end() &&
-            oIter2->second->GetSize() == poDimDesc->nSize)
+            oIter2->second->GetSize() == nDimSize)
         {
             dstArrayDims.emplace_back(oIter2->second);
             continue;
         }
 
         dstDim = poDstGroup->CreateDimension(newDimName, srcDim->GetType(),
-                                             srcDim->GetDirection(),
-                                             poDimDesc->nSize);
+                                             srcDim->GetDirection(), nDimSize);
         if (!dstDim)
             return false;
         if (!srcDimFullName.empty() && srcDimFullName[0] == '/')
@@ -1027,7 +1182,7 @@ static bool TranslateArray(
         {
             if (poSrcRootGroup)
             {
-                if (!TranslateArray(oDimRemapper, indexingVarSpec,
+                if (!TranslateArray(oDimRemapper, srcIndexVar, indexingVarSpec,
                                     poSrcRootGroup, poSrcGroup, poDstRootGroup,
                                     poDstGroup, poSrcDS, mapSrcToDstDims,
                                     mapDstDimFullNames, psOptions))
@@ -1037,39 +1192,83 @@ static bool TranslateArray(
             }
             else
             {
-                double adfGT[6];
-                if (poSrcDS->GetGeoTransform(adfGT) == CE_None &&
-                    adfGT[2] == 0.0 && adfGT[4] == 0.0)
+                bool bIndexingVarCreated = false;
+                if (srcIndexVar->GetName() == "X" ||
+                    srcIndexVar->GetName() == "Y")
                 {
-                    auto var = std::dynamic_pointer_cast<VRTMDArray>(
-                        poDstGroup->CreateMDArray(
+                    GDALGeoTransform gt;
+                    if (poSrcDS->GetGeoTransform(gt) == CE_None &&
+                        gt[2] == 0.0 && gt[4] == 0.0)
+                    {
+                        auto var = poDstGroup->CreateVRTMDArray(
                             newDimName, {dstDim},
-                            GDALExtendedDataType::Create(GDT_Float64)));
+                            GDALExtendedDataType::Create(GDT_Float64));
+                        if (var)
+                        {
+                            const double dfStart =
+                                srcIndexVar->GetName() == "X"
+                                    ? gt[0] + (range.m_nStartIdx + 0.5) * gt[1]
+                                    : gt[3] + (range.m_nStartIdx + 0.5) * gt[5];
+                            const double dfIncr =
+                                (srcIndexVar->GetName() == "X" ? gt[1]
+                                                               : gt[5]) *
+                                range.m_nIncr;
+                            auto poSource = std::make_unique<
+                                VRTMDArraySourceRegularlySpaced>(dfStart,
+                                                                 dfIncr);
+                            var->AddSource(std::move(poSource));
+                            bIndexingVarCreated = true;
+                        }
+                        // else: error emitted by CreateVRTMDArray()
+                    }
+                }
+
+                // Arbitrary: to avoid blowing up RAM
+                constexpr size_t MAX_SIZE_FOR_INDEXING_VAR = 1000 * 1000;
+                if (!bIndexingVarCreated &&
+                    srcIndexVar->GetDimensionCount() == 1 &&
+                    srcIndexVar->GetDataType().GetClass() != GEDTC_COMPOUND &&
+                    srcIndexVar->GetDimensions()[0]->GetSize() <
+                        MAX_SIZE_FOR_INDEXING_VAR)
+                {
+                    auto var = poDstGroup->CreateVRTMDArray(
+                        newDimName, {dstDim}, srcIndexVar->GetDataType());
                     if (var)
                     {
-                        const double dfStart =
-                            srcIndexVar->GetName() == "X"
-                                ? adfGT[0] +
-                                      (range.m_nStartIdx + 0.5) * adfGT[1]
-                                : adfGT[3] +
-                                      (range.m_nStartIdx + 0.5) * adfGT[5];
-                        const double dfIncr =
-                            (srcIndexVar->GetName() == "X" ? adfGT[1]
-                                                           : adfGT[5]) *
-                            range.m_nIncr;
-                        std::unique_ptr<VRTMDArraySourceRegularlySpaced>
-                            poSource(new VRTMDArraySourceRegularlySpaced(
-                                dfStart, dfIncr));
+                        std::vector<GUInt64> anOffset = {0};
+                        const size_t nCount = static_cast<size_t>(
+                            srcIndexVar->GetDimensions()[0]->GetSize());
+                        std::vector<size_t> anCount = {nCount};
+                        std::vector<GByte> abyValues;
+                        abyValues.resize(srcIndexVar->GetDataType().GetSize() *
+                                         nCount);
+                        const GInt64 arrayStep[] = {1};
+                        const GPtrDiff_t anBufferStride[] = {1};
+                        srcIndexVar->Read(anOffset.data(), anCount.data(),
+                                          arrayStep, anBufferStride,
+                                          srcIndexVar->GetDataType(),
+                                          abyValues.data());
+                        auto poSource =
+                            std::make_unique<VRTMDArraySourceInlinedValues>(
+                                var.get(),
+                                /* bIsConstantValue = */ false,
+                                std::move(anOffset), std::move(anCount),
+                                std::move(abyValues));
                         var->AddSource(std::move(poSource));
                     }
+                    // else: error emitted by CreateVRTMDArray()
+                }
+                else if (!bIndexingVarCreated)
+                {
+                    CPLDebug("GDAL", "Cannot create indexing variable for %s",
+                             srcIndexVar->GetName().c_str());
                 }
             }
 
-            CPLErrorHandlerPusher oHandlerPusher(CPLQuietErrorHandler);
-            CPLErrorStateBackuper oErrorStateBackuper;
+            CPLErrorStateBackuper oErrorStateBackuper(CPLQuietErrorHandler);
             auto poDstIndexingVar(poDstGroup->OpenMDArray(newDimName));
             if (poDstIndexingVar)
-                dstDim->SetIndexingVariable(poDstIndexingVar);
+                dstDim->SetIndexingVariable(std::move(poDstIndexingVar));
         }
     }
     if (outputType.GetClass() == GEDTC_NUMERIC &&
@@ -1077,15 +1276,39 @@ static bool TranslateArray(
     {
         outputType = GDALExtendedDataType(tmpArray->GetDataType());
     }
-    auto dstArray =
-        poDstGroup->CreateMDArray(dstArrayName, dstArrayDims, outputType);
-    auto dstArrayVRT = std::dynamic_pointer_cast<VRTMDArray>(dstArray);
-    if (!dstArrayVRT)
+
+    CPLStringList aosArrayCO;
+    if (!bResampled && anTransposedAxis.empty() && viewExpr.empty() &&
+        psOptions->aosSubset.empty() && psOptions->aosScaleFactor.empty() &&
+        srcArray->GetDimensionCount() == dstArrayDims.size())
+    {
+        const auto anBlockSize = srcArray->GetBlockSize();
+        std::string osBlockSize;
+        for (auto v : anBlockSize)
+        {
+            if (v == 0)
+            {
+                osBlockSize.clear();
+                break;
+            }
+            if (!osBlockSize.empty())
+                osBlockSize += ',';
+            osBlockSize += std::to_string(v);
+        }
+        if (!osBlockSize.empty())
+            aosArrayCO.SetNameValue("BLOCKSIZE", osBlockSize.c_str());
+    }
+
+    auto dstArray = poDstGroup->CreateVRTMDArray(dstArrayName, dstArrayDims,
+                                                 outputType, aosArrayCO.List());
+    if (!dstArray)
         return false;
 
     GUInt64 nCurCost = 0;
     dstArray->CopyFromAllExceptValues(srcArray.get(), false, nCurCost, 0,
                                       nullptr, nullptr);
+    if (bResampled)
+        dstArray->SetSpatialRef(tmpArray->GetSpatialRef().get());
 
     if (idxSliceSpec >= 0)
     {
@@ -1140,7 +1363,7 @@ static bool TranslateArray(
                         dt.FreeDynamicMemory(&abyTmp[0]);
                     }
 
-                    const auto unit(srcIndexVar->GetUnit());
+                    const auto &unit(srcIndexVar->GetUnit());
                     if (!unit.empty())
                     {
                         auto dstAttr = dstArray->CreateAttribute(
@@ -1153,23 +1376,39 @@ static bool TranslateArray(
         }
     }
 
-    const auto dimCount(tmpArray->GetDimensionCount());
-    std::vector<GUInt64> anSrcOffset(dimCount);
-    std::vector<GUInt64> anCount(dimCount);
-    for (size_t i = 0; i < dimCount; ++i)
+    double dfStart = 0.0;
+    double dfIncrement = 0.0;
+    if (!bSrcArrayAccessibleThroughSrcGroup &&
+        tmpArray->IsRegularlySpaced(dfStart, dfIncrement))
     {
-        anCount[i] = tmpArrayDims[i]->GetSize();
+        auto poSource = std::make_unique<VRTMDArraySourceRegularlySpaced>(
+            dfStart, dfIncrement);
+        dstArray->AddSource(std::move(poSource));
     }
-    std::vector<GUInt64> anStep(dimCount, 1);
-    std::vector<GUInt64> anDstOffset(dimCount);
-    std::unique_ptr<VRTMDArraySourceFromArray> poSource(
-        new VRTMDArraySourceFromArray(
-            dstArrayVRT.get(), false, false, poSrcDS->GetDescription(),
+    else
+    {
+        const auto dimCount(tmpArray->GetDimensionCount());
+        std::vector<GUInt64> anSrcOffset(dimCount);
+        std::vector<GUInt64> anCount(dimCount);
+        for (size_t i = 0; i < dimCount; ++i)
+        {
+            anCount[i] = tmpArrayDims[i]->GetSize();
+        }
+        std::vector<GUInt64> anStep(dimCount, 1);
+        std::vector<GUInt64> anDstOffset(dimCount);
+        auto poSource = std::make_unique<VRTMDArraySourceFromArray>(
+            dstArray.get(), false, false, poSrcDS->GetDescription(),
             band < 0 ? srcArray->GetFullName() : std::string(),
             band >= 1 ? CPLSPrintf("%d", band) : std::string(),
-            std::move(anTransposedAxis), viewExpr, std::move(anSrcOffset),
-            std::move(anCount), std::move(anStep), std::move(anDstOffset)));
-    dstArrayVRT->AddSource(std::move(poSource));
+            std::move(anTransposedAxis),
+            bResampled ? (viewExpr.empty()
+                              ? std::string("resample=true")
+                              : std::string("resample=true,").append(viewExpr))
+                       : std::move(viewExpr),
+            std::move(anSrcOffset), std::move(anCount), std::move(anStep),
+            std::move(anDstOffset));
+        dstArray->AddSource(std::move(poSource));
+    }
 
     return true;
 }
@@ -1193,7 +1432,7 @@ GetGroup(const std::shared_ptr<GDALGroup> &poRootGroup,
                      aosTokens[i]);
             return nullptr;
         }
-        poCurGroup = poCurGroupNew;
+        poCurGroup = std::move(poCurGroupNew);
     }
     return poCurGroup;
 }
@@ -1204,8 +1443,8 @@ GetGroup(const std::shared_ptr<GDALGroup> &poRootGroup,
 
 static bool CopyGroup(
     DimensionRemapper &oDimRemapper,
-    const std::shared_ptr<GDALGroup> &poDstRootGroup,
-    std::shared_ptr<GDALGroup> &poDstGroup,
+    const std::shared_ptr<VRTGroup> &poDstRootGroup,
+    std::shared_ptr<VRTGroup> &poDstGroup,
     const std::shared_ptr<GDALGroup> &poSrcRootGroup,
     const std::shared_ptr<GDALGroup> &poSrcGroup, GDALDataset *poSrcDS,
     std::map<std::string, std::shared_ptr<GDALDimension>> &mapSrcToDstDims,
@@ -1236,27 +1475,32 @@ static bool CopyGroup(
         }
     }
 
-    auto attrs = poSrcGroup->GetAttributes();
-    for (const auto &attr : attrs)
+    if (!(poSrcGroup == poSrcRootGroup && psOptions->aosGroup.empty()))
     {
-        auto dstAttr = poDstGroup->CreateAttribute(
-            attr->GetName(), attr->GetDimensionsSize(), attr->GetDataType());
-        if (!dstAttr)
+        auto attrs = poSrcGroup->GetAttributes();
+        for (const auto &attr : attrs)
         {
-            if (!psOptions->bStrict)
-                continue;
-            return false;
+            auto dstAttr = poDstGroup->CreateAttribute(
+                attr->GetName(), attr->GetDimensionsSize(),
+                attr->GetDataType());
+            if (!dstAttr)
+            {
+                if (!psOptions->bStrict)
+                    continue;
+                return false;
+            }
+            auto raw(attr->ReadAsRaw());
+            if (!dstAttr->Write(raw.data(), raw.size()) && !psOptions->bStrict)
+                return false;
         }
-        auto raw(attr->ReadAsRaw());
-        if (!dstAttr->Write(raw.data(), raw.size()) && !psOptions->bStrict)
-            return false;
     }
 
-    auto arrayNames = poSrcGroup->GetMDArrayNames();
+    auto arrayNames =
+        poSrcGroup->GetMDArrayNames(psOptions->aosArrayOptions.List());
     for (const auto &name : arrayNames)
     {
-        if (!TranslateArray(oDimRemapper, name, poSrcRootGroup, poSrcGroup,
-                            poDstRootGroup, poDstGroup, poSrcDS,
+        if (!TranslateArray(oDimRemapper, nullptr, name, poSrcRootGroup,
+                            poSrcGroup, poDstRootGroup, poDstGroup, poSrcDS,
                             mapSrcToDstDims, mapDstDimFullNames, psOptions))
         {
             return false;
@@ -1276,9 +1520,9 @@ static bool CopyGroup(
                 mapSrcToDstDims.find(oIterDimName->second);
             if (oCorrespondingDimIter != mapSrcToDstDims.end())
             {
-                CPLErrorHandlerPusher oHandlerPusher(CPLQuietErrorHandler);
-                CPLErrorStateBackuper oErrorStateBackuper;
-                oCorrespondingDimIter->second->SetIndexingVariable(dstArray);
+                CPLErrorStateBackuper oErrorStateBackuper(CPLQuietErrorHandler);
+                oCorrespondingDimIter->second->SetIndexingVariable(
+                    std::move(dstArray));
             }
         }
     }
@@ -1293,7 +1537,7 @@ static bool CopyGroup(
             {
                 return false;
             }
-            auto dstSubGroup = poDstGroup->CreateGroup(name);
+            auto dstSubGroup = poDstGroup->CreateVRTGroup(name);
             if (!dstSubGroup)
             {
                 return false;
@@ -1356,7 +1600,7 @@ static bool ParseGroupSpec(const std::string &groupSpec, std::string &srcName,
 /*                           TranslateInternal()                        */
 /************************************************************************/
 
-static bool TranslateInternal(std::shared_ptr<GDALGroup> &poDstRootGroup,
+static bool TranslateInternal(std::shared_ptr<VRTGroup> &poDstRootGroup,
                               GDALDataset *poSrcDS,
                               const GDALMultiDimTranslateOptions *psOptions)
 {
@@ -1425,7 +1669,7 @@ static bool TranslateInternal(std::shared_ptr<GDALGroup> &poDstRootGroup,
                     return false;
                 if (dstName.empty())
                     dstName = poSrcGroup->GetName();
-                auto dstSubGroup = poDstRootGroup->CreateGroup(dstName);
+                auto dstSubGroup = poDstRootGroup->CreateVRTGroup(dstName);
                 if (!dstSubGroup ||
                     !CopyGroup(oDimRemapper, poDstRootGroup, dstSubGroup,
                                poSrcRootGroup, poSrcGroup, poSrcDS,
@@ -1441,10 +1685,10 @@ static bool TranslateInternal(std::shared_ptr<GDALGroup> &poDstRootGroup,
     {
         for (const auto &arraySpec : psOptions->aosArraySpec)
         {
-            if (!TranslateArray(oDimRemapper, arraySpec, poSrcRootGroup,
-                                poSrcRootGroup, poDstRootGroup, poDstRootGroup,
-                                poSrcDS, mapSrcToDstDims, mapDstDimFullNames,
-                                psOptions))
+            if (!TranslateArray(oDimRemapper, nullptr, arraySpec,
+                                poSrcRootGroup, poSrcRootGroup, poDstRootGroup,
+                                poDstRootGroup, poSrcDS, mapSrcToDstDims,
+                                mapDstDimFullNames, psOptions))
             {
                 return false;
             }
@@ -1492,13 +1736,16 @@ CopyToNonMultiDimensionalDriver(GDALDriver *poDriver, const char *pszDest,
         std::string viewExpr;
         GDALExtendedDataType outputType(
             GDALExtendedDataType::Create(GDT_Unknown));
+        bool bResampled = false;
         ParseArraySpec(psOptions->aosArraySpec[0], srcArrayName, dstArrayName,
-                       band, anTransposedAxis, viewExpr, outputType);
+                       band, anTransposedAxis, viewExpr, outputType,
+                       bResampled);
         srcArray = poRG->OpenMDArray(dstArrayName);
     }
     else
     {
-        auto srcArrayNames = poRG->GetMDArrayNames();
+        auto srcArrayNames = poRG->GetMDArrayNames(
+            psOptions ? psOptions->aosArrayOptions.List() : nullptr);
         for (const auto &srcArrayName : srcArrayNames)
         {
             auto tmpArray = poRG->OpenMDArray(srcArrayName);
@@ -1516,7 +1763,7 @@ CopyToNonMultiDimensionalDriver(GDALDriver *poDriver, const char *pszDest,
                                  "output to non-multidimensional driver");
                         return nullptr;
                     }
-                    srcArray = tmpArray;
+                    srcArray = std::move(tmpArray);
                 }
             }
         }
@@ -1635,18 +1882,46 @@ GDALMultiDimTranslate(const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
         pszDest = GDALGetDescription(hDstDS);
 #endif
 
+    if (psOptions && psOptions->bOverwrite && !EQUAL(pszDest, ""))
+    {
+        VSIRmdirRecursive(pszDest);
+    }
+    else if (psOptions && psOptions->bNoOverwrite && !EQUAL(pszDest, ""))
+    {
+        VSIStatBufL sStat;
+        if (VSIStatL(pszDest, &sStat) == 0)
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "File '%s' already exists. Specify the --overwrite "
+                     "option to overwrite it.",
+                     pszDest);
+            return nullptr;
+        }
+        else if (std::unique_ptr<GDALDataset>(GDALDataset::Open(pszDest)))
+        {
+            CPLError(CE_Failure, CPLE_AppDefined,
+                     "Dataset '%s' already exists. Specify the --overwrite "
+                     "option to overwrite it.",
+                     pszDest);
+            return nullptr;
+        }
+    }
+
 #ifdef this_is_dead_code_for_now
     if (hDstDS == nullptr)
 #endif
     {
         if (osFormat.empty())
         {
-            if (EQUAL(CPLGetExtension(pszDest), "nc"))
+            if (EQUAL(CPLGetExtensionSafe(pszDest).c_str(), "nc"))
                 osFormat = "netCDF";
             else
                 osFormat = GetOutputDriverForRaster(pszDest);
             if (osFormat.empty())
             {
+                CPLError(CE_Failure, CPLE_AppDefined,
+                         "Cannot determine output driver for dataset name '%s'",
+                         pszDest);
                 return nullptr;
             }
         }
@@ -1681,13 +1956,14 @@ GDALMultiDimTranslate(const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
     GDALDataset *poTmpSrcDS = poSrcDS;
     if (psOptions &&
         (!psOptions->aosArraySpec.empty() || !psOptions->aosGroup.empty() ||
-         !psOptions->aosSubset.empty() || !psOptions->aosScaleFactor.empty()))
+         !psOptions->aosSubset.empty() || !psOptions->aosScaleFactor.empty() ||
+         !psOptions->aosArrayOptions.empty()))
     {
-        poTmpDS.reset(VRTDataset::CreateMultiDimensional("", nullptr, nullptr));
-        CPLAssert(poTmpDS);
-        poTmpSrcDS = poTmpDS.get();
+        auto poVRTDS =
+            VRTDataset::CreateVRTMultiDimensional("", nullptr, nullptr);
+        CPLAssert(poVRTDS);
 
-        auto poDstRootGroup = poTmpDS->GetRootGroup();
+        auto poDstRootGroup = poVRTDS->GetRootVRTGroup();
         CPLAssert(poDstRootGroup);
 
         if (!TranslateInternal(poDstRootGroup, poSrcDS, psOptions))
@@ -1701,6 +1977,9 @@ GDALMultiDimTranslate(const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
             }
             return nullptr;
         }
+
+        poTmpDS = std::move(poVRTDS);
+        poTmpSrcDS = poTmpDS.get();
     }
 
     auto poRG(poTmpSrcDS->GetRootGroup());
@@ -1747,7 +2026,7 @@ GDALMultiDimTranslate(const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
  * filename and open options too), or NULL. The accepted options are the ones of
  * the <a href="/programs/gdalmdimtranslate.html">gdalmdimtranslate</a> utility.
  * @param psOptionsForBinary should be nullptr, unless called from
- * gdalmultidimtranslate_bin.cpp
+ * gdalmdimtranslate_bin.cpp
  * @return pointer to the allocated GDALMultiDimTranslateOptions struct. Must be
  * freed with GDALMultiDimTranslateOptionsFree().
  *
@@ -1757,131 +2036,58 @@ GDALMultiDimTranslate(const char *pszDest, GDALDatasetH hDstDS, int nSrcCount,
 GDALMultiDimTranslateOptions *GDALMultiDimTranslateOptionsNew(
     char **papszArgv, GDALMultiDimTranslateOptionsForBinary *psOptionsForBinary)
 {
-    GDALMultiDimTranslateOptions *psOptions = new GDALMultiDimTranslateOptions;
+
+    auto psOptions = std::make_unique<GDALMultiDimTranslateOptions>();
 
     /* -------------------------------------------------------------------- */
-    /*      Handle command line arguments.                                  */
+    /*      Parse arguments.                                                */
     /* -------------------------------------------------------------------- */
-    const int argc = CSLCount(papszArgv);
-    for (int i = 0; papszArgv != nullptr && i < argc; i++)
+    try
     {
-        if (i < argc - 1 &&
-            (EQUAL(papszArgv[i], "-of") || EQUAL(papszArgv[i], "-f")))
-        {
-            ++i;
-            psOptions->osFormat = papszArgv[i];
-        }
+        auto argParser = GDALMultiDimTranslateAppOptionsGetParser(
+            psOptions.get(), psOptionsForBinary);
 
-        else if (EQUAL(papszArgv[i], "-q") || EQUAL(papszArgv[i], "-quiet"))
-        {
-            if (psOptionsForBinary)
-                psOptionsForBinary->bQuiet = TRUE;
-        }
+        argParser->parse_args_without_binary_name(papszArgv);
 
-        else if (EQUAL(papszArgv[i], "-strict"))
+        // Check for invalid options:
+        // -scaleaxes is not compatible with -array = "view"
+        // -subset is not compatible with -array = "view"
+        if (std::find(psOptions->aosArraySpec.cbegin(),
+                      psOptions->aosArraySpec.cend(),
+                      "view") != psOptions->aosArraySpec.cend())
         {
-            psOptions->bStrict = true;
-        }
-
-        else if (i < argc - 1 && EQUAL(papszArgv[i], "-array"))
-        {
-            ++i;
-            psOptions->aosArraySpec.push_back(papszArgv[i]);
-        }
-
-        else if (i < argc - 1 && EQUAL(papszArgv[i], "-group"))
-        {
-            ++i;
-            psOptions->aosGroup.push_back(papszArgv[i]);
-        }
-
-        else if (i < argc - 1 && EQUAL(papszArgv[i], "-subset"))
-        {
-            ++i;
-            psOptions->aosSubset.push_back(papszArgv[i]);
-        }
-
-        else if (i < argc - 1 && EQUAL(papszArgv[i], "-scaleaxes"))
-        {
-            ++i;
-            CPLStringList aosScaleFactors(
-                CSLTokenizeString2(papszArgv[i], ",", 0));
-            for (int j = 0; j < aosScaleFactors.size(); j++)
+            if (!psOptions->aosScaleFactor.empty())
             {
-                psOptions->aosScaleFactor.push_back(aosScaleFactors[j]);
+                CPLError(CE_Failure, CPLE_NotSupported,
+                         "The -scaleaxes option is not compatible with the "
+                         "-array \"view\" option.");
+                return nullptr;
             }
-        }
 
-        else if (i < argc - 1 && EQUAL(papszArgv[i], "-co"))
-        {
-            ++i;
-            psOptions->aosCreateOptions.AddString(papszArgv[i]);
-        }
-
-        else if (EQUAL(papszArgv[i], "-oo") && i + 1 < argc)
-        {
-            ++i;
-            if (psOptionsForBinary)
+            if (!psOptions->aosSubset.empty())
             {
-                psOptionsForBinary->aosOpenOptions.AddString(papszArgv[i]);
+                CPLError(CE_Failure, CPLE_NotSupported,
+                         "The -subset option is not compatible with the -array "
+                         "\"view\" option.");
+                return nullptr;
             }
-        }
-
-        else if (i + 1 < argc && EQUAL(papszArgv[i], "-if"))
-        {
-            i++;
-            if (psOptionsForBinary)
-            {
-                if (GDALGetDriverByName(papszArgv[i]) == nullptr)
-                {
-                    CPLError(CE_Warning, CPLE_AppDefined,
-                             "%s is not a recognized driver", papszArgv[i]);
-                }
-                psOptionsForBinary->aosAllowInputDrivers.AddString(
-                    papszArgv[i]);
-            }
-        }
-
-        else if (papszArgv[i][0] == '-')
-        {
-            CPLError(CE_Failure, CPLE_NotSupported, "Unknown option name '%s'",
-                     papszArgv[i]);
-            GDALMultiDimTranslateOptionsFree(psOptions);
-            return nullptr;
-        }
-        else if (psOptionsForBinary && psOptionsForBinary->osSource.empty())
-        {
-            psOptionsForBinary->osSource = papszArgv[i];
-        }
-        else if (psOptionsForBinary && psOptionsForBinary->osDest.empty())
-        {
-            psOptionsForBinary->osDest = papszArgv[i];
-        }
-        else
-        {
-            CPLError(CE_Failure, CPLE_NotSupported,
-                     "Too many command options '%s'", papszArgv[i]);
-            GDALMultiDimTranslateOptionsFree(psOptions);
-            return nullptr;
         }
     }
-
-    if (!psOptions->aosArraySpec.empty() && !psOptions->aosGroup.empty())
+    catch (const std::exception &error)
     {
-        CPLError(CE_Failure, CPLE_NotSupported,
-                 "-array and -group are mutually exclusive");
-        GDALMultiDimTranslateOptionsFree(psOptions);
+        CPLError(CE_Failure, CPLE_AppDefined, "%s", error.what());
         return nullptr;
     }
 
     if (psOptionsForBinary)
     {
+        // Note: bUpdate is apparently never changed by the command line options
         psOptionsForBinary->bUpdate = psOptions->bUpdate;
         if (!psOptions->osFormat.empty())
             psOptionsForBinary->osFormat = psOptions->osFormat;
     }
 
-    return psOptions;
+    return psOptions.release();
 }
 
 /************************************************************************/

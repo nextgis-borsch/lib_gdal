@@ -1,0 +1,4 @@
+https://github.com/fastfloat/fast_float
+Retrieved at commit https://github.com/fastfloat/fast_float/commit/9058831e6884e95358bcad29139a8b9d6cf0b534
+
+Using the MIT license choice.

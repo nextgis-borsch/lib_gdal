@@ -1,0 +1,7 @@
+pytest>=6.0.0
+pytest-sugar
+pytest-env
+pytest-benchmark
+lxml
+jsonschema
+filelock

@@ -9,23 +9,7 @@
  *                          Fort Collin, CO
  * Copyright (c) 2007-2015, Even Rouault <even dot rouault at spatialys.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  ****************************************************************************/
 
 #include "cpl_string.h"
@@ -62,68 +46,11 @@ static int GDALExit(int nCode)
 /*                               Usage()                                */
 /************************************************************************/
 
-static void Usage(const char *pszErrorMsg = nullptr)
+static void Usage()
 
 {
-    printf(
-        "Usage: gdalwarp [--help-general] [--formats]\n"
-        "    [-s_srs srs_def] [-t_srs srs_def] [-to \"NAME=VALUE\"]* [-vshift "
-        "| -novshift]\n"
-        "    [[-s_coord_epoch epoch] | [-t_coord_epoch epoch]]\n"
-        "    [-order n | -tps | -rpc | -geoloc] [-et err_threshold]\n"
-        "    [-refine_gcps tolerance [minimum_gcps]]\n"
-        "    [-te xmin ymin xmax ymax] [-tr xres yres] [-tap] [-ts width "
-        "height]\n"
-        "    [-ovr level|AUTO|AUTO-n|NONE] [-wo \"NAME=VALUE\"] [-ot "
-        "Byte/Int16/...] [-wt Byte/Int16]\n"
-        "    [-srcnodata \"value [value...]\"] [-dstnodata \"value "
-        "[value...]\"] -dstalpha\n"
-        "    [-r resampling_method] [-wm memory_in_mb] [-multi] [-q]\n"
-        "    [-cutline datasource] [-cl layer] [-cwhere expression]\n"
-        "    [-csql statement] [-cblend dist_in_pixels] [-crop_to_cutline]\n"
-        "    [-if format]* [-of format] [-co \"NAME=VALUE\"]* [-overwrite]\n"
-        "    [-nomd] [-cvmd meta_conflict_value] [-setci] [-oo NAME=VALUE]*\n"
-        "    [-doo NAME=VALUE]*\n"
-        "    srcfile* dstfile\n"
-        "\n"
-        "Available resampling methods:\n"
-        "    near (default), bilinear, cubic, cubicspline, lanczos, average, "
-        "rms,\n"
-        "    mode,  max, min, med, Q1, Q3, sum.\n");
-
-    if (pszErrorMsg != nullptr)
-        fprintf(stderr, "\nFAILURE: %s\n", pszErrorMsg);
-
+    fprintf(stderr, "%s\n", GDALWarpAppGetParserUsage().c_str());
     GDALExit(1);
-}
-
-/************************************************************************/
-/*                       GDALWarpAppOptionsForBinaryNew()             */
-/************************************************************************/
-
-static GDALWarpAppOptionsForBinary *GDALWarpAppOptionsForBinaryNew(void)
-{
-    return static_cast<GDALWarpAppOptionsForBinary *>(
-        CPLCalloc(1, sizeof(GDALWarpAppOptionsForBinary)));
-}
-
-/************************************************************************/
-/*                       GDALWarpAppOptionsForBinaryFree()            */
-/************************************************************************/
-
-static void
-GDALWarpAppOptionsForBinaryFree(GDALWarpAppOptionsForBinary *psOptionsForBinary)
-{
-    if (psOptionsForBinary)
-    {
-        CSLDestroy(psOptionsForBinary->papszSrcFiles);
-        CPLFree(psOptionsForBinary->pszDstFilename);
-        CSLDestroy(psOptionsForBinary->papszOpenOptions);
-        CSLDestroy(psOptionsForBinary->papszDestOpenOptions);
-        CSLDestroy(psOptionsForBinary->papszCreateOptions);
-        CSLDestroy(psOptionsForBinary->papszAllowInputDrivers);
-        CPLFree(psOptionsForBinary);
-    }
 }
 
 /************************************************************************/
@@ -143,6 +70,8 @@ static int CPL_STDCALL WarpTermProgress(double dfProgress,
     }
     else if (pszMessage != osLastMsg)
     {
+        if (!osLastMsg.empty())
+            GDALTermProgress(1.0, nullptr, nullptr);
         printf("%s : ", pszMessage);
         osLastMsg = pszMessage;
         iSrc++;
@@ -169,22 +98,6 @@ MAIN_START(argc, argv)
     if (argc < 1)
         GDALExit(-argc);
 
-    for (int i = 0; argv != nullptr && argv[i] != nullptr; i++)
-    {
-        if (EQUAL(argv[i], "--utility_version"))
-        {
-            printf("%s was compiled against GDAL %s and is running against "
-                   "GDAL %s\n",
-                   argv[0], GDAL_RELEASE_NAME, GDALVersionInfo("RELEASE_NAME"));
-            CSLDestroy(argv);
-            return 0;
-        }
-        else if (EQUAL(argv[i], "--help"))
-        {
-            Usage(nullptr);
-        }
-    }
-
     /* -------------------------------------------------------------------- */
     /*      Set optimal setting for best performance with huge input VRT.   */
     /*      The rationale for 450 is that typical Linux process allow       */
@@ -204,27 +117,20 @@ MAIN_START(argc, argv)
 #endif
     }
 
-    GDALWarpAppOptionsForBinary *psOptionsForBinary =
-        GDALWarpAppOptionsForBinaryNew();
+    GDALWarpAppOptionsForBinary sOptionsForBinary;
     /* coverity[tainted_data] */
     GDALWarpAppOptions *psOptions =
-        GDALWarpAppOptionsNew(argv + 1, psOptionsForBinary);
+        GDALWarpAppOptionsNew(argv + 1, &sOptionsForBinary);
     CSLDestroy(argv);
 
     if (psOptions == nullptr)
     {
-        Usage(nullptr);
+        Usage();
     }
 
-    if (psOptionsForBinary->pszDstFilename == nullptr)
-    {
-        Usage("No target filename specified.");
-    }
-
-    if (CSLCount(psOptionsForBinary->papszSrcFiles) == 1 &&
-        strcmp(psOptionsForBinary->papszSrcFiles[0],
-               psOptionsForBinary->pszDstFilename) == 0 &&
-        psOptionsForBinary->bOverwrite)
+    if (sOptionsForBinary.aosSrcFiles.size() == 1 &&
+        sOptionsForBinary.aosSrcFiles[0] == sOptionsForBinary.osDstFilename &&
+        sOptionsForBinary.bOverwrite)
     {
         CPLError(CE_Failure, CPLE_IllegalArg,
                  "Source and destination datasets must be different.\n");
@@ -236,21 +142,22 @@ MAIN_START(argc, argv)
     /* -------------------------------------------------------------------- */
     GDALDatasetH *pahSrcDS = nullptr;
     int nSrcCount = 0;
-    for (int i = 0; psOptionsForBinary->papszSrcFiles[i] != nullptr; i++)
+    for (int i = 0; i < sOptionsForBinary.aosSrcFiles.size(); ++i)
     {
         nSrcCount++;
         pahSrcDS = static_cast<GDALDatasetH *>(
             CPLRealloc(pahSrcDS, sizeof(GDALDatasetH) * nSrcCount));
-        pahSrcDS[i] = GDALOpenEx(psOptionsForBinary->papszSrcFiles[i],
-                                 GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR,
-                                 psOptionsForBinary->papszAllowInputDrivers,
-                                 psOptionsForBinary->papszOpenOptions, nullptr);
+        pahSrcDS[i] =
+            GDALOpenEx(sOptionsForBinary.aosSrcFiles[i],
+                       GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR,
+                       sOptionsForBinary.aosAllowedInputDrivers.List(),
+                       sOptionsForBinary.aosOpenOptions.List(), nullptr);
 
         if (pahSrcDS[i] == nullptr)
         {
             CPLError(CE_Failure, CPLE_OpenFailed,
                      "Failed to open source file %s\n",
-                     psOptionsForBinary->papszSrcFiles[i]);
+                     sOptionsForBinary.aosSrcFiles[i]);
             while (nSrcCount--)
             {
                 GDALClose(pahSrcDS[nSrcCount]);
@@ -258,7 +165,6 @@ MAIN_START(argc, argv)
             }
             CPLFree(pahSrcDS);
             GDALWarpAppOptionsFree(psOptions);
-            GDALWarpAppOptionsForBinaryFree(psOptionsForBinary);
             GDALExit(2);
         }
     }
@@ -272,21 +178,21 @@ MAIN_START(argc, argv)
     /* where it would make sense. In doubt, let's keep that dubious
      * possibility... */
 
-    int bOutStreaming = FALSE;
-    if (strcmp(psOptionsForBinary->pszDstFilename, "/vsistdout/") == 0)
+    bool bOutStreaming = false;
+    if (sOptionsForBinary.osDstFilename == "/vsistdout/")
     {
-        psOptionsForBinary->bQuiet = TRUE;
-        bOutStreaming = TRUE;
+        sOptionsForBinary.bQuiet = true;
+        bOutStreaming = true;
     }
 #ifdef S_ISFIFO
     else
     {
         VSIStatBufL sStat;
-        if (VSIStatExL(psOptionsForBinary->pszDstFilename, &sStat,
+        if (VSIStatExL(sOptionsForBinary.osDstFilename.c_str(), &sStat,
                        VSI_STAT_EXISTS_FLAG | VSI_STAT_NATURE_FLAG) == 0 &&
             S_ISFIFO(sStat.st_mode))
         {
-            bOutStreaming = TRUE;
+            bOutStreaming = true;
         }
     }
 #endif
@@ -298,36 +204,33 @@ MAIN_START(argc, argv)
     }
     else
     {
-        std::vector<CPLErrorHandlerAccumulatorStruct> aoErrors;
-        CPLInstallErrorHandlerAccumulator(aoErrors);
-        hDstDS = GDALOpenEx(
-            psOptionsForBinary->pszDstFilename,
-            GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR | GDAL_OF_UPDATE, nullptr,
-            psOptionsForBinary->papszDestOpenOptions, nullptr);
-        CPLUninstallErrorHandlerAccumulator();
+        CPLErrorAccumulator oErrorAccumulator;
+        {
+            auto oAccumulator = oErrorAccumulator.InstallForCurrentScope();
+            hDstDS = GDALOpenEx(
+                sOptionsForBinary.osDstFilename.c_str(),
+                GDAL_OF_RASTER | GDAL_OF_VERBOSE_ERROR | GDAL_OF_UPDATE,
+                nullptr, sOptionsForBinary.aosDestOpenOptions.List(), nullptr);
+        }
         if (hDstDS != nullptr)
         {
-            for (size_t i = 0; i < aoErrors.size(); i++)
-            {
-                CPLError(aoErrors[i].type, aoErrors[i].no, "%s",
-                         aoErrors[i].msg.c_str());
-            }
+            oErrorAccumulator.ReplayErrors();
         }
     }
 
-    if (hDstDS != nullptr && psOptionsForBinary->bOverwrite)
+    if (hDstDS != nullptr && sOptionsForBinary.bOverwrite)
     {
         GDALClose(hDstDS);
         hDstDS = nullptr;
     }
 
     bool bCheckExistingDstFile =
-        !bOutStreaming && hDstDS == nullptr && !psOptionsForBinary->bOverwrite;
+        !bOutStreaming && hDstDS == nullptr && !sOptionsForBinary.bOverwrite;
 
-    if (hDstDS != nullptr && psOptionsForBinary->bCreateOutput)
+    if (hDstDS != nullptr && sOptionsForBinary.bCreateOutput)
     {
-        if (CPLFetchBool(psOptionsForBinary->papszCreateOptions,
-                         "APPEND_SUBDATASET", false))
+        if (sOptionsForBinary.aosCreateOptions.FetchBool("APPEND_SUBDATASET",
+                                                         false))
         {
             GDALClose(hDstDS);
             hDstDS = nullptr;
@@ -341,7 +244,7 @@ MAIN_START(argc, argv)
                      "new dataset\n"
                      "should be created.  Please delete existing dataset and "
                      "run again.\n",
-                     psOptionsForBinary->pszDstFilename);
+                     sOptionsForBinary.osDstFilename.c_str());
             GDALExit(1);
         }
     }
@@ -352,7 +255,7 @@ MAIN_START(argc, argv)
     if (bCheckExistingDstFile)
     {
         CPLPushErrorHandler(CPLQuietErrorHandler);
-        hDstDS = GDALOpen(psOptionsForBinary->pszDstFilename, GA_ReadOnly);
+        hDstDS = GDALOpen(sOptionsForBinary.osDstFilename.c_str(), GA_ReadOnly);
         CPLPopErrorHandler();
 
         if (hDstDS)
@@ -360,13 +263,13 @@ MAIN_START(argc, argv)
             CPLError(CE_Failure, CPLE_AppDefined,
                      "Output dataset %s exists, but cannot be opened in update "
                      "mode\n",
-                     psOptionsForBinary->pszDstFilename);
+                     sOptionsForBinary.osDstFilename.c_str());
             GDALClose(hDstDS);
             GDALExit(1);
         }
     }
 
-    if (!(psOptionsForBinary->bQuiet))
+    if (!(sOptionsForBinary.bQuiet))
     {
         gnSrcCount = nSrcCount;
         GDALWarpAppOptionsSetProgress(psOptions, WarpTermProgress, nullptr);
@@ -375,17 +278,18 @@ MAIN_START(argc, argv)
 
     int bUsageError = FALSE;
     GDALDatasetH hOutDS =
-        GDALWarp(psOptionsForBinary->pszDstFilename, hDstDS, nSrcCount,
+        GDALWarp(sOptionsForBinary.osDstFilename.c_str(), hDstDS, nSrcCount,
                  pahSrcDS, psOptions, &bUsageError);
     if (bUsageError)
         Usage();
     int nRetCode = (hOutDS) ? 0 : 1;
 
     GDALWarpAppOptionsFree(psOptions);
-    GDALWarpAppOptionsForBinaryFree(psOptionsForBinary);
 
     // Close first hOutDS since it might reference sources (case of VRT)
-    GDALClose(hOutDS ? hOutDS : hDstDS);
+    if (GDALClose(hOutDS ? hOutDS : hDstDS) != CE_None)
+        nRetCode = 1;
+
     for (int i = 0; i < nSrcCount; i++)
     {
         GDALClose(pahSrcDS[i]);
@@ -398,4 +302,5 @@ MAIN_START(argc, argv)
 
     return nRetCode;
 }
+
 MAIN_END

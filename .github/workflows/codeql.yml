@@ -1,0 +1,133 @@
+name: "CodeQL"
+
+on:
+    push:
+        paths-ignore:
+            - 'doc/**'
+            - 'docker/**'
+        branches-ignore:
+          - 'backport**'
+          - 'dependabot**'
+    pull_request:
+        paths-ignore:
+            - 'doc/**'
+            - 'docker/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze
+    # Runner size impacts CodeQL analysis time. To learn more, please see:
+    #   - https://gh.io/recommended-hardware-resources-for-running-codeql
+    #   - https://gh.io/supported-runners-and-hardware-resources
+    #   - https://gh.io/using-larger-runners
+    # Consider using larger runners for possible analysis time improvements.
+    runs-on: ${{ (matrix.language == 'swift' && 'macos-latest') || 'ubuntu-latest' }}
+    timeout-minutes: ${{ (matrix.language == 'swift' && 120) || 360 }}
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'c-cpp' ]
+        # CodeQL supports [ 'c-cpp', 'csharp', 'go', 'java-kotlin', 'javascript-typescript', 'python', 'ruby', 'swift' ]
+        # Use only 'java-kotlin' to analyze code written in Java, Kotlin or both
+        # Use only 'javascript-typescript' to analyze code written in JavaScript, TypeScript or both
+        # Learn more about CodeQL language support at https://aka.ms/codeql-docs/language-support
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+    - name: Install dependencies
+      run: |
+          sudo apt-get update
+          sudo apt-get install -y g++ swig python3-numpy libproj-dev libqhull-dev
+          sudo apt-get install -y \
+            libblosc-dev \
+            libboost-dev \
+            libcairo2-dev \
+            libcfitsio-dev \
+            libcrypto++-dev \
+            libcurl4-gnutls-dev \
+            libexpat-dev \
+            libfcgi-dev \
+            libfyba-dev \
+            libfreexl-dev \
+            libgeos-dev \
+            libgeotiff-dev \
+            libgif-dev \
+            libhdf5-serial-dev \
+            libjpeg-dev \
+            libkml-dev \
+            liblcms2-2 \
+            liblz4-dev \
+            liblzma-dev \
+            libmysqlclient-dev \
+            libnetcdf-dev \
+            libopenexr-dev \
+            libopenjp2-7-dev \
+            libpcre3-dev \
+            libpng-dev \
+            libpoppler-dev \
+            libpoppler-private-dev \
+            libpq-dev \
+            libproj-dev \
+            librasterlite2-dev \
+            libspatialite-dev \
+            libssl-dev \
+            libwebp-dev \
+            libxerces-c-dev \
+            libxml2-dev \
+            libxslt-dev \
+            libzstd-dev \
+            unixodbc-dev
+
+    - name: Install latest ninja
+      run: PYTHON_CMD=python3 && $PYTHON_CMD -m pip install ninja
+
+    - name: Configure
+      if: matrix.language == 'c-cpp'
+      run: |
+          cmake -S . -B build \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DGDAL_USE_LERC_INTERNAL=OFF \
+            -DBUILD_TESTING=OFF \
+            -G Ninja \
+
+    # Initializes the CodeQL tools for scanning.
+    # We do that after running CMake to avoid CodeQL to trigger during CMake time,
+    # in particular during HDF5 detection which is terribly slow (https://github.com/OSGeo/gdal/issues/9549)
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@0499de31b99561a6d14a36a5f662c2a54f91beee # v3.29.5
+      with:
+        languages: ${{ matrix.language }}
+        # If you wish to specify custom queries, you can do so here or in a config file.
+        # By default, queries listed here will override any specified in a config file.
+        # Prefix the list here with "+" to use these queries and those in the config file.
+
+        # For more details on CodeQL's query packs, refer to: https://docs.github.com/en/code-security/code-scanning/automatically-scanning-your-code-for-vulnerabilities-and-errors/configuring-code-scanning#using-queries-in-ql-packs
+        # queries: security-extended,security-and-quality
+        config: |
+          query-filters:
+            - exclude:
+                id: cpp/non-https-url
+
+    - name: Build
+      if: matrix.language == 'c-cpp'
+      run: |
+        cmake --build build -j$(nproc)
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@0499de31b99561a6d14a36a5f662c2a54f91beee # v3.29.5
+      with:
+        category: "/language:${{matrix.language}}"

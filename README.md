@@ -1,289 +1,74 @@
-# GDAL - Geospatial Data Abstraction Library
+GDAL - Geospatial Data Abstraction Library
+====
 
-This is restructured GDAL sources tree fork with CMake build system [codename Borsch].
+[![Build Status](https://github.com/OSGeo/gdal/actions/workflows/linux_build.yml/badge.svg)](https://github.com/osgeo/gdal/actions?query=workflow%3A%22Linux+Builds%22+branch%3Amaster)
+[![Build Status](https://github.com/OSGeo/gdal/actions/workflows/macos.yml/badge.svg)](https://github.com/osgeo/gdal/actions?query=workflow%3A%22MacOS+build%22+branch%3Amaster)
+[![Build Status](https://github.com/OSGeo/gdal/actions/workflows/windows_build.yml/badge.svg)](https://github.com/osgeo/gdal/actions?query=workflow%3A%22Windows+builds%22+branch%3Amaster)
+[![Build Status](https://github.com/OSGeo/gdal/actions/workflows/android_cmake.yml/badge.svg)](https://github.com/osgeo/gdal/actions?query=workflow%3A%22Android+CMake+build%22+branch%3Amaster)
+[![Build Status](https://github.com/OSGeo/gdal/actions/workflows/clang_static_analyzer.yml/badge.svg)](https://github.com/osgeo/gdal/actions?query=workflow%3A%22CLang+Static+Analyzer%22+branch%3Amaster)
+[![Build Status](https://github.com/OSGeo/gdal/actions/workflows/code_checks.yml/badge.svg)](https://github.com/osgeo/gdal/actions?query=workflow%3A%22Code+Checks%22+branch%3Amaster)
+[![Build Status](https://github.com/OSGeo/gdal/actions/workflows/conda.yml/badge.svg)](https://github.com/osgeo/gdal/actions?query=workflow%3A%22Conda%22+branch%3Amaster)
+[![Build Status](https://scan.coverity.com/projects/749/badge.svg?flat=1)](https://scan.coverity.com/projects/gdal)
+[![Documentation build Status](https://github.com/OSGeo/gdal/workflows/Docs/badge.svg)](https://github.com/osgeo/gdal/actions?query=workflow%3A%22Docs%22+branch%3Amaster)
+[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/gdal.svg)](https://issues.oss-fuzz.com/issues?q=status:open%20gdal)
+[![Coverage Status](https://coveralls.io/repos/github/OSGeo/gdal/badge.svg?branch=master)](https://coveralls.io/github/OSGeo/gdal?branch=master)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/8250/badge)](https://www.bestpractices.dev/projects/8250)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/OSGeo/gdal/badge)](https://securityscorecards.dev/viewer/?uri=github.com/OSGeo/gdal)
 
-GDAL is an open source X/MIT licensed translator library for raster and vector
-geospatial data formats. This is a mirror of the GDAL Subversion repository.
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.5884351.svg)](https://doi.org/10.5281/zenodo.5884351)
 
-* Main site: http://www.gdal.org - Developer and user docs, links to other resources
-* SVN repository: http://svn.osgeo.org/gdal
-* Download: ftp://ftp.remotesensing.org/gdal, http://download.osgeo.org/gdal
-* Wiki: http://trac.osgeo.org/gdal - Bug tracking, various user and developer
-  contributed documentation and hints
-* Mailing list: http://lists.osgeo.org/mailman/listinfo/gdal-dev
+[![Powered by NumFOCUS](https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A )](http://numfocus.org)
 
-# License
 
-![License](https://img.shields.io/badge/License-X/MIT-blue.svg?maxAge=2592000)
+GDAL is an open source MIT licensed translator library for raster and vector geospatial data formats.
 
-# Borsch
+* Main site: https://gdal.org - Developer and user docs, links to other resources
+* GIT repository: https://github.com/OSGeo/gdal
+* Bug tracker: https://github.com/OSGeo/gdal/issues
+* Download: https://download.osgeo.org/gdal
+* Mailing list: https://lists.osgeo.org/mailman/listinfo/gdal-dev
 
-Borsch repository link: https://github.com/nextgis-borsch/borsch
+[//]: # (numfocus-fiscal-sponsor-attribution)
 
-# Sync sources with origin
+The GDAL project uses a [custom governance](./GOVERNANCE.md)
+and is fiscally sponsored by [NumFOCUS](https://numfocus.org/). Consider making
+a [tax-deductible donation](https://numfocus.org/donate-to-gdal) to help the project
+pay for developer time, professional services, travel, workshops, and a variety of other needs.
 
-Clone sources
+<div align="center">
+  <a href="https://numfocus.org/project/gdal">
+    <img height="60px"
+         src="https://raw.githubusercontent.com/numfocus/templates/master/images/numfocus-logo.png"
+         align="center">
+  </a>
+</div>
+<br>
 
- $ git clone https://github.com/OSGeo/gdal.git gdal-git
+NumFOCUS is 501(c)(3) non-profit charity in the United States; as such, donations to
+NumFOCUS are tax-deductible as allowed by law. As with any donation, you should
+consult with your personal tax adviser or the IRS about your particular tax situation.
 
-or update sources
+### How to build
 
- $ git pull
+See [BUILDING.md](BUILDING.md)
 
-Go to borsch repository (opt folder) and execute
+### How to contribute
 
- $ python tools.py organize --src /path_to_gdal_sources/ --dst_name lib_gdal
+See [CONTRIBUTING.md](CONTRIBUTING.md)
 
-# Build status
+### Docker images
 
-| OS | Status  |
-|---|:-:|
-| GDAL Windows 32 | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_win64.svg)
-| GDAL Windows 64 | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_win32.svg)
-| GDAL Mac OS X | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_mac.svg)
-| Ubuntu (packaging) | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_deb.svg) |
-| Ubuntu (packaging dev) | ![build status](https://buildbot.nextgis.com/badges/lib_gdal_debdev.svg) |
+See [docker/](docker/)
 
-# Ubuntu PPA
+### Code of Conduct
 
-  $ sudo apt-get install software-properties-common python-software-properties
+See [doc/source/community/code_of_conduct.rst](doc/source/community/code_of_conduct.rst)
 
-  $ sudo apt-add-repository ppa:nextgis/ppa
+### Security policy
 
-  $ sudo apt-get install gdal-bin python-gdal
+See [SECURITY.md](SECURITY.md)
 
-# Test status
+### Citing GDAL/OGR in publications
 
-TODO: Show test states here ([AppVeyor](https://www.appveyor.com/), [Travis CI](https://travis-ci.org/), etc.)
+See [CITATION](CITATION) and [CITATION.cff](CITATION.cff)
 
-# Raster drivers
-
-Available raster drivers for now (by all driver directories in sources). Drivers marked
-with '\*' have high priority to be implemented.
-
-| Driver | CMaked | External dependencies | Notes |
-|---|:-:|---|---|
-| **aaigrid** | **yes** | no | 2 drivers in one (AAIGrid, GRASSASCIIGrid) |
-| **adrg** | **yes** | no | 2 drivers in one (ADRG, SRP) |
-| **aigrid** | **yes** | no | No additional build targets implemented |
-| **airsar** | **yes** | no | - |
-| **arg** | **yes** | no | - |
-| **blx** | **yes** | no | - |
-| **bmp** | **yes** | no | - |
-| bpg | no |  |  |
-| **bsb** | **yes** | no | No additional build targets implemented |
-| **cals** | **yes** | no | - |
-| **ceos** | **yes** | no | No additional build targets implemented |
-| **ceos2** | **yes** | no | - |
-| **coasp** | **yes** | no | - |
-| **cosar** | **yes** | no | - |
-| **ctg** | **yes** | no | - |
-| dds | no |  |  |
-| **derived** | **yes** |  |  |
-| **dimap** | **yes** | no | - |
-| dods | no |  |  |
-| **dted** | **yes** | no | No additional build targets implemented |
-| **e00grid** | **yes** | no | - |
-| **ecw** | **yes** |  | Only Windows yet (need library repository update) |
-| **eeda** | **yes** | no | No additional build targets implemented |
-| **elas** | **yes** | no | - |
-| **envisat** | **yes** | no | No additional build targets implemented |
-| epsilon | no |  |  |
-| **ers** | **yes** | no | No additional build targets implemented |
-| **fit** | **yes** | no | - |
-| fits | no |  |  |
-| **georaster** | **yes** | [OCI](https://github.com/nextgis-borsch/lib_oci) | - |
-| **gff** | **yes** | no | - |
-| **gif** | **yes** | [GIF](https://github.com/nextgis-borsch/lib_gif) | Russian maps in internet are in gif and OZI |
-| grass * | no |  |  |
-| **grib** | **yes** | Optionally: JASPER | No JASPER support implemented; No additional build targets implemented |
-| **gsg** | **yes** | no | 3 drivers in one (GSAG, GSBG, GS7BG) |
-| gta | no |  |  |
-| **gtiff** | **yes** | no | Obligatory for building GDAL |
-| **gxf** | **yes** | no | No additional build targets implemented |
-| **hdf4** | **yes** | [HDF4](https://github.com/nextgis-borsch/lib_hdf4) | 2 drivers in one (HDF4, HDF4Image); [hdf-eos](https://github.com/nextgis-borsch/lib_hdfeos2) target implemented not as a library |
-| hdf5 * | no |  |  |
-| **hf2** | **yes** | no | - |
-| **hfa** | **yes** | no | Obligatory for building GDAL |
-| **idrisi** | **yes** | no | Has the same dir name in /vector |
-| **ignfheightasciigrid** | **yes** | no | - |
-| **ilwis** | **yes** | no | - |
-| **ingr** | **yes** | [TIFF](https://github.com/nextgis-borsch/lib_tiff)? | - |
-| **iris** | **yes** | no | - |
-| **jaxapalsar** | **yes** | no | - |
-| **jdem** | **yes** | no | - |
-| jp2kak | no |  | needs Kakadu library |
-| jp2lura | no |  | Requires Lurawave library |
-| **jpeg** | **yes** | [JPEG, JPEG12](https://github.com/nextgis-borsch/lib_jpeg) | No jpeg12 support implemented? |
-| jpeg2000 | no |  | needs libjasper |
-| jpegls | no |  | needs CharLS library |
-| jpipkak | no |  | needs Kakadu library |
-| kea | no |  |  |
-| **kmlsuperoverlay** | **yes** | no | - |
-| **l1b** | **yes** | no | - |
-| **leveller** | **yes** | no | - |
-| **map** | **yes** | no | - |
-| **mbtiles** | **yes** | Optionally: [ZLIB](https://github.com/nextgis-borsch/lib_z)? | Requires built sqlite driver; Requires some other drivers? |
-| **mem** | **yes** | no | Obligatory for building GDAL |
-| **mrf** | **yes** | [JPEG, JPEG12](https://github.com/nextgis-borsch/lib_jpeg), [TIFF](https://github.com/nextgis-borsch/lib_tiff), [PNG](https://github.com/nextgis-borsch/lib_png) | |
-| **mrsid** | **yes** |  | Only Windows yet (need library repository update) |
-| mrsid_lidar * | no |  |  |
-| msg | no |  |  |
-| **msgn** | **yes** | no | - |
-| netcdf * | no |  |  |
-| **ngsgeoid** | **yes** | no | - |
-| **nitf** | **yes** | Optionally: [JPEG, JPEG12](https://github.com/nextgis-borsch/lib_jpeg), [TIFF](https://github.com/nextgis-borsch/lib_tiff)? | 3 drivers in one (NITF, RPFTOC, ECRGTOC); Requires built jpeg driver; No JPEG12 support implemented; No additional build targets implemented;  |
-| **northwood** | **yes** | no | 2 drivers in one (NWT_GRC, NWT_GRD) |
-| ogdi | no |  |  |
-| **openjpeg** | **yes** | [OPENJPEG](https://github.com/nextgis-borsch/lib_openjpeg) | This is JPEG2000 implementation; No additional build targets implemented (plugin so/dll) |
-| **ozi** | **yes** | [ZLIB](https://github.com/nextgis-borsch/lib_z)?, GIF? | - |
-| **pcidsk** | **yes** | no | - |
-| pcraster | no |  |  |
-| pdf * | no |  |  |
-| **pds** | **yes** | no | 4 drivers in one (PDS, ISIS2, ISIS3, VICAR); Has the same dir name in /vector |
-| pgchip | no |  |  |
-| **plmosaic** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| **png** | **yes** | [PNG](https://github.com/nextgis-borsch/lib_png) |  |
-| **postgisraster** | **yes** | [PostgreSQL](https://github.com/nextgis-borsch/lib_pq) | - |
-| **r** | **yes** | no | - |
-| rasdaman | no |  |  |
-| **rasterlite** | **yes** | Optionally: [SPATIALITE](https://github.com/nextgis-borsch/lib_spatialite)? | Requires built sqlite driver |
-| **raw** | **yes** | no | Obligatory for building GDAL |
-| **rda** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| **rik** | **yes** | no | - |
-| **rmf** | **yes** | no | - |
-| **rs2** | **yes** | no | - |
-| **saga** | **yes** | no | ... |
-| sde | no |  | Needs ESRI SDE (ESRI provided ArcSDE client libraries) |
-| **sdts** | **yes** | no | Requires inner sdts lib; Has the same dir name in /vector |
-| **sgi** | **yes** | no | - |
-| **srtmhgt** | **yes** | no | - |
-| **terragen** | **yes** | no | - |
-| **til** | **yes** | no | - |
-| **tsx** | **yes** | no | - |
-| **usgsdem** | **yes** | no | - |
-| **vrt** | **yes** | no | Obligatory for building GDAL |
-| **wcs** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Adds some "HTTP Fetching Wrapper" (raster/vector driver?) |
-| **webp** | **yes** | [WebP](https://github.com/nextgis-borsch/lib_webp) | - |
-| **wms** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| **wmts** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| **xpm** | **yes** | no | - |
-| **xyz** | **yes** | no | - |
-| **zmap** | **yes** | no | - |
-
-# Vector drivers
-
-Available vector drivers for now (by all driver directories in sources). Drivers marked with '\*' have high priority to be implemented.
-
-| Driver | CMaked | External dependencies | Notes |
-|---|:-:|---|---|
-| **aeronavfaa** | **yes** | no | - |
-| amigocloud | no | [CURL](https://github.com/nextgis-borsch/lib_curl) |  |
-| **arcgen** | **yes** | no | - |
-| arcobjects | no |  |  |
-| **avc** | **yes** | no | 2 drivers in one (AVCBin, AVCE00) |
-| **bna** | **yes** | no | - |
-| **cartodb** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| **cloudant** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| **couchdb** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| **csv** | **yes** | no | - |
-| **csw** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| **dgn** | **yes** | no | No additional build targets implemented |
-| dods | no |  |  |
-| dwg | no | ... | Currently unsupported |
-| **dxf** | **yes** | no | - |
-| **edigeo** | **yes** | no | - |
-| **elastic** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| filegdb * | no |  |  |
-| fme | no |  |  |
-| **geoconcept** | **yes** | no | - |
-| **geojson** | **yes** | no | Obligatory for building GDAL |
-| geomedia | no |  |  |
-| **georss** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
-| **gft** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | - |
-| gme | no |  |  |
-| **gml** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat), XERCES, [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite) | No Xerces support implemented; No additional build targets implemented |
-| gmlas | no |  | requires Xerces |
-| **gmt** | **yes** | no | - |
-| **gpsbabel** | **yes** | ? | Built without GPX driver - do we need it? |
-| **gpx** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
-| grass * | no |  |  |
-| **gtm** | **yes** | no | - |
-| **htf** | **yes** | no | - |
-| idb | no |  |  |
-| **idrisi** | **yes** | no | Requires built Idrisi raster driver; Has the same dir name in /raster |
-| ili | no |  |  |
-| ingres | no |  |  |
-| **jml** | **yes** | Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
-| **kml** | **yes** | ... | ... |
-| **libkml** | **yes** | [Google LibKML](https://github.com/nextgis-borsch/lib_kml), [Boost](https://github.com/nextgis-borsch/lib_boost) |  |
-| mdb | no |  |  |
-| **mem** | **yes** | no | Obligatory for building GDAL |
-| **mitab** | **yes** | no | Obligatory for building GDAL; Depends on temporary /core/ogr directory |
-| mongodb * | no |  |  |
-| mssqlspatial * | no |  |  |
-| mysql * | no |  |  |
-| **mvt** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite) |  |
-| nas | no |  |  |
-| **ntf** | **yes** | no | No additional build targets implemented |
-| **null** | **yes** |  |  |
-| **oci** | **yes** | [OCI](https://github.com/nextgis-borsch/lib_oci) | - |
-| odbc | no |  |  |
-| **ods** | **yes** | [EXPAT](https://github.com/nextgis-borsch/lib_expat) | No additional build targets implemented - workaround of gcc bug |
-| ogdi | no |  |  |
-| **openair** | **yes** | no | - |
-| **openfilegdb** | **yes** | no | - |
-| **osm** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: [EXPAT](https://github.com/nextgis-borsch/lib_expat) | No additional build targets implemented |
-| **pds** | **yes** | no | Requires built PDS raster driver; Has the same dir name in /raster |
-| **pg** | **yes** | [PostgreSQL](https://github.com/nextgis-borsch/lib_pq) | - |
-| **pgdump** | **yes** | no | - |
-| pgeo | no |  |  |
-| **rec** | **yes** | no | - |
-| **s57** | **yes** | no | Requires inner iso8211 lib; No additional build targets implemented |
-| sde | no |  | Needs ESRI SDE (ESRI provided ArcSDE client libraries) |
-| **sdts** | **yes** | no | Requires inner sdts and iso8211 libs; No additional build targets implemented; Has the same dir name in /raster |
-| **segukooa** | **yes** | no | - |
-| **segy** | **yes** | no | - |
-| **selafin** | **yes** | no | - |
-| **shape** | **yes** | no | - |
-| sosi | no |  |  |
-| **sqlite** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: [SPATIALITE](https://github.com/nextgis-borsch/lib_spatialite), PCRE | No Spatialite and PCRE support implemented; No additional build targets implemented |
-| **sua** | **yes** | no | - |
-| **svg** | **yes** | [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
-| **sxf** | **yes** | no | ... |
-| **tiger** | **yes** | no | No additional build targets implemented |
-| **vdv** | **yes** | no | - |
-| **vfk** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite) | - |
-| **vrt** | **yes** | no | Obligatory for building GDAL |
-| walk | no |  |  |
-| **wasp** | **yes** | no | - |
-| **wfs** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Depends on temporary /core/frmts directory; Requires built WMS driver |
-| xls * | no | [FreeXL](https://github.com/nextgis-borsch/lib_freexl) |  |
-| **xlsx** | **yes** | [EXPAT](https://github.com/nextgis-borsch/lib_expat) | - |
-| **xplane** | **yes** | no | Obligatory for building GDAL |
-
-# Common drivers
-
-Available raster+vector drivers for now (by all driver dirs in sources):
-
-| Driver | CMaked | External dependencies | Notes |
-|---|:-:|---|---|
-| **gpkg** | **yes** | [SQLITE3](https://github.com/nextgis-borsch/lib_sqlite); Optionally: SPATIALITE | Requires [PNG](https://github.com/nextgis-borsch/lib_png)?, [JPEG](https://github.com/nextgis-borsch/lib_jpeg)?, WEBP? drivers; No Spatialite support implemented; Former OGR format |
-| **plscenes** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) | Former OGR format |
-| **cad** | **yes** | [OpenCAD](https://github.com/nextgis-borsch/lib_opencad) | GSoC 2016 |
-| **ngw** | **yes** | [CURL](https://github.com/nextgis-borsch/lib_curl) |  |
-
-# Network drivers
-
-Available network (GNM) drivers for now (by all driver directories in sources):
-
-| Driver | CMaked | External dependencies | Notes |
-|---|:-:|---|---|
-| db | no | no | Requires built PostGIS driver |
-| **file** | **yes** | no | - |
-
-# PPA
-
-Fresh GDAL build are available in Ubuntu Launchpad - https://launchpad.net/~nextgis/+archive/ubuntu/ppa/+packages
-
-Version 2.4.0

@@ -1,0 +1,441 @@
+.. _sql_sqlite_dialect:
+
+================================================================================
+SQL SQLite dialect
+================================================================================
+
+.. highlight:: sql
+
+The ``SQLite`` dialect can be used as an alternate SQL dialect to the
+:ref:`ogr_sql_dialect`.
+This assumes that GDAL/OGR is built with support for SQLite, and preferably
+with `Spatialite <https://www.gaia-gis.it/fossil/libspatialite/index>`_ support too to benefit from spatial functions.
+
+The SQLite dialect may be used with any OGR datasource, like the OGR SQL dialect.
+The ``SQLite`` dialect can be requested with the ``SQLite`` string passed
+as the dialect parameter of :cpp:func:`GDALDataset::ExecuteSQL`, or with the
+`-dialect` option of the :ref:`ogrinfo` or :ref:`ogr2ogr` utilities.
+
+This is mainly aimed to execute SELECT statements, but, for datasources that support
+update, INSERT/UPDATE/DELETE statements can also be run. GDAL is internally using
+`the Virtual Table Mechanism of SQLite <https://sqlite.org/vtab.html>`_
+and therefore operations like ALTER TABLE are not supported. For executing ALTER TABLE
+or DROP TABLE use :ref:`ogr_sql_dialect`
+
+If the datasource is SQLite database (GeoPackage, SpatiaLite) then SQLite dialect
+acts as native SQL dialect and Virtual Table Mechanism is not used. It is possible to
+force GDAL to use Virtual Tables even in this case by specifying
+"-dialect INDIRECT_SQLITE". This should be used only when necessary, since going through
+the virtual table mechanism might affect performance.
+
+The syntax of the SQL statements is fully the one of the SQLite SQL engine. You can
+refer to the following pages:
+
+- `SELECT <http://www.sqlite.org/lang_select.html>`_
+- `INSERT <http://www.sqlite.org/lang_insert.html>`_
+- `UPDATE <http://www.sqlite.org/lang_update.html>`_
+- `DELETE <http://www.sqlite.org/lang_delete.html>`_
+
+SELECT statement
+----------------
+
+The SELECT statement is used to fetch layer features (analogous to table
+rows in an RDBMS) with the result of the query represented as a temporary layer
+of features. The layers of the datasource are analogous to tables in an
+RDBMS and feature attributes are analogous to column values. The simplest
+form of OGR SQLITE SELECT statement looks like this:
+
+.. code-block::
+
+    SELECT * FROM polylayer
+
+More complex statements can of course be used, including WHERE, JOIN, USING, GROUP BY,
+ORDER BY, sub SELECT, ...
+
+The table names that can be used are the layer names available in the datasource on
+which the ExecuteSQL() method is called.
+
+Similarly to OGRSQL, it is also possible to refer to layers of other datasources with
+the following syntax : "other_datasource_name"."layer_name".
+
+.. code-block::
+
+    SELECT p.*, NAME FROM poly p JOIN "idlink.dbf"."idlink" il USING (eas_id)
+
+If the master datasource is SQLite database (GeoPackage, SpatiaLite) it is necessary to
+use indirect SQLite dialect. Otherwise additional datasources are never opened but tables to
+be used in joins are searched from the master database.
+
+.. code-block:: shell
+
+    ogrinfo jointest.gpkg -dialect INDIRECT_SQLITE -sql \
+    "SELECT a.ID,b.ID FROM jointest a JOIN \"jointest2.shp\".\"jointest2\" b ON a.ID=b.ID"
+
+The column names that can be used in the result column list, in WHERE, JOIN, ... clauses
+are the field names of the layers. Expressions, SQLite functions, spatial functions, etc...
+can also be used.
+
+
+The conditions on fields expressed in WHERE clauses, or in JOINs are
+translated, as far as possible, as attribute filters that are applied on the
+underlying OGR layers. Joins can be very expensive operations if the secondary table is not
+indexed on the key field being used.
+
+LIKE operator
++++++++++++++
+
+In SQLite, the LIKE operator is case insensitive, unless ``PRAGMA case_sensitive_like = 1``
+has been issued.
+
+Starting with GDAL 3.9, GDAL installs a custom LIKE comparison, such that UTF-8
+characters are taken into account by ``LIKE`` operator.
+
+For case insensitive comparisons, this is restricted to the
+`ASCII <https://en.wikipedia.org/wiki/Basic_Latin_(Unicode_block)>`__,
+`Latin-1 Supplement <https://en.wikipedia.org/wiki/Latin-1_Supplement_(Unicode_block)>`__,
+`Latin Extended-A <https://en.wikipedia.org/wiki/Latin_Extended-A>`__,
+`Latin Extended-B <https://en.wikipedia.org/wiki/Latin_Extended-B>`__,
+`Greek and Coptic <https://en.wikipedia.org/wiki/Greek_and_Coptic>`__
+and `Cyrillic <https://en.wikipedia.org/wiki/Greek_and_Coptic>`__ Unicode categories.
+
+Delimited identifiers
++++++++++++++++++++++
+
+If names of layers or attributes are reserved keywords in SQL like 'FROM' or they
+begin with a number or underscore they must be handled as "delimited identifiers" and
+enclosed between double quotation marks in queries. Double quotes can be used even when
+they are not strictly needed.
+
+.. code-block::
+
+    SELECT "p"."geometry", "p"."FROM", "p"."3D" FROM "poly" p
+
+When SQL statements are used in the command shell and the statement itself is put
+between double quotes, the internal double quotes must be escaped with \\
+
+.. code-block:: shell
+
+    ogrinfo p.shp -sql "SELECT geometry \"FROM\", \"3D\" FROM p"
+
+Geometry field
+++++++++++++++
+
+Geometry fields can be explicitly specified in the result column list of a SELECT,
+or automatically selected if the * wildcard is used.
+
+For OGR layers that have a non-empty geometry column name (generally for RDBMS datasources),
+as returned by OGRLayer::GetGeometryColumn(), the name of the geometry special field
+in the SQL statement must be the name of the geometry column of the underlying OGR layer.
+If the name of the geometry column in the source layer is empty, like with shapefiles etc.,
+the name to use in the SQL statement must be "geometry". Here we'll use it case-insensitively
+(as all field names are in a SELECT statement):
+
+.. code-block::
+
+    SELECT EAS_ID, GEOMETRY FROM poly
+
+returns:
+
+::
+
+    OGRFeature(SELECT):0
+    EAS_ID (Real) = 168
+    POLYGON ((479819.84375 4765180.5,479690.1875 4765259.5,[...],479819.84375 4765180.5))
+
+.. code-block::
+
+    SELECT * FROM poly
+
+returns:
+
+::
+
+    OGRFeature(SELECT):0
+    AREA (Real) = 215229.266
+    EAS_ID (Real) = 168
+    PRFEDEA (String) = 35043411
+    POLYGON ((479819.84375 4765180.5,479690.1875 4765259.5,[...],479819.84375 4765180.5))
+
+Feature id (FID)
+++++++++++++++++
+
+The feature id is a special property of a feature and not treated
+as an attribute of the feature.  In some cases it is convenient to be able to
+utilize the feature id in queries and result sets as a regular field.  To do
+so use the name ``rowid``.
+
+Starting with GDAL 3.8, if the layer has a named FID column
+(:cpp:func:`OGRLayer::GetFIDColumn` != ""), this name may also be used.
+
+The field wildcard expansions will not include
+the feature id, but it may be explicitly included using a syntax like:
+
+.. code-block::
+
+    SELECT rowid, * FROM nation
+
+It is of course possible to rename it:
+
+.. code-block::
+
+    SELECT rowid AS fid, * FROM nation
+
+OGR_STYLE special field
++++++++++++++++++++++++
+
+The ``OGR_STYLE`` special field represents the style string of the feature
+returned by OGRFeature::GetStyleString(). By using this field and the
+``LIKE`` operator the result of the query can be filtered by the style.
+For example we can select the annotation features as:
+
+.. code-block::
+
+    SELECT * FROM nation WHERE OGR_STYLE LIKE 'LABEL%'
+
+Statistics functions
+++++++++++++++++++++
+
+In addition to standard COUNT(), SUM(), AVG(), MIN(), MAX(), the following
+aggregate functions are available:
+
+- ``STDDEV_POP(numeric_value)``: (GDAL >= 3.10) numerical population standard deviation.
+- ``STDDEV_SAMP(numeric_value)``: (GDAL >= 3.10) numerical `sample standard deviation <https://en.wikipedia.org/wiki/Standard_deviation#Sample_standard_deviation>`__
+
+Ordered-set aggregate functions
++++++++++++++++++++++++++++++++
+
+The following aggregate functions are available. Note that they require to allocate an amount of memory proportional to the number of selected rows (for ``MEDIAN``, ``PERCENTILE`` and ``PERCENTILE_CONT``) or to the number of values (for ``MODE``).
+
+- ``MEDIAN(numeric_value)``: (GDAL >= 3.10) (continuous) median (equivalent to ``PERCENTILE(numeric_value, 50)``). NULL values are ignored.
+- ``PERCENTILE(numeric_value, percentage)``: (GDAL >= 3.10) (continuous) percentile, with percentage between 0 and 100 (equivalent to ``PERCENTILE_CONT(numeric_value, percentage / 100)``). NULL values are ignored.
+- ``PERCENTILE_CONT(numeric_value, fraction)``: (GDAL >= 3.10) (continuous) percentile, with fraction between 0 and 1. NULL values are ignored.
+- ``MODE(value)``: (GDAL >= 3.10): mode, i.e. most frequent input value (strings and numeric values are supported), arbitrarily choosing the first one if there are multiple equally-frequent results. NULL values are ignored.
+
+Spatialite SQL functions
+++++++++++++++++++++++++
+
+When GDAL/OGR is build with support for the `Spatialite <https://www.gaia-gis.it/fossil/libspatialite/index>`_ library,
+a lot of `extra SQL functions <http://www.gaia-gis.it/gaia-sins/spatialite-sql-latest.html>`_,
+in particular spatial functions, can be used in results column fields, WHERE clauses, etc....
+
+.. code-block::
+
+    SELECT EAS_ID, ST_Area(GEOMETRY) AS area FROM poly WHERE
+        ST_Intersects(GEOMETRY, BuildCircleMbr(479750.6875,4764702.0,100))
+
+returns:
+
+::
+
+    OGRFeature(SELECT):0
+    EAS_ID (Real) = 169
+    area (Real) = 101429.9765625
+
+    OGRFeature(SELECT):1
+    EAS_ID (Real) = 165
+    area (Real) = 596610.3359375
+
+    OGRFeature(SELECT):2
+    EAS_ID (Real) = 170
+    area (Real) = 5268.8125
+
+Note that due to the loose typing mechanism of SQLite, if a geometry expression
+returns a NULL value for the first row, this will generally cause OGR not to
+recognize the column as a geometry column. It might be then useful to sort
+the results by making sure that non-null geometries are returned first:
+
+::
+
+   ogrinfo test.shp -sql "SELECT * FROM (SELECT ST_Buffer(geometry,5) AS geometry FROM test) ORDER BY geometry IS NULL ASC" -dialect sqlite
+
+OGR datasource SQL functions
+++++++++++++++++++++++++++++
+
+The ``ogr_datasource_load_layers(datasource_name[, update_mode[, prefix]])``
+function can be used to automatically load all the layers of a datasource as
+:ref:`VirtualOGR tables <vector.sqlite>`.
+
+::
+
+    sqlite> SELECT load_extension('libgdal.so');
+
+    sqlite> SELECT load_extension('mod_spatialite');
+
+    sqlite> SELECT ogr_datasource_load_layers('poly.shp');
+    1
+    sqlite> SELECT * FROM sqlite_master;
+    table|poly|poly|0|CREATE VIRTUAL TABLE "poly" USING VirtualOGR('poly.shp', 0, 'poly')
+
+OGR layer SQL functions
++++++++++++++++++++++++
+
+The following SQL functions are available and operate on a layer name :
+``ogr_layer_Extent()``, ``ogr_layer_SRID()``,
+``ogr_layer_GeometryType()`` and ``ogr_layer_FeatureCount()``
+
+.. code-block::
+
+    SELECT ogr_layer_Extent('poly'), ogr_layer_SRID('poly') AS srid,
+        ogr_layer_GeometryType('poly') AS geomtype, ogr_layer_FeatureCount('poly') AS count
+
+::
+
+    OGRFeature(SELECT):0
+    srid (Integer) = 40004
+    geomtype (String) = POLYGON
+    count (Integer) = 10
+    POLYGON ((478315.53125 4762880.5,481645.3125 4762880.5,481645.3125 4765610.5,478315.53125 4765610.5,478315.53125 4762880.5))
+
+OGR compression functions
++++++++++++++++++++++++++
+
+``ogr_deflate(text_or_blob[, compression_level])`` returns a binary blob
+compressed with the ZLib deflate algorithm. See :cpp:func:`CPLZLibDeflate`
+
+``ogr_inflate(compressed_blob)`` returns the decompressed binary blob,
+from a blob compressed with the ZLib deflate algorithm.
+If the decompressed binary is a string, use
+CAST(ogr_inflate(compressed_blob) AS VARCHAR). See CPLZLibInflate().
+
+Other functions
++++++++++++++++
+
+The ``hstore_get_value()`` function can be used to extract
+a value associate to a key from a HSTORE string, formatted like "key=>value,other_key=>other_value,..."
+
+.. code-block::
+
+    SELECT hstore_get_value('a => b, "key with space"=> "value with space"', 'key with space') --> 'value with space'
+
+.. _sql_sqlite_dialect_raster_functions:
+
+Raster related functions
+++++++++++++++++++++++++
+
+The ``gdal_get_pixel_value()`` function (added in GDAL 3.7) can be used to extract the value
+of a pixel in a GDAL dataset. It requires the configuration option OGR_SQLITE_ALLOW_EXTERNAL_ACCESS
+to be set to YES (for security reasons).
+
+It takes 5 or 6 arguments:
+
+* a string with the dataset name
+* a band number (numbering starting at 1)
+* a string being "georef" to indicate that subsequent values will be georeferenced
+  coordinates, or "pixel" to indicate that subsequent values will be in column, line
+  pixel space
+* georeferenced X value or column number
+* georeferenced Y value or line number
+* resampling method among ``nearest`` (default), ``bilinear``, ``cubic``, ``cubicspline``. Optional, added in GDAL 3.10
+
+.. code-block::
+
+    SELECT gdal_get_pixel_value('../gcore/data/byte.tif', 1, 'georef', 440720, 3751320)
+    SELECT gdal_get_pixel_value('../gcore/data/byte.tif', 1, 'pixel', 0, 0)
+    SELECT gdal_get_pixel_value('../gcore/data/byte.tif', 1, 'pixel', 0.5, 0.5, 'bilinear')  -- GDAL >= 3.10
+
+
+OGR geocoding functions
++++++++++++++++++++++++
+
+The following SQL functions are available : ``ogr_geocode(...)`` and ``ogr_geocode_reverse(...)``.
+
+``ogr_geocode(name_to_geocode [, field_to_return [, option1 [, option2, ...]]])`` where
+name_to_geocode is a literal or a column name that must be geocoded. field_to_return if specified can be "geometry" for
+the geometry (default), or a field name of the layer returned by :cpp:func:`OGRGeocode`. The special field  "raw" can also be used
+to return the raw response (XML string) of the geocoding service.
+option1, option2, etc.. must be of the key=value format, and are options understood
+by :cpp:func:`OGRGeocodeCreateSession` or OGRGeocode().
+
+This function internally uses the OGRGeocode() API. Refer to it for more details.
+
+.. code-block::
+
+    SELECT ST_Centroid(ogr_geocode('Paris'))
+
+returns:
+
+::
+
+    OGRFeature(SELECT):0
+    POINT (2.34287687375113 48.856622357411)
+
+.. code-block:: shell
+
+    ogrinfo cities.csv -dialect sqlite -sql "SELECT *, ogr_geocode(city, 'country_code') AS country_code, ST_Centroid(ogr_geocode(city)) FROM cities"
+
+returns:
+
+
+.. highlight:: none
+
+::
+
+    OGRFeature(SELECT):0
+      city (String) = Paris
+      country_code (String) = fr
+      POINT (2.34287687375113 48.856622357411)
+
+    OGRFeature(SELECT):1
+      city (String) = London
+      country_code (String) = gb
+      POINT (-0.109415723431508 51.5004964757441)
+
+    OGRFeature(SELECT):2
+      city (String) = Rennes
+      country_code (String) = fr
+      POINT (-1.68185479486048 48.1116771631195)
+
+    OGRFeature(SELECT):3
+      city (String) = New York
+      country_code (String) = us
+      POINT (-73.9388908443975 40.6632061220125)
+
+    OGRFeature(SELECT):4
+      city (String) = Beijing
+      country_code (String) = cn
+      POINT (116.3912972 39.9057136)
+
+
+.. highlight:: sql
+
+``ogr_geocode_reverse(longitude, latitude, field_to_return [, option1 [, option2, ...]])`` where
+longitude, latitude is the coordinate to query. field_to_return must be a field name of the layer
+returned by OGRGeocodeReverse() (for example 'display_name'). The special field  "raw" can also be used
+to return the raw response (XML string) of the geocoding service.
+option1, option2, etc.. must be of the key=value format, and are options understood
+by OGRGeocodeCreateSession() or OGRGeocodeReverse().
+
+``ogr_geocode_reverse(geometry, field_to_return [, option1 [, option2, ...]])`` is also accepted
+as an alternate syntax where geometry is a (Spatialite) point geometry.
+
+This function internally uses the :cpp:func:`OGRGeocodeReverse` API. Refer to it for more details.
+
+Spatialite spatial index
+++++++++++++++++++++++++
+
+Spatialite spatial index mechanism can be triggered by making sure a spatial index
+virtual table is mentioned in the SQL (of the form idx_layername_geometrycolumn), or
+by using the more recent SpatialIndex from the VirtualSpatialIndex extension. In which
+case, a in-memory RTree will be built to be used to speed up the spatial queries.
+
+For example, a spatial intersection between 2 layers, by using a spatial index on one
+of the layers to limit the number of actual geometry intersection computations :
+
+.. code-block::
+
+    SELECT city_name, region_name FROM cities, regions WHERE
+        ST_Area(ST_Intersection(cities.geometry, regions.geometry)) > 0 AND
+        regions.rowid IN (
+            SELECT pkid FROM idx_regions_geometry WHERE
+                xmax >= MbrMinX(cities.geometry) AND xmin <= MbrMaxX(cities.geometry) AND
+                ymax >= MbrMinY(cities.geometry) AND ymin <= MbrMaxY(cities.geometry))
+
+or more elegantly :
+
+.. code-block::
+
+    SELECT city_name, region_name FROM cities, regions WHERE
+        ST_Area(ST_Intersection(cities.geometry, regions.geometry)) > 0 AND
+        regions.rowid IN (
+            SELECT rowid FROM SpatialIndex WHERE
+                f_table_name = 'regions' AND search_frame = cities.geometry)

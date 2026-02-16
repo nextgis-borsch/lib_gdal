@@ -1,0 +1,15 @@
+<GDAL_WMS>
+    <Service name="AGS">
+	    <ServerUrl>https://services.arcgisonline.com/arcgis/rest/services/World_Imagery/MapServer</ServerUrl>
+	    <BBoxOrder>xyXY</BBoxOrder>
+        <SRS>3857</SRS>
+    </Service>
+    <DataWindow>
+        <UpperLeftX>-20037508.34</UpperLeftX>
+        <UpperLeftY>20037508.34</UpperLeftY>
+        <LowerRightX>20037508.34</LowerRightX>
+        <LowerRightY>-20037508.34</LowerRightY>
+        <SizeX>512</SizeX>
+        <SizeY>512</SizeY>
+    </DataWindow>
+</GDAL_WMS>

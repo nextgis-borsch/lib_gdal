@@ -1,0 +1,715 @@
+#!/usr/bin/env pytest
+# -*- coding: utf-8 -*-
+###############################################################################
+# Project:  GDAL/OGR Test Suite
+# Purpose:  Test KEA driver
+# Author:   Even Rouault, <even dot rouault at spatialys dot com>
+#
+###############################################################################
+# Copyright (c) 2014, Even Rouault <even dot rouault at spatialys dot com>
+#
+# SPDX-License-Identifier: MIT
+###############################################################################
+
+import datetime
+
+import gdaltest
+import pytest
+
+from osgeo import gdal, ogr, osr
+
+pytestmark = pytest.mark.require_driver("KEA")
+
+###############################################################################
+
+
+@pytest.fixture(scope="module", autouse=True)
+def setup_and_cleanup():
+    gdaltest.kea_driver = gdal.GetDriverByName("KEA")
+
+    yield
+
+    del gdaltest.kea_driver
+
+
+###############################################################################
+# Test copying a reference sample with CreateCopy()
+
+
+def test_kea_1():
+
+    tst = gdaltest.GDALTest(
+        "KEA", "byte.tif", 1, 4672, options=["IMAGEBLOCKSIZE=15", "THEMATIC=YES"]
+    )
+    tst.testCreateCopy(check_srs=True, check_gt=1, new_filename="tmp/byte.kea")
+
+
+###############################################################################
+# Test CreateCopy() for various data types
+
+
+@pytest.mark.parametrize(
+    "src_file",
+    [
+        "byte.tif",
+        "gtiff/int8.tif",
+        "int16.tif",
+        "../../gcore/data/uint16.tif",
+        "../../gcore/data/int32.tif",
+        "../../gcore/data/uint32.tif",
+        "../../gcore/data/int64.tif",
+        "../../gcore/data/uint64.tif",
+        "../../gcore/data/float32.tif",
+        "../../gcore/data/float64.tif",
+    ],
+)
+def test_kea_2(src_file):
+
+    tst = gdaltest.GDALTest(
+        "KEA", src_file, 1, 4672 if src_file != "gtiff/int8.tif" else 1046
+    )
+    tst.testCreateCopy(check_minmax=1, new_filename="tmp/test.kea")
+
+
+###############################################################################
+# Test Create() for various data types
+
+
+@pytest.mark.parametrize(
+    "src_file",
+    [
+        "byte.tif",
+        "gtiff/int8.tif",
+        "int16.tif",
+        "../../gcore/data/uint16.tif",
+        "../../gcore/data/int32.tif",
+        "../../gcore/data/uint32.tif",
+        "../../gcore/data/int64.tif",
+        "../../gcore/data/uint64.tif",
+        "../../gcore/data/float32.tif",
+        "../../gcore/data/float64.tif",
+    ],
+)
+def test_kea_3(tmp_path, src_file):
+
+    tst = gdaltest.GDALTest(
+        "KEA", src_file, 1, 4672 if src_file != "gtiff/int8.tif" else 1046
+    )
+    tst.testCreate(out_bands=1, check_minmax=1, new_filename=str(tmp_path / "test.kea"))
+
+
+###############################################################################
+# Test Create()/CreateCopy() error cases or limit cases
+
+
+@gdaltest.disable_exceptions()
+def test_kea_4(tmp_path):
+
+    with gdal.quiet_errors():
+        ds = gdaltest.kea_driver.Create("/non_existing_path/non_existing_path", 1, 1)
+    assert ds is None
+
+    src_ds = gdaltest.kea_driver.Create(tmp_path / "src.kea", 1, 1, 0)
+    assert src_ds is not None
+    ds = gdaltest.kea_driver.CreateCopy(tmp_path / "out.kea", src_ds)
+    assert ds is not None
+    assert ds.RasterCount == 0
+    src_ds = None
+    ds = None
+
+    # Test updating a read-only file
+    ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 1, 1)
+    ds.GetRasterBand(1).Fill(255)
+    ds = None
+    ds = gdal.Open(tmp_path / "out.kea")
+
+    with gdal.quiet_errors():
+        ret = ds.SetProjection("a")
+    assert ret != 0
+
+    with gdal.quiet_errors():
+        ret = ds.SetGeoTransform([1, 2, 3, 4, 5, 6])
+    assert ret != 0
+
+    # Disabled for now since some of them cause memory leaks or
+    # crash in the HDF5 library finalizer
+    if False:  # pylint: disable=using-constant-test
+        with gdal.quiet_errors():
+            ret = ds.SetMetadataItem("foo", "bar")
+        assert ret != 0
+
+        with gdal.quiet_errors():
+            ret = ds.SetMetadata({"foo": "bar"})
+        assert ret != 0
+
+        with gdal.quiet_errors():
+            ret = ds.GetRasterBand(1).SetMetadataItem("foo", "bar")
+        assert ret != 0
+
+        with gdal.quiet_errors():
+            ret = ds.GetRasterBand(1).SetMetadata({"foo": "bar"})
+        assert ret != 0
+
+        with gdal.quiet_errors():
+            ret = ds.SetGCPs([], "")
+        assert ret != 0
+
+    with gdal.quiet_errors():
+        ret = ds.AddBand(gdal.GDT_Byte)
+    assert ret != 0
+
+    with gdal.quiet_errors():
+        ret = ds.GetRasterBand(1).WriteRaster(0, 0, 1, 1, "\0")
+    assert ret != 0
+    assert ds.GetRasterBand(1).Checksum() == 3
+
+    ds = None
+
+    # test Delete
+    gdaltest.kea_driver.Delete(tmp_path / "src.kea")
+    gdaltest.kea_driver.Delete(tmp_path / "out.kea")
+
+
+###############################################################################
+# Test Create() creation options
+
+
+def test_kea_5(tmp_path):
+
+    options = [
+        "IMAGEBLOCKSIZE=15",
+        "ATTBLOCKSIZE=100",
+        "MDC_NELMTS=10",
+        "RDCC_NELMTS=256",
+        "RDCC_NBYTES=500000",
+        "RDCC_W0=0.5",
+        "SIEVE_BUF=32768",
+        "META_BLOCKSIZE=1024",
+        "DEFLATE=9",
+        "THEMATIC=YES",
+    ]
+    ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 100, 100, 3, options=options)
+    ds = None
+    ds = gdal.Open(tmp_path / "out.kea")
+    assert ds.GetRasterBand(1).GetBlockSize() == [15, 15]
+    assert (
+        ds.GetRasterBand(1).GetMetadataItem("LAYER_TYPE") == "thematic"
+    ), ds.GetRasterBand(1).GetMetadata()
+    assert ds.GetRasterBand(1).Checksum() == 0
+    assert ds.GetGeoTransform() == (0, 1, 0, 0, 0, -1)
+    assert ds.GetProjectionRef() == ""
+    ds = None
+
+
+###############################################################################
+# Test metadata
+
+
+def test_kea_6(tmp_path):
+
+    ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 1, 1, 5)
+    ds.SetMetadata({"foo": "bar"})
+    ds.SetMetadataItem("bar", "baw")
+    ds.GetRasterBand(1).SetMetadata({"bar": "baz"})
+    ds.GetRasterBand(1).SetDescription("desc")
+    ds.GetRasterBand(2).SetMetadata(
+        {"LAYER_TYPE": "any_string_that_is_not_athematic_is_thematic"}
+    )
+    ds.GetRasterBand(3).SetMetadata({"LAYER_TYPE": "athematic"})
+    ds.GetRasterBand(4).SetMetadataItem("LAYER_TYPE", "thematic")
+    ds.GetRasterBand(5).SetMetadataItem("LAYER_TYPE", "athematic")
+    assert ds.SetMetadata({"foo": "bar"}, "other_domain") != 0
+    assert ds.SetMetadataItem("foo", "bar", "other_domain") != 0
+    assert ds.GetRasterBand(1).SetMetadata({"foo": "bar"}, "other_domain") != 0
+    assert ds.GetRasterBand(1).SetMetadataItem("foo", "bar", "other_domain") != 0
+    ds = None
+
+    ds = gdal.Open(tmp_path / "out.kea")
+    assert ds.GetMetadata("other_domain") == {}
+    assert ds.GetMetadataItem("item", "other_domain") is None
+    assert ds.GetRasterBand(1).GetMetadata("other_domain") == {}
+    assert ds.GetRasterBand(1).GetMetadataItem("item", "other_domain") is None
+    md = ds.GetMetadata()
+    assert md["foo"] == "bar"
+    assert ds.GetMetadataItem("foo") == "bar"
+    assert ds.GetMetadataItem("bar") == "baw"
+    assert ds.GetRasterBand(1).GetDescription() == "desc"
+    md = ds.GetRasterBand(1).GetMetadata()
+    assert md["bar"] == "baz"
+    assert ds.GetRasterBand(1).GetMetadataItem("bar") == "baz"
+    assert ds.GetRasterBand(2).GetMetadataItem("LAYER_TYPE") == "thematic"
+    assert ds.GetRasterBand(3).GetMetadataItem("LAYER_TYPE") == "athematic"
+    assert ds.GetRasterBand(4).GetMetadataItem("LAYER_TYPE") == "thematic"
+    assert ds.GetRasterBand(5).GetMetadataItem("LAYER_TYPE") == "athematic"
+    out2_ds = gdaltest.kea_driver.CreateCopy(tmp_path / "out2.kea", ds)
+    ds = None
+
+    assert out2_ds.GetMetadataItem("foo") == "bar"
+    assert out2_ds.GetRasterBand(1).GetMetadataItem("bar") == "baz"
+
+    out2_ds = None
+
+
+###############################################################################
+# Test georef
+
+
+def test_kea_7(tmp_path):
+
+    sr = osr.SpatialReference()
+    sr.ImportFromEPSG(4326)
+
+    # Geotransform
+    ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 1, 1)
+    assert ds.GetGCPCount() == 0
+    assert ds.SetGeoTransform([1, 2, 3, 4, 5, 6]) == 0
+    assert ds.SetProjection(sr.ExportToWkt()) == 0
+    ds = None
+
+    ds = gdal.Open(tmp_path / "out.kea")
+    out2_ds = gdaltest.kea_driver.CreateCopy(tmp_path / "out2.kea", ds)
+    ds = None
+    assert out2_ds.GetGCPCount() == 0
+    assert out2_ds.GetGeoTransform() == (1, 2, 3, 4, 5, 6)
+    assert out2_ds.GetProjectionRef() != ""
+    out2_ds = None
+
+
+def test_kea_7_bis(tmp_path):
+
+    sr = osr.SpatialReference()
+    sr.ImportFromEPSG(4326)
+
+    # GCP
+    ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 1, 1)
+    gcp1 = gdal.GCP(0, 1, 2, 3, 4)
+    gcp1.Id = "id"
+    gcp1.Info = "info"
+    gcp2 = gdal.GCP(0, 1, 2, 3, 4)
+    gcps = [gcp1, gcp2]
+    ds.SetGCPs(gcps, sr.ExportToWkt())
+    ds = None
+
+    ds = gdal.Open(tmp_path / "out.kea")
+    out2_ds = gdaltest.kea_driver.CreateCopy(tmp_path / "out2.kea", ds)
+    ds = None
+
+    assert out2_ds.GetGCPCount() == 2
+    assert out2_ds.GetGCPProjection() != ""
+    got_gcps = out2_ds.GetGCPs()
+    for i in range(2):
+        assert (
+            got_gcps[i].GCPX == gcps[i].GCPX
+            and got_gcps[i].GCPY == gcps[i].GCPY
+            and got_gcps[i].GCPZ == gcps[i].GCPZ
+            and got_gcps[i].GCPPixel == gcps[i].GCPPixel
+            and got_gcps[i].GCPLine == gcps[i].GCPLine
+            and got_gcps[i].Id == gcps[i].Id
+            and got_gcps[i].Info == gcps[i].Info
+        )
+    out2_ds = None
+
+
+###############################################################################
+# Test colortable
+
+
+def test_kea_8(tmp_path):
+
+    for i in range(2):
+        ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 1, 1)
+        assert ds.GetRasterBand(1).GetColorTable() is None
+        assert ds.GetRasterBand(1).SetColorTable(None) != 0
+        ct = gdal.ColorTable()
+        ct.SetColorEntry(0, (0, 255, 0, 255))
+        ct.SetColorEntry(1, (255, 0, 255, 255))
+        ct.SetColorEntry(2, (0, 0, 255, 255))
+        assert ds.GetRasterBand(1).SetColorTable(ct) == 0
+        if i == 1:
+            # And again
+            assert ds.GetRasterBand(1).SetColorTable(ct) == 0
+        ds = None
+
+        ds = gdal.Open(tmp_path / "out.kea")
+        out2_ds = gdaltest.kea_driver.CreateCopy(tmp_path / "out2.kea", ds)
+        ds = None
+        got_ct = out2_ds.GetRasterBand(1).GetColorTable()
+        assert got_ct.GetCount() == 3, "Got wrong color table entry count."
+        assert got_ct.GetColorEntry(1) == (
+            255,
+            0,
+            255,
+            255,
+        ), "Got wrong color table entry."
+
+        out2_ds = None
+
+        gdaltest.kea_driver.Delete(tmp_path / "out.kea")
+        gdaltest.kea_driver.Delete(tmp_path / "out2.kea")
+
+
+###############################################################################
+# Test color interpretation
+
+
+def test_kea_9(tmp_path):
+
+    ds = gdaltest.kea_driver.Create(
+        tmp_path / "out.kea", 1, 1, gdal.GCI_YCbCr_CrBand - gdal.GCI_GrayIndex + 1
+    )
+    assert ds.GetRasterBand(1).GetColorInterpretation() == gdal.GCI_GrayIndex
+    for i in range(gdal.GCI_GrayIndex, gdal.GCI_YCbCr_CrBand + 1):
+        ds.GetRasterBand(i).SetColorInterpretation(i)
+    ds = None
+
+    ds = gdal.Open(tmp_path / "out.kea")
+    out2_ds = gdaltest.kea_driver.CreateCopy(tmp_path / "out2.kea", ds)
+    ds = None
+    for i in range(gdal.GCI_GrayIndex, gdal.GCI_YCbCr_CrBand + 1):
+        assert (
+            out2_ds.GetRasterBand(i).GetColorInterpretation() == i
+        ), "Got wrong color interpretation."
+
+    out2_ds = None
+
+
+###############################################################################
+# Test nodata
+
+
+@pytest.mark.parametrize(
+    "dt,nd,expected_nd",
+    [
+        (gdal.GDT_Byte, 0, 0),
+        (gdal.GDT_Byte, 1.1, 1.0),
+        (gdal.GDT_Byte, 255, 255),
+        (gdal.GDT_Byte, -1, None),
+        (gdal.GDT_Byte, 256, None),
+        (gdal.GDT_UInt16, 0, 0),
+        (gdal.GDT_UInt16, 65535, 65535),
+        (gdal.GDT_UInt16, -1, None),
+        (gdal.GDT_UInt16, 65536, None),
+        (gdal.GDT_Int16, -32768, -32768),
+        (gdal.GDT_Int16, 32767, 32767),
+        (gdal.GDT_Int16, -32769, None),
+        (gdal.GDT_Int16, 32768, None),
+        (gdal.GDT_UInt32, 0, 0),
+        (gdal.GDT_UInt32, 0xFFFFFFFF, 0xFFFFFFFF),
+        (gdal.GDT_UInt32, -1, None),
+        (gdal.GDT_UInt32, 0xFFFFFFFF + 1, None),
+        (gdal.GDT_Int32, -2147483648, -2147483648),
+        (gdal.GDT_Int32, 2147483647, 2147483647),
+        (gdal.GDT_Int32, -2147483649, None),
+        (gdal.GDT_Int32, 2147483648, None),
+        (gdal.GDT_Int64, 0, 0),
+        (gdal.GDT_Int64, 0xFFFFFFFF + 1, 0xFFFFFFFF + 1),
+        (gdal.GDT_Int64, -0xFFFFFFFF - 1, -0xFFFFFFFF - 1),
+        (gdal.GDT_UInt64, 0, 0),
+        (gdal.GDT_UInt64, 0xFFFFFFFF + 1, 0xFFFFFFFF + 1),
+        (gdal.GDT_Float32, 0.5, 0.5),
+    ],
+)
+def test_kea_10(tmp_path, dt, nd, expected_nd):
+
+    ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 1, 1, 1, dt)
+    assert ds.GetRasterBand(1).GetNoDataValue() is None
+    ds.GetRasterBand(1).SetNoDataValue(nd)
+    if ds.GetRasterBand(1).GetNoDataValue() != expected_nd:
+        print(dt)
+        pytest.fail("Got wrong nodata.")
+    ds = None
+
+    ds = gdal.Open(tmp_path / "out.kea")
+    out2_ds = gdaltest.kea_driver.CreateCopy(tmp_path / "out2.kea", ds)
+    ds = None
+    if out2_ds.GetRasterBand(1).GetNoDataValue() != expected_nd:
+        print(dt)
+        pytest.fail("Got wrong nodata.")
+    out2_ds.GetRasterBand(1).DeleteNoDataValue()
+    out2_ds = None
+
+    ds = gdal.Open(tmp_path / "out2.kea")
+    assert ds.GetRasterBand(1).GetNoDataValue() is None
+    ds = None
+
+
+###############################################################################
+# Test AddBand
+
+
+def test_kea_11(tmp_path):
+
+    ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 1, 1, 1, gdal.GDT_Byte)
+    ds = None
+
+    ds = gdal.Open(tmp_path / "out.kea", gdal.GA_Update)
+    assert ds.AddBand(gdal.GDT_Byte) == 0
+    assert ds.AddBand(gdal.GDT_Int16, options=["DEFLATE=9"]) == 0
+    ds = None
+
+    ds = gdal.Open(tmp_path / "out.kea")
+    assert ds.RasterCount == 3
+    assert ds.GetRasterBand(2).DataType == gdal.GDT_Byte
+    assert ds.GetRasterBand(3).DataType == gdal.GDT_Int16
+    ds = None
+
+
+###############################################################################
+# Test RAT
+
+
+def test_kea_rat(tmp_path):
+
+    ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 1, 1, 1, gdal.GDT_Byte)
+    assert ds.GetRasterBand(1).GetDefaultRAT().GetColumnCount() == 0
+    assert ds.GetRasterBand(1).SetDefaultRAT(None) != 0
+    rat = ds.GetRasterBand(1).GetDefaultRAT()
+    rat.CreateColumn("col_real_generic", gdal.GFT_Real, gdal.GFU_Generic)
+    assert ds.GetRasterBand(1).SetDefaultRAT(rat) == 0
+    rat = ds.GetRasterBand(1).GetDefaultRAT()
+    rat.CreateColumn("col_integer_pixelcount", gdal.GFT_Real, gdal.GFU_PixelCount)
+    rat.CreateColumn("col_string_name", gdal.GFT_String, gdal.GFU_Name)
+    rat.CreateColumn("col_integer_red", gdal.GFT_Integer, gdal.GFU_Red)
+    rat.CreateColumn("col_integer_green", gdal.GFT_Integer, gdal.GFU_Green)
+    rat.CreateColumn("col_integer_blue", gdal.GFT_Integer, gdal.GFU_Blue)
+    rat.CreateColumn("col_integer_alpha", gdal.GFT_Integer, gdal.GFU_Alpha)
+    rat.CreateColumn("col_bool", gdal.GFT_Boolean, gdal.GFU_Generic)
+    rat.CreateColumn("col_datetime", gdal.GFT_DateTime, gdal.GFU_Generic)
+    rat.CreateColumn("col_wkbgeneric", gdal.GFT_WKBGeometry, gdal.GFU_Generic)
+    rat.SetRowCount(1)
+
+    rat.SetValueAsString(0, 0, "1.23")
+    rat.SetValueAsInt(0, 0, 1)
+    rat.SetValueAsBoolean(0, 0, False)
+    rat.SetValueAsDateTime(0, 0, datetime.datetime.fromtimestamp(0))
+    rat.SetValueAsWKBGeometry(0, 0, b"")
+    rat.SetValueAsDouble(0, 0, 1.23)
+
+    rat.SetValueAsInt(0, 2, 0)
+    rat.SetValueAsDouble(0, 2, 0)
+    rat.SetValueAsString(0, 2, "foo")
+
+    rat.SetValueAsString(0, 3, "123")
+    rat.SetValueAsDouble(0, 3, 123)
+    rat.SetValueAsInt(0, 3, 123)
+
+    rat.SetValueAsString(0, 7, "true")
+    rat.SetValueAsDouble(0, 7, 0)
+    rat.SetValueAsInt(0, 7, 1)
+    rat.SetValueAsDateTime(0, 7, datetime.datetime.fromtimestamp(0))
+    rat.SetValueAsWKBGeometry(0, 7, b"")
+    rat.SetValueAsBoolean(0, 7, True)
+
+    rat.SetValueAsString(0, 8, "true")
+    rat.SetValueAsDouble(0, 8, 0)
+    rat.SetValueAsInt(0, 8, 1)
+    rat.SetValueAsWKBGeometry(0, 8, b"")
+    rat.SetValueAsBoolean(0, 8, True)
+    dt = datetime.datetime(
+        2025,
+        10,
+        11,
+        12,
+        34,
+        56,
+        500000,
+        tzinfo=datetime.timezone(datetime.timedelta(seconds=4500)),
+    )
+    rat.SetValueAsDateTime(0, 8, dt)
+
+    g = ogr.Geometry(ogr.wkbPoint)
+    g.SetPoint_2D(0, 1, 2)
+    wkb = g.ExportToWkb()
+
+    rat.SetValueAsString(0, 9, "true")
+    rat.SetValueAsDouble(0, 9, 0)
+    rat.SetValueAsInt(0, 9, 1)
+    rat.SetValueAsDateTime(0, 9, datetime.datetime.fromtimestamp(0))
+    rat.SetValueAsBoolean(0, 9, True)
+    rat.SetValueAsWKBGeometry(0, 9, wkb)
+
+    cloned_rat = rat.Clone()
+    assert ds.GetRasterBand(1).SetDefaultRAT(rat) == 0
+    ds = None
+
+    ds = gdal.Open(tmp_path / "out.kea")
+    out2_ds = gdaltest.kea_driver.CreateCopy(tmp_path / "out2.kea", ds)
+    rat = out2_ds.GetRasterBand(1).GetDefaultRAT()
+
+    for i in range(7):
+        assert rat.GetColOfUsage(rat.GetUsageOfCol(i)) == i
+
+    assert cloned_rat.GetNameOfCol(0) == "col_real_generic"
+    assert cloned_rat.GetTypeOfCol(0) == gdal.GFT_Real
+    assert cloned_rat.GetUsageOfCol(0) == gdal.GFU_Generic
+    assert cloned_rat.GetUsageOfCol(1) == gdal.GFU_PixelCount
+    assert cloned_rat.GetTypeOfCol(2) == gdal.GFT_String
+    assert cloned_rat.GetTypeOfCol(3) == gdal.GFT_Integer
+
+    assert rat.GetColumnCount() == cloned_rat.GetColumnCount()
+    assert rat.GetRowCount() == cloned_rat.GetRowCount()
+    for i in range(rat.GetColumnCount()):
+        assert rat.GetNameOfCol(i) == cloned_rat.GetNameOfCol(i)
+        if rat.GetTypeOfCol(i) not in (gdal.GFT_DateTime, gdal.GFT_WKBGeometry):
+            assert rat.GetTypeOfCol(i) == cloned_rat.GetTypeOfCol(i), rat.GetNameOfCol(
+                i
+            )
+        assert rat.GetUsageOfCol(i) == cloned_rat.GetUsageOfCol(i)
+
+    with gdal.quiet_errors():
+
+        rat.GetNameOfCol(-1)
+        rat.GetTypeOfCol(-1)
+        rat.GetUsageOfCol(-1)
+
+        rat.GetNameOfCol(rat.GetColumnCount())
+        rat.GetTypeOfCol(rat.GetColumnCount())
+        rat.GetUsageOfCol(rat.GetColumnCount())
+
+        with pytest.raises(Exception):
+            rat.GetValueAsDouble(-1, 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsInt(-1, 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsString(-1, 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsBoolean(-1, 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsDateTime(-1, 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsWKBGeometry(-1, 0)
+
+        with pytest.raises(Exception):
+            rat.GetValueAsDouble(rat.GetColumnCount(), 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsInt(rat.GetColumnCount(), 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsString(rat.GetColumnCount(), 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsBoolean(rat.GetColumnCount(), 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsDateTime(rat.GetColumnCount(), 0)
+        with pytest.raises(Exception):
+            rat.GetValueAsWKBGeometry(rat.GetColumnCount(), 0)
+
+        with pytest.raises(Exception):
+            rat.GetValueAsDouble(0, -1)
+        with pytest.raises(Exception):
+            rat.GetValueAsInt(0, -1)
+        with pytest.raises(Exception):
+            rat.GetValueAsString(0, -1)
+        with pytest.raises(Exception):
+            rat.GetValueAsBoolean(0, -1)
+        with pytest.raises(Exception):
+            rat.GetValueAsDateTime(0, -1)
+        with pytest.raises(Exception):
+            rat.GetValueAsWKBGeometry(0, -1)
+
+        rat.GetValueAsDouble(0, rat.GetRowCount())
+        rat.GetValueAsInt(0, rat.GetRowCount())
+        rat.GetValueAsString(0, rat.GetRowCount())
+        rat.GetValueAsBoolean(0, rat.GetRowCount())
+        rat.GetValueAsDateTime(0, rat.GetRowCount())
+        rat.GetValueAsWKBGeometry(0, rat.GetRowCount())
+
+    assert rat.GetValueAsDouble(0, 0) == 1.23
+    assert rat.GetValueAsInt(0, 0) == 1
+    assert rat.GetValueAsString(0, 0) == "1.23"
+
+    assert rat.GetValueAsInt(0, 3) == 123
+    assert rat.GetValueAsDouble(0, 3) == 123
+    assert rat.GetValueAsString(0, 3) == "123"
+
+    assert rat.GetValueAsString(0, 2) == "foo"
+    assert rat.GetValueAsInt(0, 2) == 0
+    assert rat.GetValueAsDouble(0, 2) == 0
+
+    assert rat.GetValueAsBoolean(0, 7)
+    assert rat.GetValueAsDateTime(0, 8) == dt
+    assert rat.GetValueAsWKBGeometry(0, 9) == wkb
+
+    ds = None
+    out2_ds = None
+
+
+###############################################################################
+# Test overviews
+
+
+def test_kea_13(tmp_path):
+
+    src_ds = gdal.Open("data/byte.tif")
+    ds = gdaltest.kea_driver.CreateCopy(tmp_path / "out.kea", src_ds)
+    src_ds = None
+    ds.BuildOverviews("NEAR", [2])
+    ds = None
+    ds = gdal.Open(tmp_path / "out.kea")
+    out2_ds = gdaltest.kea_driver.CreateCopy(
+        tmp_path / "out2.kea", ds
+    )  # yes CreateCopy() of KEA copies overviews
+    assert out2_ds.GetRasterBand(1).GetOverviewCount() == 1
+    assert out2_ds.GetRasterBand(1).GetOverview(0).Checksum() == 1087
+    assert out2_ds.GetRasterBand(1).GetOverview(0).GetDefaultRAT() is None
+    assert out2_ds.GetRasterBand(1).GetOverview(0).SetDefaultRAT(None) != 0
+    assert out2_ds.GetRasterBand(1).GetOverview(-1) is None
+    assert out2_ds.GetRasterBand(1).GetOverview(1) is None
+    out2_ds = None
+    ds = None
+
+
+###############################################################################
+# Test mask bands
+
+
+def test_kea_14(tmp_path):
+
+    ds = gdaltest.kea_driver.Create(tmp_path / "out.kea", 1, 1, 1, gdal.GDT_Byte)
+    assert ds.GetRasterBand(1).GetMaskFlags() == gdal.GMF_ALL_VALID
+    assert ds.GetRasterBand(1).GetMaskBand().Checksum() == 3
+    ds.GetRasterBand(1).CreateMaskBand(0)
+    assert ds.GetRasterBand(1).GetMaskFlags() == 0
+    assert ds.GetRasterBand(1).GetMaskBand().IsMaskBand()
+    assert ds.GetRasterBand(1).GetMaskBand().Checksum() == 3
+    ds.GetRasterBand(1).GetMaskBand().Fill(0)
+    assert ds.GetRasterBand(1).GetMaskBand().Checksum() == 0
+    ds = None
+
+    ds = gdal.Open(tmp_path / "out.kea")
+    out2_ds = gdaltest.kea_driver.CreateCopy(
+        tmp_path / "out2.kea", ds
+    )  # yes CreateCopy() of KEA copies overviews
+    assert out2_ds.GetRasterBand(1).GetMaskFlags() == 0
+    assert out2_ds.GetRasterBand(1).GetMaskBand().Checksum() == 0
+    out2_ds = None
+    ds = None
+
+
+###############################################################################
+# Test /vsi functionality
+
+
+def test_kea_15(tmp_path, tmp_vsimem):
+
+    # create an temp image
+    ds = gdaltest.kea_driver.Create(tmp_path / "vsitest.kea", 1, 1)
+    ds.GetRasterBand(1).Fill(255)
+    ds = None
+
+    # load it into /vsimem and try and open it
+    gdal.FileFromMemBuffer(
+        tmp_vsimem / "foo.kea", open(tmp_path / "vsitest.kea", "rb").read()
+    )
+    ds = gdal.Open(tmp_vsimem / "foo.kea")
+    assert ds.GetDriver().ShortName == "KEA"
+    ds = None
+
+
+###############################################################################
+# Test /vsi functionality on writing (does not work)
+
+
+@gdaltest.enable_exceptions()
+def test_kea_create_vsimem(tmp_vsimem):
+
+    with pytest.raises(Exception):
+        gdaltest.kea_driver.Create(tmp_vsimem / "vsitest.kea", 1, 1)

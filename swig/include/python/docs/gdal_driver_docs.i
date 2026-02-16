@@ -1,0 +1,261 @@
+%feature("docstring") GDALDriverShadow "
+Python proxy of a :cpp:class:`GDALDriver`.
+";
+
+%extend GDALDriverShadow {
+
+%feature("docstring") CopyFiles "
+Copy all the files associated with a :py:class:`Dataset`.
+
+Parameters
+----------
+newName : str
+    new path for the dataset
+oldName : str
+    old path for the dataset
+
+Returns
+-------
+int
+   :py:const:`CE_None` on success or :py:const:`CE_Failure` on failure.
+";
+
+%feature("docstring") Create "
+
+Create a new :py:class:`Dataset` with this driver.
+See :cpp:func:`GDALDriver::Create`.
+
+Parameters
+----------
+utf8_path : str
+   Path of the dataset to create.
+xsize : int
+   Width of created raster in pixels. Set to zero for vector datasets.
+ysize : int
+   Height of created raster in pixels. Set to zero for vector datasets.
+bands : int, default = 1
+    Number of bands. Set to zero for vector datasets.
+eType : int or numpy.dtype, default = :py:const:`GDT_Byte`
+    Raster data type. Set to :py:const:`GDT_Unknown` for vector datasets.
+options : list or dict
+    List of driver-specific options
+
+Returns
+-------
+Dataset
+
+Examples
+--------
+>>> with gdal.GetDriverByName('GTiff').Create('test.tif', 12, 4, 2, gdal.GDT_Float32, {'COMPRESS': 'DEFLATE'}) as ds:
+...     print(gdal.Info(ds))
+...
+Driver: GTiff/GeoTIFF
+Files: test.tif
+Size is 12, 4
+Image Structure Metadata:
+  INTERLEAVE=PIXEL
+Corner Coordinates:
+Upper Left  (    0.0,    0.0)
+Lower Left  (    0.0,    4.0)
+Upper Right (   12.0,    0.0)
+Lower Right (   12.0,    4.0)
+Center      (    6.0,    2.0)
+Band 1 Block=12x4 Type=Float32, ColorInterp=Gray
+Band 2 Block=12x4 Type=Float32, ColorInterp=Undefined
+
+>>> with gdal.GetDriverByName('ESRI Shapefile').Create('test.shp', 0, 0, 0, gdal.GDT_Unknown) as ds:
+...     print(gdal.VectorInfo(ds))
+...
+INFO: Open of `test.shp'
+      using driver `ESRI Shapefile' successful.
+";
+
+%feature("docstring") CreateCopy "
+
+Create a copy of a :py:class:`Dataset`.
+See :cpp:func:`GDALDriver::CreateCopy`.
+
+Parameters
+----------
+utf8_path : str
+   Path of the dataset to create.
+src : Dataset
+   The dataset being duplicated.
+strict : bool, default=1
+   Indicates whether the copy must be strictly equivalent or if
+   it may be adapted as needed for the output format.
+options : list or dict
+   List of driver-specific options
+callback : callable, optional
+   A progress callback function
+callback_data : any, optional
+   Optional data to be passed to callback function
+
+Returns
+-------
+Dataset
+";
+
+%feature("docstring") CreateMultiDimensional "
+
+Create a new multidimensional dataset.
+See :cpp:func:`GDALDriver::CreateMultiDimensional`.
+
+Parameters
+----------
+utf8_path : str
+   Path of the dataset to create.
+root_group_options : list or dict
+   Driver-specific options regarding the creation of the
+   root group.
+options : list or dict
+   List of driver-specific options regarding the creation
+   of the Dataset.
+
+Returns
+-------
+Dataset
+
+Examples
+--------
+.. testsetup::
+   >>> if gdal.GetDriverByName('netCDF') is None:
+   ...     pytest.skip()
+
+>>> with gdal.GetDriverByName('netCDF').CreateMultiDimensional('test.nc') as ds:
+...     gdal.MultiDimInfo(ds)
+...
+{'type': 'group', 'driver': 'netCDF', 'name': '/', 'attributes': {'Conventions': 'CF-1.6'}, 'structural_info': {'NC_FORMAT': 'NETCDF4'}}
+
+";
+
+%feature("docstring") CreateVector "
+
+Create a new vector :py:class:`Dataset` with this driver.
+This method is an alias for ``Create(name, 0, 0, 0, gdal.GDT_Unknown)``.
+
+Parameters
+----------
+utf8_path : str
+   Path of the dataset to create.
+
+Returns
+-------
+Dataset
+
+Examples
+--------
+>>> with gdal.GetDriverByName('ESRI Shapefile').CreateVector('test.shp') as ds:
+...     print(ds.GetLayerCount())
+... 
+0
+
+";
+
+%feature("docstring") Delete "
+Delete a :py:class:`Dataset`.
+See :cpp:func:`GDALDriver::Delete`.
+
+Parameters
+----------
+utf8_path : str
+   Path of the dataset to delete.
+
+Returns
+-------
+int
+   :py:const:`CE_None` on success or :py:const:`CE_Failure` on failure.
+";
+
+%feature("docstring") Deregister "
+Deregister the driver.
+See :cpp:func:`GDALDriverManager::DeregisterDriver`.
+";
+
+%feature("docstring") HasOpenOption "
+
+Reports whether the driver supports a specified open option.
+
+Parameters
+----------
+openOptionName : str
+   The name of the option to test
+
+Returns
+-------
+bool
+   ``True``, if the option is supported by this driver, ``False`` otherwise.
+
+Examples
+--------
+>>> gdal.GetDriverByName('GPKG').HasOpenOption('PRELUDE_STATEMENTS')
+True
+>>> gdal.GetDriverByName('GPKG').HasOpenOption('CLOSING_STATEMENTS')
+False
+
+";
+
+%feature("docstring") HelpTopic "
+The URL for driver documentation, relative to the GDAL documentation directory.
+See :cpp:func:`GDALGetDriverHelpTopic`.
+";
+
+%feature("docstring") LongName "
+The long name of the driver.
+See :cpp:func:`GDALGetDriverLongName`.
+";
+
+%feature("docstring") Register "
+Register the driver for use.
+See :cpp:func:`GDALDriverManager::RegisterDriver`.
+";
+
+%feature("docstring") Rename "
+Rename a :py:class:`Dataset`.
+See :cpp:func:`GDALDriver::Rename`.
+
+Parameters
+----------
+newName : str
+    new path for the dataset
+oldName : str
+    old path for the dataset
+
+Returns
+-------
+int
+   :py:const:`CE_None` on success or :py:const:`CE_Failure` on failure.
+";
+
+%feature("docstring") ShortName "
+The short name of a :py:class:`Driver` that can be passed to
+:py:func:`GetDriverByName`.
+See :cpp:func:`GDALGetDriverShortName`.
+";
+
+%feature("docstring") TestCapability "
+
+Check whether the driver supports a specified capability
+(:py:const:`ogr.ODrCCreateDataSource` or
+:py:const:`ogr.ODrCDeleteDataSource`)`.
+
+Parameters
+----------
+cap : str
+    The name of the capability to test
+
+Returns
+-------
+bool
+   ``True`` if the driver supports the capability, ``False`` otherwise.
+
+Examples
+--------
+>>> gdal.GetDriverByName('ESRI Shapefile').TestCapability(ogr.ODrCCreateDataSource)
+True
+>>> gdal.GetDriverByName('GTiff').TestCapability(ogr.ODrCCreateDataSource)
+True
+
+";
+
+};

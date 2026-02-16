@@ -1,0 +1,255 @@
+name: Code Checks
+
+on:
+    push:
+        paths-ignore:
+            - 'doc/**'
+        branches-ignore:
+            - 'backport**'
+            - 'dependabot**'
+    pull_request:
+        paths-ignore:
+            - 'doc/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  cppcheck_2004:
+    runs-on: ubuntu-latest
+    container: ubuntu:20.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Install Requirements
+        run: |
+          apt update
+          apt install -y cppcheck libsqlite3-dev ccache sqlite3 libproj-dev cmake g++ make
+
+      - name: Run cmake
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+
+      - name: Run cppcheck test
+        run: |
+          cd build
+          ../scripts/cppcheck.sh
+
+  cppcheck_2404:
+    runs-on: ubuntu-latest
+    container: ubuntu:24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Install Requirements
+        run: |
+          apt update
+          apt install -y cppcheck libsqlite3-dev ccache sqlite3 libproj-dev cmake g++ make
+
+      - name: Run cmake
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+
+      - name: Run cppcheck test
+        run: |
+          cd build
+          ../scripts/cppcheck.sh
+
+  cppcheck_master:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Install Requirements
+        run: |
+          sudo apt update
+          sudo apt install -y git libsqlite3-dev ccache sqlite3 libproj-dev cmake g++ make
+
+      - name: Build cppcheck
+        run: |
+          git clone https://github.com/danmar/cppcheck
+          cd cppcheck
+          git checkout 2af570d02db4577ee7da98c8257d6ccc37f36095
+          mkdir build
+          cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j$(nproc)
+          sudo make install
+          cd ../..
+
+      - name: Run cmake
+        run: |
+          mkdir build
+          cd build
+          cmake ..
+
+      - name: Run cppcheck test (on push events)
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          cd build
+          ../scripts/cppcheck.sh
+
+      - name: Run cppcheck test, but ignore failures (on pull request)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: |
+          cd build
+          # Do not fail the job. This is just used as a tool to monitor how we are regarding recent cppcheck
+          ../scripts/cppcheck.sh || /bin/true
+
+  code_quality_checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Detect tabulations
+        run: ./scripts/detect_tabulations.sh
+
+      - name: Detect printf
+        run: ./scripts/detect_printf.sh
+
+      - name: Detect self assignments
+        run: ./scripts/detect_self_assignment.sh
+
+      - name: Detect suspicious char digit zero
+        run: ./scripts/detect_suspicious_char_digit_zero.sh
+
+      - name: Detect missing includes
+        run: ./scripts/detect_missing_include.sh
+
+      - name: Detect (a+b-1)/b
+        run: ./scripts/detect_a_plus_b_minus_1_div_b.sh
+
+      - name: Detect 'virtual' and 'override'
+        run: ./scripts/detect_virtual_override.sh
+
+      # Helps detecting updates of internal libjson-c where replacement
+      # of strtod() -> CPLStrtod() is missing. The later function is not
+      # locale sensitive. An alternative would be to make sure that HAVE_USELOCALE
+      # or HAVE_SETLOCALE are passed on Windows, but avoiding to mess with
+      # locale seems to be a better option
+      - name: Detect invalid use of atof() or strtod() in internal libjson
+        run: |
+          grep -e "CPLStrtod(" ../ogr/ogrsf_frmts/geojson/libjson/*.c >/dev/null && echo "CPLStrtod() found as expected"
+          if grep -e "strtod(" ogr/ogrsf_frmts/geojson/libjson/*.c; then echo "Unexpected use of strtod(). Use CPLStrtod() instead"; /bin/false; fi
+          if grep -e "atof(" ogr/ogrsf_frmts/geojson/libjson/*.c; then echo "Unexpected use of atof()."; /bin/false; fi
+
+      - name: Shellcheck
+        # SC2129: (style): Consider using { cmd1; cmd2; } >> file instead of individual redirects
+        run: shellcheck -e SC2086,SC2046,SC2164,SC2054,SC2129 $(find . -name '*.sh' -a -not -name ltmain.sh -a -not -wholename "./autotest/*" -a -not -wholename "./.github/*")
+
+  binary_files:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Install Requirements
+        run: |
+            sudo apt-get install -y python3 coreutils
+
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Detect binary files
+        run: python3 ./scripts/check_binaries.py
+
+  linting:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+      - uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+
+  other_checks:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Install Requirements
+        run: |
+            sudo apt-get install -y --no-install-recommends python3-pip
+            sudo apt-get remove -y python3-jsonschema
+            PYTHON_CMD=python3 && sudo $PYTHON_CMD -m pip install --break-system-packages cffconvert
+
+      - name: Validate citation file
+        run: |
+            cffconvert --validate
+            cffconvert -f bibtex
+            cffconvert -f apalike
+
+  cmake-lint:
+    # Disabled because of https://github.com/OSGeo/gdal/pull/5326#issuecomment-1042617407
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - name: Set up Python
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      with:
+        python-version: "3.10"
+    - name: Install lint tool
+      run: |
+        PYTHON_CMD=python3 && $PYTHON_CMD -m pip --upgrade pip
+        PYTHON_CMD=python3 && $PYTHON_CMD -m pip install cmake-format pyyaml
+    - name: Check cmakelist
+      run: find . -name CMakeLists.txt |xargs cmake-format --check
+
+  validate_xml:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Install requirements
+        run: |
+          sudo apt update
+          sudo apt install -y libxml2-utils
+
+      - name: Run xmllint checks
+        run: |
+          xmllint --schema ./frmts/nitf/data/nitf_spec.xsd ./frmts/nitf/data/nitf_spec.xml --noout
+          xmllint --schema ./ogr/ogrsf_frmts/vdv/data/vdv452.xsd ./ogr/ogrsf_frmts/vdv/data/vdv452.xml --noout
+          xmllint --schema ./ogr/ogrsf_frmts/gmlas/data/gmlasconf.xsd ./ogr/ogrsf_frmts/gmlas/data/gmlasconf.xml --noout
+
+  check-config-options:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - name: Set up Python
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      with:
+        python-version: "3.10"
+    - name: Check cmakelist
+      run: |
+        python scripts/collect_config_options.py
+        git diff
+        git diff --quiet || (echo "You need to run scripts/collect_config_options to update port/cpl_known_config_options.h" && /bin/false)
+
+  check-driver-connection-prefix:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+    - name: Set up Python
+      uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+      with:
+        python-version: "3.10"
+    - name: Check cmakelist
+      run: |
+        python scripts/collect_driver_connection_prefix.py
+        git diff
+        git diff --quiet || (echo "You need to run scripts/collect_driver_connection_prefix.py to update gcore/gdal_known_connection_prefixes.h" && /bin/false)

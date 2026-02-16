@@ -1,0 +1,518 @@
+/******************************************************************************
+ *
+ * Name:     georaster_priv.h
+ * Project:  Oracle Spatial GeoRaster Driver
+ * Purpose:  Define C++/Private declarations
+ * Author:   Ivan Lucena [ivan.lucena at oracle.com]
+ *
+ ******************************************************************************
+ * Copyright (c) 2008, Ivan Lucena
+ *
+ * SPDX-License-Identifier: MIT
+ *****************************************************************************/
+
+#ifndef GEORASTER_PRIV_H_INCLUDED
+#define GEORASTER_PRIV_H_INCLUDED
+
+#include "gdal.h"
+#include "gdal_priv.h"
+#include "gdal_alg.h"
+#include "gdal_rat.h"
+#include "ogr_spatialref.h"
+#include "cpl_minixml.h"
+#include "cpl_list.h"
+
+#include <mutex>
+
+//  ---------------------------------------------------------------------------
+//  DEFLATE compression support
+//  ---------------------------------------------------------------------------
+
+#include <zlib.h>
+
+//  ---------------------------------------------------------------------------
+//  JPEG compression support
+//  ---------------------------------------------------------------------------
+
+#ifdef JPEG_SUPPORTED
+CPL_C_START
+#include <jpeglib.h>
+CPL_C_END
+#endif
+
+//  ---------------------------------------------------------------------------
+//  JPEG2000 support - Install the Virtual File System handler to OCI LOB
+//  ---------------------------------------------------------------------------
+
+CPL_C_START
+void CPL_DLL VSIInstallOCILobHandler(void);
+CPL_C_END
+
+//  ---------------------------------------------------------------------------
+//  System constants
+//  ---------------------------------------------------------------------------
+
+//  VAT maximum string len
+
+#define MAXLEN_VATSTR 128
+
+//  Geographic system without EPSG parameters
+
+#define UNKNOWN_CRS 999999
+#define NO_CRS 0
+#define DEFAULT_CRS NO_CRS
+
+//  Bitmap Mask for the whole dataset start with -99999
+
+#define DEFAULT_BMP_MASK -99999
+
+//  Default block size
+
+#define DEFAULT_BLOCK_ROWS 512
+#define DEFAULT_BLOCK_COLUMNS 512
+
+#define DEFAULT_JP2_TILE_ROWS 512
+#define DEFAULT_JP2_TILE_COLUMNS 512
+
+//  Default Model Coordinate Location (internal pixel geo-reference)
+
+#define MCL_CENTER 0
+#define MCL_UPPERLEFT 1
+#define MCL_DEFAULT MCL_CENTER
+
+// MAX double string representation
+
+#define MAX_DOUBLE_STR_REP 20
+
+// Pyramid levels details
+
+struct hLevelDetails
+{
+    int nColumnBlockSize;
+    int nRowBlockSize;
+    int nTotalColumnBlocks;
+    int nTotalRowBlocks;
+    unsigned long nBlockCount;
+    unsigned long nBlockBytes;
+    unsigned long nGDALBlockBytes;
+    unsigned long nOffset;
+};
+
+//  ---------------------------------------------------------------------------
+//  Support for multi-values NoData support
+//  ---------------------------------------------------------------------------
+
+struct hNoDataItem
+{
+    int nBand;
+    double dfLower;
+    double dfUpper;
+};
+
+//  ---------------------------------------------------------------------------
+//  GeoRaster wrapper class definitions
+//  ---------------------------------------------------------------------------
+
+#include "oci_wrapper.h"
+
+class GeoRasterDataset;
+class GeoRasterRasterBand;
+class GeoRasterWrapper;
+
+//  ---------------------------------------------------------------------------
+//  GeoRasterDriver class definitions
+//  ---------------------------------------------------------------------------
+class GeoRasterDriver final : public GDALDriver
+{
+
+  private:
+    std::mutex oMutex{};
+    std::map<CPLString, OWSessionPool *> oMapSessionPool{};
+
+    CPL_DISALLOW_COPY_ASSIGN(GeoRasterDriver)
+  public:
+    GeoRasterDriver();
+    ~GeoRasterDriver() override;
+    OWConnection *GetConnection(const char *pszUserIn,
+                                const char *pszPasswordIn,
+                                const char *pszServerIn, int nSessMinIn,
+                                int nSessMaxIn, int nSessIncrIn);
+
+    static GeoRasterDriver *gpoGeoRasterDriver;
+};
+
+//  ---------------------------------------------------------------------------
+//  GeoRasterDataset, extends GDALDataset to support GeoRaster Datasets
+//  ---------------------------------------------------------------------------
+
+class GeoRasterDataset final : public GDALDataset
+{
+    friend class GeoRasterRasterBand;
+
+  public:
+    GeoRasterDataset();
+    ~GeoRasterDataset() override;
+
+  private:
+    GeoRasterWrapper *poGeoRaster;
+    bool bGeoTransform;
+    bool bForcedSRID;
+    mutable OGRSpatialReference m_oSRS{};
+    char **papszSubdatasets;
+    GDALGeoTransform m_gt{};
+    GeoRasterRasterBand *poMaskBand;
+    bool bApplyNoDataArray;
+    void JP2_Open(GDALAccess eAccess);
+    void JP2_CreateCopy(GDALDataset *poJP2DS, char **papszOptions,
+                        int *pnResolutions, GDALProgressFunc pfnProgress,
+                        void *pProgressData);
+    boolean JP2_CopyDirect(const char *pszJP2Filename, int *pnResolutions,
+                           GDALProgressFunc pfnProgress, void *pProgressData);
+    boolean JPEG_CopyDirect(const char *pszJPGFilename,
+                            GDALProgressFunc pfnProgress, void *pProgressData);
+    static GeoRasterDataset *OpenDataset(const char *pszFilenameIn,
+                                         GDALAccess eAccessIn, bool bPoolIn,
+                                         int nPoolSessionMinIn,
+                                         int nPoolSessionMaxIn,
+                                         int nPoolSessionIncrIn);
+
+  public:
+    GDALDataset *poJP2Dataset;
+
+    void SetSubdatasets(GeoRasterWrapper *poGRW);
+
+    static int Identify(GDALOpenInfo *poOpenInfo);
+    static GDALDataset *Open(GDALOpenInfo *poOpenInfo);
+    static CPLErr Delete(const char *pszFilename);
+    static GDALDataset *Create(const char *pszFilename, int nXSize, int nYSize,
+                               int nBands, GDALDataType eType,
+                               char **papszOptions);
+    static GDALDataset *CreateCopy(const char *pszFilename,
+                                   GDALDataset *poSrcDS, int bStrict,
+                                   char **papszOptions,
+                                   GDALProgressFunc pfnProgress,
+                                   void *pProgressData);
+    CPLErr GetGeoTransform(GDALGeoTransform &gt) const override;
+    CPLErr SetGeoTransform(const GDALGeoTransform &gt) override;
+    const OGRSpatialReference *GetSpatialRef() const override;
+    CPLErr SetSpatialRef(const OGRSpatialReference *poSRS) override;
+
+    char **GetMetadataDomainList() override;
+    char **GetMetadata(const char *pszDomain) override;
+    CPLErr IRasterIO(GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize,
+                     int nYSize, void *pData, int nBufXSize, int nBufYSize,
+                     GDALDataType eBufType, int nBandCount,
+                     BANDMAP_TYPE panBandMap, GSpacing nPixelSpace,
+                     GSpacing nLineSpace, GSpacing nBandSpace,
+                     GDALRasterIOExtraArg *psExtraArg) override;
+    int GetGCPCount() override;
+    const OGRSpatialReference *GetGCPSpatialRef() const override;
+    const GDAL_GCP *GetGCPs() override;
+    CPLErr SetGCPs(int nGCPCount, const GDAL_GCP *pasGCPList,
+                   const OGRSpatialReference *poSRS) override;
+
+    CPLErr IBuildOverviews(const char *pszResampling, int nOverviews,
+                           const int *panOverviewList, int nListBandsover,
+                           const int *panBandList, GDALProgressFunc pfnProgress,
+                           void *pProgresoversData,
+                           CSLConstList papszOptions) override;
+    CPLErr CreateMaskBand(int nFlags) override;
+
+    // cppcheck-suppress functionStatic
+    OGRErr StartTransaction(int /* bForce */ = FALSE) override
+    {
+        return CE_None;
+    }
+
+    OGRErr CommitTransaction() override
+    {
+        return CE_None;
+    }
+
+    OGRErr RollbackTransaction() override
+    {
+        return CE_None;
+    }
+
+    char **GetFileList() override;
+
+    void AssignGeoRaster(GeoRasterWrapper *poGRW);
+};
+
+//  ---------------------------------------------------------------------------
+//  GeoRasterRasterBand, extends GDALRasterBand to support GeoRaster Band
+//  ---------------------------------------------------------------------------
+
+class GeoRasterRasterBand final : public GDALRasterBand
+{
+    friend class GeoRasterDataset;
+
+  public:
+    GeoRasterRasterBand(GeoRasterDataset *poGDS, int nBand, int nLevel,
+                        GDALDataset *poJP2Dataset = nullptr);
+    ~GeoRasterRasterBand() override;
+
+  private:
+    GeoRasterWrapper *poGeoRaster;
+    GDALColorTable *poColorTable;
+    GDALRasterAttributeTable *poDefaultRAT;
+    GDALDataset *poJP2Dataset;
+    double dfMin;
+    double dfMax;
+    double dfMean;
+    double dfMedian;
+    double dfMode;
+    double dfStdDev;
+    bool bValidStats;
+    double dfNoData;
+    char *pszVATName;
+    int nOverviewLevel;
+    GeoRasterRasterBand **papoOverviews;
+    int nOverviewCount;
+    hNoDataItem *pahNoDataArray;
+    int nNoDataArraySz;
+    bool bHasNoDataArray;
+
+    void ApplyNoDataArray(void *pBuffer) const;
+
+  public:
+    double GetNoDataValue(int *pbSuccess = nullptr) override;
+    CPLErr SetNoDataValue(double dfNoDataValue) override;
+    double GetMinimum(int *pbSuccess = nullptr) override;
+    double GetMaximum(int *pbSuccess = nullptr) override;
+    GDALColorTable *GetColorTable() override;
+    CPLErr SetColorTable(GDALColorTable *poInColorTable) override;
+    GDALColorInterp GetColorInterpretation() override;
+    CPLErr IReadBlock(int nBlockXOff, int nBlockYOff, void *pImage) override;
+    CPLErr IWriteBlock(int nBlockXOff, int nBlockYOff, void *pImage) override;
+    CPLErr SetStatistics(double dfMin, double dfMax, double dfMean,
+                         double dfStdDev) override;
+    CPLErr GetStatistics(int bApproxOK, int bForce, double *pdfMin,
+                         double *pdfMax, double *pdfMean,
+                         double *pdfStdDev) override;
+    GDALRasterAttributeTable *GetDefaultRAT() override;
+    CPLErr SetDefaultRAT(const GDALRasterAttributeTable *poRAT) override;
+    int GetOverviewCount() override;
+    GDALRasterBand *GetOverview(int) override;
+    CPLErr CreateMaskBand(int nFlags) override;
+    GDALRasterBand *GetMaskBand() override;
+    int GetMaskFlags() override;
+
+    bool IsMaskBand() const override
+    {
+        return nOverviewLevel == DEFAULT_BMP_MASK;
+    }
+};
+
+//  ---------------------------------------------------------------------------
+//  GeoRasterWrapper, an interface for Oracle Spatial SDO_GEORASTER objects
+//  ---------------------------------------------------------------------------
+
+class GeoRasterWrapper final
+{
+  public:
+    GeoRasterWrapper();
+    ~GeoRasterWrapper();
+
+  private:
+    OCILobLocator **pahLocator;
+    unsigned long nBlockCount;
+    unsigned long nBlockBytes;
+    unsigned long nGDALBlockBytes;
+    GByte *pabyBlockBuf;
+    GByte *pabyCompressBuf;
+    OWStatement *poBlockStmt;
+
+    int nCurrentLevel;
+    long nLevelOffset;
+
+    long nCacheBlockId;
+    bool bFlushBlock;
+    unsigned long nFlushBlockSize;
+
+    bool bWriteOnly;
+
+    hLevelDetails *pahLevels;
+
+    int nCellSizeBits;
+    int nGDALCellBytes;
+
+    bool bUpdate;
+    bool bInitializeIO;
+    bool bFlushMetadata;
+
+    void InitializeLayersNode();
+    bool InitializeIO();
+    void InitializeLevel(int nLevel);
+
+    void LoadNoDataValues();
+
+    void UnpackNBits(GByte *pabyData);
+    void PackNBits(GByte *pabyData) const;
+#ifdef JPEG_SUPPORTED
+    unsigned long CompressJpeg();
+    void UncompressJpeg(unsigned long nBufferSize);
+
+    struct jpeg_decompress_struct sDInfo;
+    struct jpeg_compress_struct sCInfo;
+    struct jpeg_error_mgr sJErr;
+#endif
+    unsigned long CompressDeflate();
+    bool UncompressDeflate(unsigned long nBufferSize);
+
+    void GetSpatialReference();
+
+    CPL_DISALLOW_COPY_ASSIGN(GeoRasterWrapper)
+
+  public:
+    int nGCPCount;
+    GDAL_GCP *pasGCPList;
+    bool bFlushGCP;
+    void FlushGCP();
+
+    bool FlushMetadata();
+    static char **ParseIdentificator(const char *pszStringID);
+    static GeoRasterWrapper *Open(const char *pszStringID, bool bUpdate,
+                                  bool bPool, int nSessionMinIn,
+                                  int nSessionMaxIn, int nSessionIncrIn);
+    bool Create(char *pszDescription, char *pszInsert, bool bUpdate);
+    bool Delete();
+    void GetRasterInfo();
+    bool GetStatistics(int nBand, char *pszMin, char *pszMax, char *pszMean,
+                       char *pszMedian, char *pszMode, char *pszStdDev,
+                       char *pszSampling);
+    bool SetStatistics(int nBand, const char *pszMin, const char *pszMax,
+                       const char *pszMean, const char *pszMedian,
+                       const char *pszMode, const char *pszStdDev,
+                       const char *pszSampling);
+    bool HasColorMap(int nBand);
+    void GetColorMap(int nBand, GDALColorTable *poCT);
+    void SetColorMap(int nBand, GDALColorTable *poCT);
+    void SetGeoReference(long long nSRIDIn);
+    bool GetDataBlock(int nBand, int nLevel, int nXOffset, int nYOffset,
+                      void *pData);
+    bool SetDataBlock(int nBand, int nLevel, int nXOffset, int nYOffset,
+                      void *pData);
+
+    long GetBlockNumber(int nB, int nX, int nY) const
+    {
+        return nLevelOffset +
+               (long)((ceil((double)((nB - 1) / nBandBlockSize)) *
+                       nTotalColumnBlocks * nTotalRowBlocks) +
+                      (nY * nTotalColumnBlocks) + nX);
+    }
+
+    bool FlushBlock(long nCacheBlock);
+    bool GetNoData(int nLayer, double *pdfNoDataValue);
+    bool SetNoData(int nLayer, const char *pszValue);
+
+    CPLXMLNode *GetMetadata()
+    {
+        return phMetadata;
+    }
+
+    bool SetVAT(int nBand, const char *pszName);
+    char *GetVAT(int nBand);
+    bool GeneratePyramid(int nLevels, const char *pszResampling,
+                         bool bInternal = false);
+    bool GenerateStatistics(int nSamplingFactor, double *pdfSamplingWindow,
+                            bool bHistogram, const char *pszLayerNumbers,
+                            bool bUseBin, double *pdfBinFunction, bool bNodata);
+    void DeletePyramid();
+    void PrepareToOverwrite();
+    bool InitializeMask(int nLevel, int nBlockColumns, int nBlockRows,
+                        int nColumnBlocks, int nRowBlocks, int nBandBlocks);
+
+    void SetWriteOnly(bool value)
+    {
+        bWriteOnly = value;
+    }
+
+    void SetRPC();
+    void SetMaxLevel(int nMaxLevel);
+    void GetRPC();
+    void GetGCP();
+    void SetGCP(int nGCPCountIn, const GDAL_GCP *pasGCPListIn);
+    void QueryWKText();
+
+  public:
+    OWConnection *poConnection;
+
+    CPLString sTable;
+    CPLString sSchema;
+    CPLString sOwner;
+    CPLString sColumn;
+    CPLString sDataTable;
+    long long nRasterId;
+    CPLString sWhere;
+    CPLString sValueAttributeTab;
+
+    long long nSRID;
+    long long nExtentSRID;
+    bool bGenSpatialExtent;
+    bool bCreateObjectTable;
+    CPLXMLNode *phMetadata;
+    CPLString sCellDepth;
+
+    bool bGenPyramid;
+    CPLString sPyramidResampling;
+    int nPyramidLevels;
+
+    CPLString sCompressionType;
+    int nCompressQuality;
+    CPLString sWKText;
+    CPLString sAuthority;
+    CPLList *psNoDataList;
+
+    int nRasterColumns;
+    int nRasterRows;
+    int nRasterBands;
+
+    CPLString sInterleaving;
+    bool bIsReferenced;
+
+    bool bBlocking;
+    bool bAutoBlocking;
+
+    bool bPool;
+    int nPoolSessionMin;
+    int nPoolSessionMax;
+    int nPoolSessionIncr;
+
+    double dfXCoefficient[3];
+    double dfYCoefficient[3];
+
+    int nColumnBlockSize;
+    int nRowBlockSize;
+    int nBandBlockSize;
+
+    int nTotalColumnBlocks;
+    int nTotalRowBlocks;
+    int nTotalBandBlocks;
+
+    int iDefaultRedBand;
+    int iDefaultGreenBand;
+    int iDefaultBlueBand;
+
+    int nPyramidMaxLevel;
+
+    bool bHasBitmapMask;
+    bool bUniqueFound;
+
+    bool bGenStats;
+    int nGenStatsSamplingFactor;
+    bool bGenStatsUseSamplingWindow;
+    double dfGenStatsSamplingWindow[4];
+    bool bGenStatsHistogram;
+    CPLString sGenStatsLayerNumbers;
+    bool bGenStatsUseBin;
+    double dfGenStatsBinFunction[5];
+    bool bGenStatsNodata;
+
+    int eModelCoordLocation;
+    unsigned int anULTCoordinate[3];
+
+    GDALRPCInfoV2 *phRPC;
+};
+
+#endif /* ifndef GEORASTER_PRIV_H_INCLUDED */

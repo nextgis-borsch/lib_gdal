@@ -1,5 +1,4 @@
 /******************************************************************************
- * $Id$
  *
  * Project:  GDAL Utilities
  * Purpose:  GDAL Utilities Private Declarations.
@@ -8,23 +7,7 @@
  * ****************************************************************************
  * Copyright (c) 2015, Even Rouault <even.rouault at spatialys.com>
  *
- * Permission is hereby granted, free of charge, to any person obtaining a
- * copy of this software and associated documentation files (the "Software"),
- * to deal in the Software without restriction, including without limitation
- * the rights to use, copy, modify, merge, publish, distribute, sublicense,
- * and/or sell copies of the Software, and to permit persons to whom the
- * Software is furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included
- * in all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
- * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
- * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
+ * SPDX-License-Identifier: MIT
  ****************************************************************************/
 
 #ifndef GDAL_UTILS_PRIV_H_INCLUDED
@@ -36,57 +19,35 @@
 #include "cpl_string.h"
 #include "gdal_utils.h"
 
-/* This file is only meant at being used by the XXXX_bin.cpp and XXXX_lib.cpp
- * files */
+/* This file is only meant at being used by the XXXX_bin.cpp and XXXX_lib.cpp */
 
 CPL_C_START
 
 struct GDALInfoOptionsForBinary
 {
     /* Filename to open. */
-    char *pszFilename;
+    std::string osFilename{};
 
     /* Open options. */
-    char **papszOpenOptions;
+    CPLStringList aosOpenOptions{};
 
-    /* > for reporting on a particular subdataset */
-    int nSubdataset;
+    /* For reporting on a particular subdataset */
+    int nSubdataset = 0;
 
     /* Allowed input drivers. */
-    char **papszAllowInputDrivers;
+    CPLStringList aosAllowedInputDrivers{};
 };
 
-struct GDALTranslateOptionsForBinary
+struct GDALDEMProcessingOptionsForBinary
 {
-    char *pszSource;
-    char *pszDest;
-    int bQuiet;
-    int bCopySubDatasets;
-    char **papszOpenOptions;
-    char *pszFormat;
-
-    /* Allowed input drivers. */
-    char **papszAllowInputDrivers;
+    std::string osProcessing{};
+    std::string osSrcFilename{};
+    std::string osColorFilename{};
+    std::string osDstFilename{};
+    bool bQuiet = false;
 };
 
-struct GDALWarpAppOptionsForBinary
-{
-    char **papszSrcFiles;
-    char *pszDstFilename;
-    int bQuiet;
-    char **papszOpenOptions;
-
-    /*! output dataset open option (format specific) */
-    char **papszDestOpenOptions;
-
-    char **papszCreateOptions;
-
-    int bOverwrite;
-    int bCreateOutput;
-
-    /* Allowed input drivers. */
-    char **papszAllowInputDrivers;
-};
+CPL_C_END
 
 /* Access modes */
 typedef enum
@@ -100,57 +61,26 @@ typedef enum
 
 struct GDALVectorTranslateOptionsForBinary
 {
-    char *pszDataSource;
-    char *pszDestDataSource;
-    int bQuiet;
-    char **papszOpenOptions;
-    char *pszFormat;
-    GDALVectorTranslateAccessMode eAccessMode;
+    std::string osDataSource{};
+    std::string osDestDataSource{};
+    bool bQuiet = false;
+    CPLStringList aosOpenOptions{};
+    std::string osFormat{};
+    GDALVectorTranslateAccessMode eAccessMode = ACCESS_CREATION;
+    bool bShowUsageIfError = false;
+
+    /* Allowed input drivers. */
+    CPLStringList aosAllowInputDrivers{};
 };
 
-struct GDALDEMProcessingOptionsForBinary
+struct GDALContourOptionsForBinary
 {
-    char *pszProcessing;
-    char *pszSrcFilename;
-    char *pszColorFilename;
-    char *pszDstFilename;
-    int bQuiet;
+    CPLStringList aosOpenOptions{};
+    CPLStringList aosCreationOptions{};
+    bool bQuiet = false;
+    std::string osDestDataSource{};
+    std::string osSrcDataSource{};
 };
-
-struct GDALNearblackOptionsForBinary
-{
-    char *pszInFile;
-    char *pszOutFile;
-    int bQuiet;
-};
-
-struct GDALGridOptionsForBinary
-{
-    char *pszSource;
-    char *pszDest;
-    int bQuiet;
-    char *pszFormat;
-};
-
-struct GDALRasterizeOptionsForBinary
-{
-    char *pszSource;
-    char *pszDest;
-    int bQuiet;
-    char *pszFormat;
-    int bCreateOutput;
-};
-
-struct GDALBuildVRTOptionsForBinary
-{
-    int nSrcFiles;
-    char **papszSrcFiles;
-    char *pszDstFilename;
-    int bQuiet;
-    int bOverwrite;
-};
-
-CPL_C_END
 
 struct GDALMultiDimInfoOptionsForBinary
 {
@@ -178,6 +108,160 @@ struct GDALMultiDimTranslateOptionsForBinary
     /* Open options. */
     CPLStringList aosOpenOptions{};
 };
+
+struct GDALVectorInfoOptionsForBinary
+{
+    /* Filename to open. */
+    std::string osFilename{};
+
+    bool bVerbose = true;
+
+    bool bReadOnly = false;
+
+    bool bUpdate = false;
+
+    std::string osSQLStatement{};
+
+    /* Open options. */
+    CPLStringList aosOpenOptions{};
+
+    /* Allowed input drivers. */
+    CPLStringList aosAllowInputDrivers{};
+};
+
+struct GDALGridOptionsForBinary
+{
+    std::string osSource{};
+    std::string osDest{};
+    bool bQuiet = false;
+    CPLStringList aosOpenOptions{};
+};
+
+struct GDALRasterizeOptionsForBinary
+{
+    std::string osSource{};
+    bool bDestSpecified = false;
+    std::string osDest{};
+    bool bQuiet = false;
+    CPLStringList aosOpenOptions{};
+    bool bCreateOutput = false;
+    std::string osFormat{};
+};
+
+struct GDALFootprintOptionsForBinary
+{
+    std::string osSource{};
+    bool bDestSpecified = false;
+    std::string osDest{};
+    bool bQuiet = false;
+    CPLStringList aosOpenOptions{};
+    bool bCreateOutput = false;
+    std::string osFormat{};
+
+    /*! whether to overwrite destination layer */
+    bool bOverwrite = false;
+
+    std::string osDestLayerName{};
+};
+
+struct GDALTileIndexOptionsForBinary
+{
+    CPLStringList aosSrcFiles{};
+    bool bDestSpecified = false;
+    std::string osDest{};
+    bool bQuiet = false;
+};
+
+struct GDALNearblackOptionsForBinary
+{
+    std::string osInFile{};
+    std::string osOutFile{};
+    bool bQuiet = false;
+};
+
+struct GDALTranslateOptionsForBinary
+{
+    std::string osSource{};
+    std::string osDest{};
+    bool bQuiet = false;
+    bool bCopySubDatasets = false;
+    CPLStringList aosOpenOptions{};
+    CPLStringList aosCreateOptions{};
+    std::string osFormat{};
+
+    /* Allowed input drivers. */
+    CPLStringList aosAllowedInputDrivers{};
+};
+
+struct GDALWarpAppOptionsForBinary
+{
+    CPLStringList aosSrcFiles{};
+    std::string osDstFilename{};
+    bool bQuiet = false;
+    CPLStringList aosOpenOptions{};
+
+    /*! output dataset open option (format specific) */
+    CPLStringList aosDestOpenOptions{};
+
+    CPLStringList aosCreateOptions{};
+
+    bool bOverwrite = false;
+    bool bCreateOutput = false;
+
+    /* Allowed input drivers. */
+    CPLStringList aosAllowedInputDrivers{};
+};
+
+struct GDALBuildVRTOptionsForBinary
+{
+    CPLStringList aosSrcFiles{};
+    std::string osDstFilename{};
+    bool bQuiet = false;
+    bool bOverwrite = false;
+};
+
+std::string CPL_DLL GDALNearblackGetParserUsage();
+
+std::string CPL_DLL GDALVectorInfoGetParserUsage();
+
+std::string CPL_DLL GDALTranslateGetParserUsage();
+
+std::string CPL_DLL GDALMultiDimTranslateAppGetParserUsage();
+
+std::string CPL_DLL GDALVectorTranslateGetParserUsage();
+
+std::string CPL_DLL GDALWarpAppGetParserUsage();
+
+std::string CPL_DLL GDALInfoAppGetParserUsage();
+
+std::string CPL_DLL GDALMultiDimInfoAppGetParserUsage();
+
+std::string CPL_DLL GDALGridGetParserUsage();
+
+std::string CPL_DLL GDALContourGetParserUsage();
+
+std::string CPL_DLL GDALBuildVRTGetParserUsage();
+
+std::string CPL_DLL GDALTileIndexAppGetParserUsage();
+
+std::string CPL_DLL GDALFootprintAppGetParserUsage();
+
+std::string CPL_DLL GDALRasterizeAppGetParserUsage();
+
+/**
+ * Returns the gdaldem usage help string
+ * @param osProcessingMode          Processing mode (subparser name)
+ * @return                          gdaldem usage help string
+ */
+std::string CPL_DLL
+GDALDEMAppGetParserUsage(const std::string &osProcessingMode);
+
+GDALDatasetH GDALTileIndexInternal(const char *pszDest,
+                                   GDALDatasetH hTileIndexDS, OGRLayerH hLayer,
+                                   int nSrcCount,
+                                   const char *const *papszSrcDSNames,
+                                   const GDALTileIndexOptions *psOptionsIn,
+                                   int *pbUsageError);
 
 #endif /* #ifndef DOXYGEN_SKIP */
 
