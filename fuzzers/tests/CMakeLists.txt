@@ -1,17 +1,11 @@
 # CMake4GDAL project is distributed under MIT license. See accompanying file LICENSE.txt.
 
-set(TEST_ENV)
-# Set PATH / LD_LIBRARY_PATH
-set(GDAL_OUTPUT_DIR "$<SHELL_PATH:$<TARGET_FILE_DIR:${GDAL_LIB_TARGET_NAME}>>")
+include(GdalSetRuntimeEnv)
+gdal_set_runtime_env(TEST_ENV)
 if (WIN32)
   # If running GDAL as a CustomBuild Command os MSBuild, "ERROR bla:" is considered as failing the job. This is rarely
   # the intended behavior
   list(APPEND TEST_ENV "CPL_ERROR_SEPARATOR=\\;")
-
-  string(REPLACE ";" "\\;" PATH_ESCAPED "$ENV{PATH}")
-  list(APPEND TEST_ENV "PATH=${GDAL_OUTPUT_DIR}\\;${PATH_ESCAPED}")
-else ()
-  list(APPEND TEST_ENV "LD_LIBRARY_PATH=${GDAL_OUTPUT_DIR}:$ENV{LD_LIBRARY_PATH}")
 endif ()
 
 macro (fuzzer_test_target _test _target)

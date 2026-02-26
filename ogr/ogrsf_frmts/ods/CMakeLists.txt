@@ -15,6 +15,12 @@ add_gdal_driver(
 gdal_standard_includes(ogr_ODS)
 target_include_directories(ogr_ODS PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 add_executable(testparser EXCLUDE_FROM_ALL testparser.cpp)
+gdal_standard_includes(testparser)
+target_include_directories(testparser PRIVATE $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+target_link_libraries(testparser PRIVATE cpl ogr_ODS)
+if (MSVC)
+  set_target_properties(testparser PROPERTIES EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+endif()
 
 if (GDAL_USE_EXPAT)
   gdal_target_link_libraries(ogr_ODS PRIVATE ${EXPAT_TARGET})

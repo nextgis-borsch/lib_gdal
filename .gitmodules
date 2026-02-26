@@ -1,0 +1,3 @@
+[submodule "cmake/borsch"]
+	path = cmake/borsch
+	url = https://github.com/nextgis-borsch/borsch.git

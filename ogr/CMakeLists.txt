@@ -122,7 +122,7 @@ gdal_target_link_libraries(ogr PRIVATE PROJ::proj)
 # External libs then
 if (GDAL_USE_GEOS)
   target_compile_definitions(ogr PRIVATE -DHAVE_GEOS=1)
-  gdal_target_link_libraries(ogr PRIVATE ${GEOS_TARGET})
+  gdal_target_link_libraries(ogr PRIVATE ${GEOS_LIBRARIES})
 endif ()
 
 if (GDAL_USE_SFCGAL)
@@ -159,7 +159,7 @@ endif ()
 
 if (GDAL_USE_EXPAT)
   target_compile_definitions(ogr PRIVATE -DHAVE_EXPAT)
-  gdal_target_link_libraries(ogr PRIVATE ${EXPAT_TARGET})
+  gdal_target_link_libraries(ogr PRIVATE ${EXPAT_LIBRARIES})
 endif ()
 
 if (GDAL_USE_XERCESC)
@@ -169,7 +169,23 @@ if (GDAL_USE_XERCESC)
 endif ()
 
 if (NOT GDAL_USE_JSONC_INTERNAL)
-  gdal_target_link_libraries(ogr PRIVATE ${JSONC_TARGET})
+  if (DEFINED JSONC_INCLUDE_DIRS AND NOT "${JSONC_INCLUDE_DIRS}" STREQUAL "")
+    target_include_directories(ogr PRIVATE ${JSONC_INCLUDE_DIRS})
+  elseif(DEFINED JSONC_INCLUDE_DIR AND NOT "${JSONC_INCLUDE_DIR}" STREQUAL "")
+    target_include_directories(ogr PRIVATE ${JSONC_INCLUDE_DIR})
+  elseif(DEFINED GDAL_JSON_INCLUDE_DIR
+         AND NOT "${GDAL_JSON_INCLUDE_DIR}" STREQUAL ""
+         AND NOT "${GDAL_JSON_INCLUDE_DIR}" MATCHES "-NOTFOUND$")
+    target_include_directories(ogr PRIVATE ${GDAL_JSON_INCLUDE_DIR})
+  elseif(DEFINED JSONC_DIR AND EXISTS "${JSONC_DIR}")
+    get_filename_component(_jsonc_prefix "${JSONC_DIR}" DIRECTORY)
+    get_filename_component(_jsonc_prefix "${_jsonc_prefix}" DIRECTORY)
+    get_filename_component(_jsonc_prefix "${_jsonc_prefix}" DIRECTORY)
+    if(EXISTS "${_jsonc_prefix}/include/json.h")
+      target_include_directories(ogr PRIVATE "${_jsonc_prefix}/include")
+    endif()
+  endif()
+  gdal_target_link_libraries(ogr PRIVATE ${JSONC_LIBRARIES})
 endif ()
 
 include(TargetPublicHeader)

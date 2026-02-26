@@ -65,10 +65,10 @@ endif ()
 
 # External libs next
 if (NOT GDAL_USE_JSONC_INTERNAL)
-  gdal_target_link_libraries(gdal_PDS PRIVATE ${JSONC_TARGET})
+  gdal_target_link_libraries(gdal_PDS PRIVATE ${JSONC_LIBRARY})
 endif ()
 if (GDAL_USE_GEOTIFF AND NOT GDAL_USE_GEOTIFF_INTERNAL)
-  gdal_target_link_libraries(gdal_PDS PRIVATE ${GeoTIFF_TARGET})
+  gdal_target_link_libraries(gdal_PDS PRIVATE ${GEOTIFF_LIBRARY})
   target_compile_definitions(gdal_PDS PRIVATE -DHAVE_GEOTIFF)
 endif ()
 if (GDAL_USE_TIFF AND NOT GDAL_USE_TIFF_INTERNAL)

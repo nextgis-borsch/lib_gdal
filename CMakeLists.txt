@@ -5,10 +5,21 @@ cmake_minimum_required(VERSION ${GDAL_CMAKE_VERSION_MIN}...${GDAL_CMAKE_VERSION_
 project(gdal LANGUAGES C CXX)
 
 set(GDAL_LIB_TARGET_NAME GDAL)
+if(NOT DEFINED PACKAGE_VENDOR)
+  set(PACKAGE_VENDOR NextGIS)
+endif()
 
 #
 # setup cmake modules paths
 include(cmake/modules/init.cmake)
+
+# Prefer NextGIS borsch dependency resolution when submodule is available.
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/cmake/borsch/cmake/FindAnyProject.cmake")
+  list(INSERT CMAKE_MODULE_PATH 0
+    "${CMAKE_CURRENT_LIST_DIR}/cmake/borsch/cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/cmake/borsch/cmake/modules")
+  include(FindAnyProject)
+endif()
 
 #
 # template files path
@@ -183,7 +194,7 @@ endif ()
 #
 include(FeatureSummary)
 
-find_package(SWIG)
+find_package(SWIG QUIET)
 set_package_properties(
   SWIG PROPERTIES
   DESCRIPTION
@@ -237,12 +248,16 @@ else()
   unset(ENV{MKL_ENABLE_INSTRUCTIONS})
 endif()
 
-
 if (SWIG_FOUND AND (Python_Interpreter_FOUND OR Python_FOUND))
   option(BUILD_PYTHON_BINDINGS "Build Python bindings" ON)
 else()
   option(BUILD_PYTHON_BINDINGS "Build Python bindings" OFF)
 endif()
+
+message(STATUS "*** SWIG_FOUND = ${SWIG_FOUND}")
+message(STATUS "*** Python_Interpreter_FOUND = ${Python_Interpreter_FOUND}")
+message(STATUS "*** Python_FOUND = ${Python_FOUND}")
+message(STATUS "*** BUILD_PYTHON_BINDINGS = ${BUILD_PYTHON_BINDINGS}")
 
 if (BUILD_PYTHON_BINDINGS)
     if (NOT (Python_Interpreter_FOUND OR Python_FOUND))
@@ -254,6 +269,7 @@ if (BUILD_PYTHON_BINDINGS)
 endif()
 
 option(BUILD_TESTING "Build the testing tree." ON)
+option(SKIP_PYTHON_TESTS "Disable registration and execution of Python autotests" OFF)
 # Make sure enable_testing() is defined before including gdal.cmake for
 # Java and CSharp tests
 if (BUILD_TESTING)
@@ -263,10 +279,24 @@ endif()
 #
 include(${CMAKE_CURRENT_SOURCE_DIR}/gdal.cmake)
 
+include(version)
+report_version(${PROJECT_NAME} ${GDAL_VERSION})
+set(GDAL_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/Version.txt")
+file(WRITE "${GDAL_VERSION_FILE}"
+  "GDAL_VERSION_MAJOR=${GDAL_VERSION_MAJOR}\n"
+  "GDAL_VERSION_MINOR=${GDAL_VERSION_MINOR}\n"
+  "GDAL_VERSION_PATCH=${GDAL_VERSION_REV}\n"
+)
+write_version("${GDAL_VERSION_FILE}"
+  ${GDAL_VERSION_MAJOR}
+  ${GDAL_VERSION_MINOR}
+  ${GDAL_VERSION_REV}
+)
+
 if (BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/autotest")
   # unit tests
   add_subdirectory(autotest/cpp)
-  if(BUILD_PYTHON_BINDINGS)
+  if(BUILD_PYTHON_BINDINGS AND NOT SKIP_PYTHON_TESTS)
       add_subdirectory(autotest)
   endif()
 endif ()

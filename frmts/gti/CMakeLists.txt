@@ -17,7 +17,7 @@ set_property(
   PROPERTY RESOURCE "${GDAL_DATA_FILES}")
 
 if (GDAL_USE_GEOS)
-  gdal_target_link_libraries(gdal_GTI PRIVATE ${GEOS_TARGET})
+  gdal_target_link_libraries(gdal_GTI PRIVATE ${GEOS_LIBRARY})
   target_compile_definitions(gdal_GTI PRIVATE -DHAVE_GEOS=1)
 endif ()
 

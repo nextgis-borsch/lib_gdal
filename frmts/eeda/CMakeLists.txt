@@ -21,7 +21,7 @@ set_property(
 if (GDAL_USE_JSONC_INTERNAL)
   gdal_add_vendored_lib(gdal_EEDA libjson)
 else ()
-  gdal_target_link_libraries(gdal_EEDA PRIVATE ${JSONC_TARGET})
+  gdal_target_link_libraries(gdal_EEDA PRIVATE ${JSONC_LIBRARY})
 endif ()
 
 if (GDAL_ENABLE_DRIVER_EEDA_PLUGIN)

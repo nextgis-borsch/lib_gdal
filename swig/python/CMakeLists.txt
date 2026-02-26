@@ -217,6 +217,14 @@ if (Python_Interpreter_FOUND)
   else()
     set(Python_EXECUTABLE_CMAKE "${Python_EXECUTABLE}")
   endif()
+
+  set(_BUILD_EXT_COMMAND "\"${Python_EXECUTABLE_CMAKE}\" \"${SETUP_PY_FILENAME}\" build_ext --inplace")
+  set(_BDIST_WHEEL_COMMAND "\"${Python_EXECUTABLE_CMAKE}\" \"${SETUP_PY_FILENAME}\" bdist_wheel")
+  if (NOT Python_NumPy_FOUND)
+    set(_BUILD_EXT_COMMAND "\"${CMAKE_COMMAND}\" -E env \"GDAL_PYTHON_BINDINGS_WITHOUT_NUMPY=ON\" ${_BUILD_EXT_COMMAND}")
+    set(_BDIST_WHEEL_COMMAND "\"${CMAKE_COMMAND}\" -E env \"GDAL_PYTHON_BINDINGS_WITHOUT_NUMPY=ON\" ${_BDIST_WHEEL_COMMAND}")
+  endif()
+
   if (ONLY_GENERATE_FOR_NON_DEBUG)
     set(BUILD_EXT_FILENAME "${CMAKE_CURRENT_BINARY_DIR}/build_ext_$<CONFIG>.cmake")
     file(
@@ -224,7 +232,7 @@ if (Python_Interpreter_FOUND)
       OUTPUT "${BUILD_EXT_FILENAME}"
       CONTENT
         "file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/build)
-         execute_process(COMMAND $<IF:$<NOT:$<CONFIG:Debug>>,\"${Python_EXECUTABLE_CMAKE}\" \"${SETUP_PY_FILENAME}\" build_ext --inplace,${CMAKE_COMMAND} -E echo \"setup.py build_ext only run in configuration != Debug\"> RESULT_VARIABLE res)
+         execute_process(COMMAND $<IF:$<NOT:$<CONFIG:Debug>>,${_BUILD_EXT_COMMAND},\"${CMAKE_COMMAND}\" -E echo \"setup.py build_ext only run in configuration != Debug\"> RESULT_VARIABLE res)
          if(NOT res EQUAL 0)
            message(FATAL_ERROR \"setup.py bdist_wheel failed\")
          endif()"
@@ -236,7 +244,7 @@ if (Python_Interpreter_FOUND)
       OUTPUT "${BUILD_EXT_FILENAME}"
       CONTENT
          "file(REMOVE_RECURSE ${CMAKE_CURRENT_BINARY_DIR}/build)\n
-          execute_process(COMMAND \"${Python_EXECUTABLE_CMAKE}\" \"${SETUP_PY_FILENAME}\" build_ext --inplace RESULT_VARIABLE res)
+          execute_process(COMMAND ${_BUILD_EXT_COMMAND} RESULT_VARIABLE res)
           if(NOT res EQUAL 0)
             message(FATAL_ERROR \"setup.py bdist_wheel failed\")
           endif()"
@@ -288,12 +296,39 @@ if (Python_Interpreter_FOUND)
 
   if(WIN32)
        set(PATH_SEP ";")
+       set(PYTHON_BUILD_PATH_LIST "${PROJECT_BINARY_DIR}/apps")
+       foreach(_tool IN ITEMS CMAKE_RC_COMPILER CMAKE_LINKER CMAKE_MT CMAKE_C_COMPILER CMAKE_CXX_COMPILER)
+         if(DEFINED ${_tool} AND NOT "${${_tool}}" STREQUAL "")
+           get_filename_component(_tool_dir "${${_tool}}" DIRECTORY)
+           if(_tool_dir)
+             list(APPEND PYTHON_BUILD_PATH_LIST "${_tool_dir}")
+           endif()
+         endif()
+       endforeach()
+       if(DEFINED ENV{WindowsSdkDir} AND DEFINED ENV{WindowsSDKVersion})
+         file(TO_CMAKE_PATH "$ENV{WindowsSdkDir}" _sdk_dir)
+         set(_sdk_ver "$ENV{WindowsSDKVersion}")
+         if(EXISTS "${_sdk_dir}/bin/${_sdk_ver}/x64")
+           list(APPEND PYTHON_BUILD_PATH_LIST "${_sdk_dir}/bin/${_sdk_ver}/x64")
+         endif()
+       endif()
+       if(DEFINED ENV{VCToolsInstallDir})
+         file(TO_CMAKE_PATH "$ENV{VCToolsInstallDir}" _vc_tools_dir)
+         foreach(_vc_host IN ITEMS "Hostx64/x64" "Hostx86/x64")
+           if(EXISTS "${_vc_tools_dir}/bin/${_vc_host}")
+             list(APPEND PYTHON_BUILD_PATH_LIST "${_vc_tools_dir}/bin/${_vc_host}")
+           endif()
+         endforeach()
+       endif()
+       list(REMOVE_DUPLICATES PYTHON_BUILD_PATH_LIST)
+       string(JOIN "${PATH_SEP}" PYTHON_BUILD_PATH_PREFIX ${PYTHON_BUILD_PATH_LIST})
     else()
        set(PATH_SEP ":")
+       set(PYTHON_BUILD_PATH_PREFIX "${PROJECT_BINARY_DIR}/apps")
     endif()
   add_custom_command(
     OUTPUT ${PY_SO_LIST}
-    COMMAND ${CMAKE_COMMAND} -E env "\"PATH=${PROJECT_BINARY_DIR}/apps${PATH_SEP}$ENV{PATH}\"" ${CMAKE_COMMAND} ${WERROR_DEV_FLAG} -P "${BUILD_EXT_FILENAME}"
+    COMMAND ${CMAKE_COMMAND} -E env "PATH=${PYTHON_BUILD_PATH_PREFIX}${PATH_SEP}$ENV{PATH}" ${CMAKE_COMMAND} ${WERROR_DEV_FLAG} -P "${BUILD_EXT_FILENAME}"
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS ${GDAL_LIB_DEP_FOR_PY_SO} ${GDAL_PYTHON_PYSOURCES} ${GDAL_PYTHON_CSOURCES} "${BUILD_EXT_FILENAME}"
             ${PROJECT_SOURCE_DIR}/gcore/gdal_priv.h)
@@ -395,7 +430,7 @@ if __name__ == '__main__':
       GENERATE
       OUTPUT ${BUILD_BDIST_WHEEL_FILENAME}
       CONTENT
-        "execute_process(COMMAND $<IF:$<NOT:$<CONFIG:Debug>>,${Python_EXECUTABLE_CMAKE} ${SETUP_PY_FILENAME} bdist_wheel,${CMAKE_COMMAND} -E echo \"setup.py bdist_wheel only run in configuration != Debug\"> RESULT_VARIABLE res)
+        "execute_process(COMMAND $<IF:$<NOT:$<CONFIG:Debug>>,${_BDIST_WHEEL_COMMAND},\"${CMAKE_COMMAND}\" -E echo \"setup.py bdist_wheel only run in configuration != Debug\"> RESULT_VARIABLE res)
         if(NOT res EQUAL 0)
            message(FATAL_ERROR \"setup.py bdist_wheel failed\")
         endif()
@@ -404,7 +439,7 @@ if __name__ == '__main__':
   else ()
     set(BUILD_BDIST_WHEEL_FILENAME ${CMAKE_CURRENT_BINARY_DIR}/build_bdist_wheel.cmake)
     file(WRITE ${BUILD_BDIST_WHEEL_FILENAME}
-         "execute_process(COMMAND ${Python_EXECUTABLE_CMAKE} ${SETUP_PY_FILENAME} bdist_wheel RESULT_VARIABLE res)
+         "execute_process(COMMAND ${_BDIST_WHEEL_COMMAND} RESULT_VARIABLE res)
           if(NOT res EQUAL 0)
             message(FATAL_ERROR \"setup.py bdist_wheel failed\")
           endif()")
@@ -443,10 +478,9 @@ if __name__ == '__main__':
     set(IGNORE_CMAKE_INSTALL_PREFIX_CONFIGURE_TIME_DIFFERENT_FROM_RUNTIME TRUE)
   elseif (CMAKE_INSTALL_PREFIX)
     if (WIN32 AND _isMultiConfig)
-      file(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" NATIVE_CMAKE_INSTALL_PREFIX)
-      string(REPLACE "\\" "\\\\" NATIVE_CMAKE_INSTALL_PREFIX "${NATIVE_CMAKE_INSTALL_PREFIX}")
-      set(INSTALL_ARGS "${INSTALL_ARGS} \"--prefix=${NATIVE_CMAKE_INSTALL_PREFIX}\"")
-      set(IGNORE_CMAKE_INSTALL_PREFIX_CONFIGURE_TIME_DIFFERENT_FROM_RUNTIME TRUE)
+      # Use install-time CMAKE_INSTALL_PREFIX (including CPack staging prefix)
+      # instead of hardcoding the configure-time path.
+      set(CAN_USE_CMAKE_INSTALL_PREFIX_FROM_CMAKE_INSTALL TRUE)
     elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
       file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/is_std_unix_layout.py
            "import sys;print(\"FALSE\" if \"framework\" in sys.prefix.lower() else \"TRUE\")\n")
@@ -513,14 +547,26 @@ if __name__ == '__main__':
       GENERATE
       OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/install_binding_$<CONFIG>.cmake
       CONTENT
-        "execute_process(COMMAND $<IF:$<NOT:$<CONFIG:Debug>>,${CMAKE_COMMAND} ${WERROR_DEV_FLAG} -P \"${CMAKE_CURRENT_BINARY_DIR}/install_python_$<CONFIG>.cmake\",${CMAKE_COMMAND} -E echo \"setup.py install only run in configuration != Debug\">
-                                        WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")")
+        "execute_process(COMMAND $<IF:$<NOT:$<CONFIG:Debug>>,\"${CMAKE_COMMAND}\" ${WERROR_DEV_FLAG} -P \"${CMAKE_CURRENT_BINARY_DIR}/install_python_$<CONFIG>.cmake\",\"${CMAKE_COMMAND}\" -E echo \"setup.py install only run in configuration != Debug\">
+                                        WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\"
+                                        RESULT_VARIABLE _install_python_res)
+         if(NOT _install_python_res EQUAL 0)
+           message(FATAL_ERROR \"Python bindings installation failed\")
+         endif()")
     install(SCRIPT ${CMAKE_CURRENT_BINARY_DIR}/install_binding_$<CONFIG>.cmake)
   else ()
     configure_file("${CMAKE_CURRENT_SOURCE_DIR}/install_python.cmake.in" "${CMAKE_CURRENT_BINARY_DIR}/install_python.cmake"
                    @ONLY)
     install(SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/install_python.cmake")
   endif ()
+  if (WIN32)
+    # setup.py may install into the build-tree when CPack uses "/" prefix.
+    # Copy site-packages explicitly so CPack staging always includes Python files.
+    install(
+      DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/Lib/site-packages/"
+      DESTINATION "Lib/site-packages"
+      OPTIONAL)
+  endif()
 
 elseif (Python_Development_FOUND)
   macro (py_ext name v source)

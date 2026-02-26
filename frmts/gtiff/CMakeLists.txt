@@ -95,7 +95,7 @@ if (NOT GDAL_USE_TIFF_INTERNAL)
 endif ()
 
 if (NOT GDAL_USE_GEOTIFF_INTERNAL)
-  gdal_target_link_libraries(gdal_GTIFF PRIVATE ${GeoTIFF_TARGET})
+  gdal_target_link_libraries(gdal_GTIFF PRIVATE ${GEOTIFF_LIBRARY})
 endif ()
 
 if (GDAL_USE_JXL)

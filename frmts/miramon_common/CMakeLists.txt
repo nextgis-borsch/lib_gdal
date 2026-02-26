@@ -13,8 +13,6 @@ set_property(TARGET miramon_common PROPERTY POSITION_INDEPENDENT_CODE ${GDAL_OBJ
 target_sources(${GDAL_LIB_TARGET_NAME} PRIVATE $<TARGET_OBJECTS:miramon_common>)
 gdal_standard_includes(miramon_common)
 
-# Because linking an OBJECT library
-add_executable(mm_gdal_functions EXCLUDE_FROM_ALL mm_gdal_functions.c)
-target_include_directories(mm_gdal_functions PRIVATE $<TARGET_PROPERTY:miramon_common,SOURCE_DIR>)
-target_link_libraries(mm_gdal_functions PRIVATE $<TARGET_NAME:${GDAL_LIB_TARGET_NAME}> miramon_common)
+# Do not build the helper executable here: it reuses the same translation unit
+# already compiled into GDAL via miramon_common and causes duplicate symbols.
 

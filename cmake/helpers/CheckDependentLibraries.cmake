@@ -113,13 +113,17 @@ endif ()
 set(GDAL_FIND_PACKAGE_PROJ_MODE "CUSTOM" CACHE STRING "Mode to use for find_package(PROJ): CUSTOM, CONFIG, MODULE or empty string")
 set_property(CACHE GDAL_FIND_PACKAGE_PROJ_MODE PROPERTY STRINGS "CUSTOM" "CONFIG" "MODULE" "")
 if(NOT GDAL_FIND_PACKAGE_PROJ_MODE STREQUAL "CUSTOM")
-    find_package(PROJ ${GDAL_FIND_PACKAGE_PROJ_MODE} REQUIRED)
+    set(_proj_anyproject_args REQUIRED)
+    if(GDAL_FIND_PACKAGE_PROJ_MODE STREQUAL "MODULE")
+      list(APPEND _proj_anyproject_args MODULE)
+    endif()
+    find_anyproject(PROJ ${_proj_anyproject_args})
     if (NOT BUILD_SHARED_LIBS)
         string(APPEND GDAL_IMPORT_DEPENDENCIES "find_dependency(PROJ ${GDAL_FIND_PACKAGE_PROJ_MODE})\n")
     endif()
 else()
     # First check with CMake config files, and then fallback to the FindPROJ module.
-    find_package(PROJ CONFIG)
+    find_anyproject(PROJ QUIET)
     if (PROJ_FOUND AND PROJ_VERSION VERSION_LESS "8")
         message(WARNING "PROJ ${PROJ_VERSION} < 8 found with Config file. As it is not trusted, retrying with module mode")
     endif()
@@ -128,7 +132,7 @@ else()
         string(APPEND GDAL_IMPORT_DEPENDENCIES "find_dependency(PROJ CONFIG)\n")
       endif()
     else()
-      find_package(PROJ REQUIRED)
+      find_anyproject(PROJ REQUIRED)
       if (NOT BUILD_SHARED_LIBS)
         string(APPEND GDAL_IMPORT_DEPENDENCIES "find_dependency(PROJ)\n")
       endif()
@@ -137,8 +141,21 @@ endif()
 if (DEFINED PROJ_VERSION_STRING AND NOT DEFINED PROJ_VERSION)
     set(PROJ_VERSION ${PROJ_VERSION_STRING})
 endif()
-if ("${PROJ_VERSION}" VERSION_LESS "6.3")
+if (NOT "${PROJ_VERSION}" STREQUAL "" AND "${PROJ_VERSION}" VERSION_LESS "6.3")
     message(FATAL_ERROR "PROJ >= 6.3 required. Version ${PROJ_VERSION} found")
+endif()
+if (PROJ_FOUND AND NOT TARGET PROJ::proj)
+    add_library(PROJ::proj INTERFACE IMPORTED)
+    if (DEFINED PROJ_INCLUDE_DIRS)
+        set_target_properties(PROJ::proj PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${PROJ_INCLUDE_DIRS}")
+    elseif (DEFINED PROJ_INCLUDE_DIR)
+        set_target_properties(PROJ::proj PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${PROJ_INCLUDE_DIR}")
+    endif()
+    if (DEFINED PROJ_LIBRARIES)
+        set_target_properties(PROJ::proj PROPERTIES INTERFACE_LINK_LIBRARIES "${PROJ_LIBRARIES}")
+    elseif (DEFINED PROJ_LIBRARY)
+        set_target_properties(PROJ::proj PROPERTIES INTERFACE_LINK_LIBRARIES "${PROJ_LIBRARY}")
+    endif()
 endif()
 
 gdal_check_package(TIFF "Support for the Tag Image File Format (TIFF)." VERSION 4.1 CAN_DISABLE)
@@ -174,17 +191,45 @@ gdal_internal_library(GIF)
 
 gdal_check_package(JSONC "json-c library (external)" CAN_DISABLE
   NAMES json-c
-  TARGETS json-c::json-c JSONC::JSONC
+  TARGETS json-c::json-c JSONC::JSONC json-c
 )
 gdal_internal_library(JSONC REQUIRED)
+if(TARGET json-c AND NOT TARGET json-c::json-c)
+  add_library(json-c::json-c INTERFACE IMPORTED)
+  set_target_properties(json-c::json-c PROPERTIES INTERFACE_LINK_LIBRARIES "json-c")
+endif()
 if(TARGET json-c::json-c)
-  get_target_property(include_dirs json-c::json-c INTERFACE_INCLUDE_DIRECTORIES)
+  set(_jsonc_target json-c::json-c)
+elseif(TARGET JSONC::JSONC)
+  set(_jsonc_target JSONC::JSONC)
+elseif(TARGET json-c)
+  set(_jsonc_target json-c)
+endif()
+if(DEFINED _jsonc_target)
+  # Prefer CMake target form so gdal_target_link_libraries() can propagate
+  # interface include directories to all object libraries using json-c.
+  set(JSONC_LIBRARY "${_jsonc_target}")
+  set(JSONC_LIBRARIES "${_jsonc_target}")
+  get_target_property(include_dirs ${_jsonc_target} INTERFACE_INCLUDE_DIRECTORIES)
+  if(NOT include_dirs OR "${include_dirs}" MATCHES "-NOTFOUND$")
+    set(include_dirs "")
+  endif()
   find_path(GDAL_JSON_INCLUDE_DIR NAMES json.h PATHS ${include_dirs} PATH_SUFFIXES json-c NO_DEFAULT_PATH)
-  list(APPEND include_dirs "${GDAL_JSON_INCLUDE_DIR}")
+  if(GDAL_JSON_INCLUDE_DIR)
+    # Ensure legacy include variables are populated for targets that do not
+    # link against json-c imported targets directly.
+    set(JSONC_INCLUDE_DIR "${GDAL_JSON_INCLUDE_DIR}")
+    set(JSONC_INCLUDE_DIRS "${GDAL_JSON_INCLUDE_DIR}")
+    include_directories("${GDAL_JSON_INCLUDE_DIR}")
+  endif()
+  if(GDAL_JSON_INCLUDE_DIR)
+    list(APPEND include_dirs "${GDAL_JSON_INCLUDE_DIR}")
+  endif()
   list(REMOVE_DUPLICATES include_dirs)
-  set_target_properties(json-c::json-c PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${GDAL_JSON_INCLUDE_DIR}"
+  set_target_properties(${_jsonc_target} PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${include_dirs}"
   )
+  unset(_jsonc_target)
 endif()
 
 gdal_check_package(OpenCAD "libopencad (external, used by OpenCAD driver)" CAN_DISABLE)
@@ -286,7 +331,13 @@ endfunction()
 gdal_check_package(SPATIALITE "Enable spatialite support for sqlite3" VERSION 4.1.2 CAN_DISABLE)
 gdal_check_package(RASTERLITE2 "Enable RasterLite2 support for sqlite3" VERSION 1.1.0 CAN_DISABLE)
 
-gdal_check_package(LibKML "Use LIBKML library" COMPONENTS DOM ENGINE CAN_DISABLE)
+gdal_check_package(
+  LibKML
+  "Use LIBKML library"
+  NAMES KML
+  TARGETS kml
+  CAN_DISABLE
+)
 
 define_find_package2(KEA libkea/KEACommon.h kea;libkea)
 gdal_check_package(KEA "Enable KEA driver" CAN_DISABLE)
@@ -330,7 +381,7 @@ if (ARMADILLO_FOUND)
   unset(CMAKE_TRY_COMPILE_CONFIGURATION)
   cmake_pop_check_state()
   if (NOT ARMADILLO_TEST_PROGRAM_WITHOUT_LAPACK_COMPILES)
-    find_package(LAPACK)
+    find_anyproject(LAPACK QUIET)
     if (LAPACK_FOUND)
       list(APPEND ARMADILLO_LIBRARIES ${LAPACK_LIBRARIES})
       cmake_push_check_state(RESET)
@@ -411,7 +462,61 @@ gdal_check_package(NetCDF "Enable netCDF driver" CAN_DISABLE
   VERSION "4.7")
 
 set(PostgreSQL_ADDITIONAL_VERSIONS "14" CACHE STRING "Additional PostgreSQL versions to check")
-gdal_check_package(PostgreSQL "" CAN_DISABLE)
+gdal_check_package(PostgreSQL "" CAN_DISABLE NAMES PQ TARGETS pq)
+if(WIN32 AND GDAL_USE_POSTGRESQL)
+  # The prebuilt PostgreSQL client package depends on openssl-1_1.dll at runtime.
+  # Ensure OpenSSL/JBIG/SZIP binaries are available in third-party/install so
+  # CTest runtime PATH (assembled in GdalSetRuntimeEnv.cmake) can resolve them.
+  set(_prev_with_openssl "${WITH_OpenSSL}")
+  set(_prev_with_openssl_external "${WITH_OpenSSL_EXTERNAL}")
+  set(_prev_with_jbig "${WITH_JBIG}")
+  set(_prev_with_jbig_external "${WITH_JBIG_EXTERNAL}")
+  set(_prev_with_szip "${WITH_SZIP}")
+  set(_prev_with_szip_external "${WITH_SZIP_EXTERNAL}")
+  # Force dependency fetch for runtime (does not imply enabling GDAL OpenSSL feature).
+  set(WITH_OpenSSL ON)
+  set(WITH_OpenSSL_EXTERNAL ON)
+  set(WITH_JBIG ON)
+  set(WITH_JBIG_EXTERNAL ON)
+  set(WITH_SZIP ON)
+  set(WITH_SZIP_EXTERNAL ON)
+  find_anyproject(OpenSSL QUIET COMPONENTS SSL Crypto)
+  find_anyproject(JBIG QUIET)
+  find_anyproject(SZIP QUIET)
+  # Some third-party binaries (depending on who built them) may look for
+  # split OpenSSL names libcrypto-1_1-x64.dll / libssl-1_1-x64.dll, while our
+  # OpenSSL package provides openssl-1_1.dll. Create compatibility copies.
+  file(GLOB _openssl_monolithic_dll
+       LIST_DIRECTORIES false
+       "${PROJECT_BINARY_DIR}/third-party/install/openssl-*/bin/openssl-1_1.dll")
+  foreach(_openssl_dll IN LISTS _openssl_monolithic_dll)
+    get_filename_component(_openssl_bin_dir "${_openssl_dll}" DIRECTORY)
+    foreach(_openssl_alias IN ITEMS
+      "libcrypto-1_1-x64.dll" "libssl-1_1-x64.dll"
+      "libcrypto-1_1.dll" "libssl-1_1.dll")
+      if(NOT EXISTS "${_openssl_bin_dir}/${_openssl_alias}")
+        execute_process(
+          COMMAND ${CMAKE_COMMAND} -E copy_if_different "${_openssl_dll}" "${_openssl_bin_dir}/${_openssl_alias}")
+      endif()
+    endforeach()
+  endforeach()
+  unset(_openssl_monolithic_dll)
+  unset(_openssl_dll)
+  unset(_openssl_bin_dir)
+  unset(_openssl_alias)
+  set(WITH_OpenSSL "${_prev_with_openssl}")
+  set(WITH_OpenSSL_EXTERNAL "${_prev_with_openssl_external}")
+  set(WITH_JBIG "${_prev_with_jbig}")
+  set(WITH_JBIG_EXTERNAL "${_prev_with_jbig_external}")
+  set(WITH_SZIP "${_prev_with_szip}")
+  set(WITH_SZIP_EXTERNAL "${_prev_with_szip_external}")
+  unset(_prev_with_openssl)
+  unset(_prev_with_openssl_external)
+  unset(_prev_with_jbig)
+  unset(_prev_with_jbig_external)
+  unset(_prev_with_szip)
+  unset(_prev_with_szip_external)
+endif()
 
 gdal_check_package(FYBA "enable ogr_SOSI driver" CAN_DISABLE)
 # Assume liblzma from xzutils, skip expensive checks.
@@ -507,15 +612,15 @@ gdal_check_package(AdbcDriverManager "Enable ADBC" CONFIG CAN_DISABLE)
 
 set(JAVA_AWT_LIBRARY NotNeeded)
 set(JAVA_AWT_INCLUDE_PATH NotNeeded)
-find_package(JNI)
-find_package(Java COMPONENTS Runtime Development)
+find_anyproject(JNI QUIET)
+find_anyproject(Java QUIET COMPONENTS Runtime Development)
 find_program(
   ANT
   NAMES ant
   DOC "ant executable for Java binding")
 set_package_properties(JNI PROPERTIES PURPOSE "SWIG_JAVA: Java binding")
 
-find_package(CSharp)
+find_anyproject(CSharp QUIET)
 set_package_properties(CSharp PROPERTIES PURPOSE "SWIG_CSharp: CSharp binding")
 
 # vim: ts=4 sw=4 sts=4 et

@@ -22,18 +22,45 @@ function(gdal_set_runtime_env res)
   endif()
 
   if (WIN32)
-    string(REPLACE ";" "\\;" PATH_ESCAPED "$ENV{PATH}")
+    set(RUNTIME_PATH_LIST "${GDAL_OUTPUT_DIR}")
+    if (GDAL_APPS_OUTPUT_DIR)
+      list(APPEND RUNTIME_PATH_LIST "${GDAL_APPS_OUTPUT_DIR}")
+    endif()
     if (Python_Interpreter_FOUND)
       file(TO_NATIVE_PATH "${GDAL_PYTHON_SCRIPTS_DIR}" NATIVE_GDAL_PYTHON_SCRIPTS_DIR)
-      string(REPLACE ";" "\\;" NATIVE_GDAL_PYTHON_SCRIPTS_DIR_WITH_SEP "${NATIVE_GDAL_PYTHON_SCRIPTS_DIR};")
+      list(APPEND RUNTIME_PATH_LIST "${NATIVE_GDAL_PYTHON_SCRIPTS_DIR}")
     endif()
-    if (GDAL_APPS_OUTPUT_DIR)
-      set(GDAL_APPS_OUTPUT_DIR_WITH_SEP "${GDAL_APPS_OUTPUT_DIR}\\;")
+
+    file(GLOB THIRD_PARTY_BIN_DIRS LIST_DIRECTORIES true "${PROJECT_BINARY_DIR}/third-party/install/*/bin")
+    foreach(_third_party_bin_dir IN LISTS THIRD_PARTY_BIN_DIRS)
+      if(IS_DIRECTORY "${_third_party_bin_dir}")
+        file(TO_NATIVE_PATH "${_third_party_bin_dir}" _third_party_bin_dir_native)
+        list(APPEND RUNTIME_PATH_LIST "${_third_party_bin_dir_native}")
+      endif()
+    endforeach()
+
+    # Keep PATH compact: cmd.exe (used by os.system()) has practical limits on
+    # very long PATH values, which can make existing executables unresolvable.
+    if(DEFINED ENV{SystemRoot} AND NOT "$ENV{SystemRoot}" STREQUAL "")
+      list(APPEND RUNTIME_PATH_LIST
+        "$ENV{SystemRoot}\\System32"
+        "$ENV{SystemRoot}"
+        "$ENV{SystemRoot}\\System32\\Wbem"
+        "$ENV{SystemRoot}\\System32\\WindowsPowerShell\\v1.0")
     endif()
     if (GTEST_DIR)
-      set(SEP_GTEST_DIR "\\;${GTEST_DIR}")
+      list(APPEND RUNTIME_PATH_LIST "${GTEST_DIR}")
     endif()
-    list(APPEND RUNTIME_ENV "PATH=${GDAL_OUTPUT_DIR}\\;${GDAL_APPS_OUTPUT_DIR_WITH_SEP}${NATIVE_GDAL_PYTHON_SCRIPTS_DIR_WITH_SEP}${PATH_ESCAPED}${SEP_GTEST_DIR}")
+    list(REMOVE_DUPLICATES RUNTIME_PATH_LIST)
+
+    set(RUNTIME_PATH_ESCAPED "")
+    foreach(_runtime_path IN LISTS RUNTIME_PATH_LIST)
+      if(NOT _runtime_path STREQUAL "")
+        string(APPEND RUNTIME_PATH_ESCAPED "${_runtime_path}\\;")
+      endif()
+    endforeach()
+    string(REGEX REPLACE "\\\\;$" "" RUNTIME_PATH_ESCAPED "${RUNTIME_PATH_ESCAPED}")
+    list(APPEND RUNTIME_ENV "PATH=${RUNTIME_PATH_ESCAPED}")
   else ()
     if (Python_Interpreter_FOUND)
       set(GDAL_PYTHON_SCRIPTS_DIR_WITH_SEP "${GDAL_PYTHON_SCRIPTS_DIR}:")
@@ -54,6 +81,11 @@ function(gdal_set_runtime_env res)
   endif ()
 
   list(APPEND RUNTIME_ENV "PYTHONPATH=${PROJECT_BINARY_DIR}/swig/python/")
+  if(WIN32 AND Python_Interpreter_FOUND)
+    # On Python >= 3.8, osgeo/__init__.py can register all PATH entries as DLL
+    # directories only when this variable is set.
+    list(APPEND RUNTIME_ENV "USE_PATH_FOR_GDAL_PYTHON=YES")
+  endif()
 
   # Set GDAL_DRIVER_PATH We request the TARGET_FILE_DIR of one of the plugins, since the PLUGIN_OUTPUT_DIR will not
   # contain the \Release suffix with MSVC generator

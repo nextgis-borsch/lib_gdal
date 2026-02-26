@@ -669,8 +669,23 @@ if (NOT GDAL_ENABLE_MACOSX_FRAMEWORK)
     COMPONENT libraries)
 endif ()
 
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/cmake/borsch/cmake/packaging.cmake")
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/borsch/cmake/packaging.cmake)
+  get_property(
+    _gdal_public_headers
+    TARGET ${GDAL_LIB_TARGET_NAME}
+    PROPERTY PUBLIC_HEADER)
+  create_borsch_package(${PROJECT_NAME}
+    VENDOR ${PACKAGE_VENDOR}
+    VERSION ${GDAL_VERSION_NO_DEV_SUFFIX}
+    TARGETS ${GDAL_LIB_TARGET_NAME}
+    HEADERS ${_gdal_public_headers})
+endif()
+
 configure_file(${GDAL_CMAKE_TEMPLATE_PATH}/uninstall.cmake.in ${PROJECT_BINARY_DIR}/cmake_uninstall.cmake @ONLY)
-add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+if(NOT TARGET uninstall)
+  add_custom_target(uninstall COMMAND ${CMAKE_COMMAND} -P ${CMAKE_CURRENT_BINARY_DIR}/cmake_uninstall.cmake)
+endif()
 
 ################################################################
 # Final reports and warnings

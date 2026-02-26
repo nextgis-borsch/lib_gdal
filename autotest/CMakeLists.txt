@@ -10,6 +10,23 @@ endif ()
 
 if (Python_Interpreter_FOUND)
 
+  option(GDAL_AUTOTEST_INSTALL_REQUIREMENTS "Install Python autotest dependencies from autotest/requirements.txt" ON)
+  set(_AUTOTEST_REQUIREMENTS_TARGET)
+  if (GDAL_AUTOTEST_INSTALL_REQUIREMENTS)
+    set(_AUTOTEST_REQUIREMENTS_FILE "${CMAKE_CURRENT_SOURCE_DIR}/requirements.txt")
+    if (EXISTS "${_AUTOTEST_REQUIREMENTS_FILE}")
+      add_custom_target(
+        autotest_python_requirements
+        ALL
+        COMMAND ${Python_EXECUTABLE} -m pip install --user --disable-pip-version-check -r "${_AUTOTEST_REQUIREMENTS_FILE}"
+        COMMENT "Installing Python autotest dependencies"
+      )
+      set(_AUTOTEST_REQUIREMENTS_TARGET autotest_python_requirements)
+    else ()
+      message(WARNING "GDAL_AUTOTEST_INSTALL_REQUIREMENTS=ON but requirements file not found: ${_AUTOTEST_REQUIREMENTS_FILE}")
+    endif ()
+  endif ()
+
   include(GdalSetRuntimeEnv)
   gdal_set_runtime_env(PYTHON_RUN_ENV)
 
@@ -100,7 +117,7 @@ endfunction ()
       COMMAND ${CMAKE_COMMAND} -E env ${PYTHON_RUN_ENV} ${Python_EXECUTABLE} -m pytest
               -c ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini
               ${python_test_path}/${tgt}
-      DEPENDS ${GDAL_LIB_TARGET_NAME} gdalapps python_binding)
+      DEPENDS ${GDAL_LIB_TARGET_NAME} gdalapps python_binding ${_AUTOTEST_REQUIREMENTS_TARGET})
     add_test(NAME autotest_${tgt}
              COMMAND ${Python_EXECUTABLE} -m pytest
                      -c ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini
@@ -112,7 +129,7 @@ endfunction ()
     autotest
     COMMAND ${CMAKE_COMMAND} -E env ${PYTHON_RUN_ENV} ${Python_EXECUTABLE} -m pytest -c
             ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini
-    DEPENDS ${GDAL_LIB_TARGET_NAME} gdalapps python_binding)
+    DEPENDS ${GDAL_LIB_TARGET_NAME} gdalapps python_binding ${_AUTOTEST_REQUIREMENTS_TARGET})
 
   # Generating Python bindings in Debug mode of MSVC tends to be problematic, since it requires a python debug library
   # not easily found, hence we disable pytest_runner for that situation We might not need it at all
@@ -125,7 +142,7 @@ endfunction ()
       autotest_runner
       COMMAND ${CMAKE_COMMAND} -E env ${PYTHON_RUN_ENV} $<TARGET_FILE:pytest_runner> -c
               ${CMAKE_CURRENT_BINARY_DIR}/pytest.ini
-      DEPENDS ${GDAL_LIB_TARGET_NAME} gdalapps python_binding pytest_runner
+      DEPENDS ${GDAL_LIB_TARGET_NAME} gdalapps python_binding pytest_runner ${_AUTOTEST_REQUIREMENTS_TARGET}
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
   endif ()
 

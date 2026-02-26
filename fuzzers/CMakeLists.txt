@@ -143,6 +143,7 @@ build_fuzzer(
     libertiff_fuzzer
     SOURCES
     gdal_fuzzer.cpp
+    fuzzingengine.cpp
     DEFINITIONS
     -DREGISTER_FUNC=GDALRegister_LIBERTIFF
     -DDRIVER_NAME="LIBERTIFF"
@@ -153,7 +154,6 @@ build_fuzzer(
   gdal_filesystem_fuzzer
   SOURCES
   gdal_fuzzer.cpp
-  fuzzingengine.cpp
   DEFINITIONS
   -DUSE_FILESYSTEM)
 build_fuzzer(
