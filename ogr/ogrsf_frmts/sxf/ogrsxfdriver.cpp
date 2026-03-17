@@ -7,36 +7,66 @@
  *
  ******************************************************************************
  * Copyright (c) 2011, Ben Ahmed Daho Ali
- * Copyright (c) 2013, NextGIS
+ * Copyright (c) 2013-2020, NextGIS <info@nextgis.com>
  * Copyright (c) 2014, Even Rouault <even dot rouault at spatialys.com>
  *
- * SPDX-License-Identifier: MIT
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included
+ * in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+ * OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+ * THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  ****************************************************************************/
 
+#include "cpl_port.h"
 #include "cpl_conv.h"
 #include "ogr_sxf.h"
+
+extern "C" void RegisterOGRSXF();
+
+/************************************************************************/
+/*                       ~OGRSXFDriver()                         */
+/************************************************************************/
+
+OGRSXFDriver::~OGRSXFDriver()
+{
+}
 
 /************************************************************************/
 /*                                Open()                                */
 /************************************************************************/
 
-static GDALDataset *OGRSXFDriverOpen(GDALOpenInfo *poOpenInfo)
+GDALDataset *OGRSXFDriver::Open(GDALOpenInfo *poOpenInfo)
 
 {
-    /* -------------------------------------------------------------------- */
-    /*      Determine what sort of object this is.                          */
-    /* -------------------------------------------------------------------- */
+/* -------------------------------------------------------------------- */
+/*      Determine what sort of object this is.                          */
+/* -------------------------------------------------------------------- */
 
-    VSIStatBufL sStatBuf;
-    if (!poOpenInfo->IsExtensionEqualToCI("sxf") ||
-        VSIStatL(poOpenInfo->pszFilename, &sStatBuf) != 0 ||
-        !VSI_ISREG(sStatBuf.st_mode))
+    if (poOpenInfo->pabyHeader == nullptr)
+        return nullptr;
+
+    if (memcmp(poOpenInfo->pabyHeader, SXF_Sig, sizeof(SXF_Sig)) != 0
+        && memcmp(poOpenInfo->pabyHeader, SXF_Sig_BE,
+            sizeof(SXF_Sig_BE)) != 0)
         return nullptr;
 
     OGRSXFDataSource *poDS = new OGRSXFDataSource();
 
-    if (!poDS->Open(poOpenInfo->pszFilename, poOpenInfo->eAccess == GA_Update,
-                    poOpenInfo->papszOpenOptions))
+    if( !poDS->Open( poOpenInfo->pszFilename,
+                     poOpenInfo->eAccess == GA_Update,
+                     poOpenInfo->papszOpenOptions ) )
     {
         delete poDS;
         poDS = nullptr;
@@ -49,20 +79,20 @@ static GDALDataset *OGRSXFDriverOpen(GDALOpenInfo *poOpenInfo)
 /*                              Identify()                              */
 /************************************************************************/
 
-static int OGRSXFDriverIdentify(GDALOpenInfo *poOpenInfo)
+int OGRSXFDriver::Identify(GDALOpenInfo *poOpenInfo)
 {
-    if (!poOpenInfo->IsExtensionEqualToCI("sxf") || !poOpenInfo->bStatOK ||
-        poOpenInfo->bIsDirectory)
+    if (!EQUAL(CPLGetExtensionSafe(poOpenInfo->pszFilename).c_str(), "sxf") ||
+        !poOpenInfo->bStatOK || poOpenInfo->bIsDirectory)
     {
         return GDAL_IDENTIFY_FALSE;
     }
-
-    if (poOpenInfo->nHeaderBytes < 4)
+        
+    if(poOpenInfo->nHeaderBytes < 4)
     {
         return GDAL_IDENTIFY_UNKNOWN;
     }
-
-    if (0 != memcmp(poOpenInfo->pabyHeader, "SXF", 3))
+    
+    if(0 != memcmp(poOpenInfo->pabyHeader, "SXF", 3))
     {
         return GDAL_IDENTIFY_FALSE;
     }
@@ -71,25 +101,27 @@ static int OGRSXFDriverIdentify(GDALOpenInfo *poOpenInfo)
 }
 
 /************************************************************************/
-/*                          GRSXFDriverDelete()                         */
+/*                           DeleteDataSource()                         */
 /************************************************************************/
 
-static CPLErr OGRSXFDriverDelete(const char *pszName)
+CPLErr OGRSXFDriver::DeleteDataSource(const char *pszName)
 {
-    // TODO: add more extensions if applicable
-    static const char *const apszExtensions[] = {"szf", "rsc", "SZF", "RSC",
-                                                 nullptr};
+    //TODO: add more extensions if applicable
+    static const char * const apszExtensions[] = { 
+        "szf", "rsc", "SZF", "RSC", nullptr 
+    };
 
     VSIStatBufL sStatBuf;
     if (VSIStatL(pszName, &sStatBuf) != 0)
     {
         CPLError(CE_Failure, CPLE_AppDefined,
-                 "%s does not appear to be a valid sxf file.", pszName);
+            "%s does not appear to be a valid sxf file.",
+            pszName);
 
         return CE_Failure;
     }
 
-    for (int iExt = 0; apszExtensions[iExt] != nullptr; iExt++)
+    for( int iExt = 0; apszExtensions[iExt] != nullptr; iExt++ )
     {
         const std::string osFile =
             CPLResetExtensionSafe(pszName, apszExtensions[iExt]);
@@ -101,38 +133,73 @@ static CPLErr OGRSXFDriverDelete(const char *pszName)
 }
 
 /************************************************************************/
+/*                               Create()                               */
+/************************************************************************/
+
+GDALDataset *OGRSXFDriver::Create(const char *pszName,
+    int /* nBands */,
+    int /* nXSize */,
+    int /* nYSize */,
+    GDALDataType /* eDT */,
+    char **papszOptions)
+{
+    OGRSXFDataSource *poDS = new OGRSXFDataSource();
+
+    if (!poDS->Create(pszName, papszOptions))
+    {
+        delete poDS;
+        poDS = nullptr;
+    }
+
+    return poDS;
+}
+
+
+/************************************************************************/
 /*                        RegisterOGRSXF()                       */
 /************************************************************************/
 void RegisterOGRSXF()
 {
-    if (GDALGetDriverByName("SXF") != nullptr)
+    if( GDALGetDriverByName( "SXF" ) != nullptr )
         return;
 
-    GDALDriver *poDriver = new GDALDriver();
+    OGRSXFDriver* poDriver = new OGRSXFDriver;
 
-    poDriver->SetDescription("SXF");
-    poDriver->SetMetadataItem(GDAL_DCAP_VECTOR, "YES");
-    poDriver->SetMetadataItem(GDAL_DMD_LONGNAME, "Storage and eXchange Format");
-    poDriver->SetMetadataItem(GDAL_DMD_HELPTOPIC, "drivers/vector/sxf.html");
-    poDriver->SetMetadataItem(GDAL_DMD_EXTENSION, "sxf");
-    poDriver->SetMetadataItem(GDAL_DCAP_VIRTUALIO, "YES");
-    poDriver->SetMetadataItem(GDAL_DCAP_Z_GEOMETRIES, "YES");
-    poDriver->SetMetadataItem(GDAL_DMD_SUPPORTED_SQL_DIALECTS, "OGRSQL SQLITE");
-    poDriver->SetMetadataItem(
-        GDAL_DMD_OPENOPTIONLIST,
+    poDriver->SetDescription( "SXF" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VECTOR, "YES" );
+    poDriver->SetMetadataItem( GDAL_DMD_LONGNAME,
+                               "Storage and eXchange Format" );
+    poDriver->SetMetadataItem( GDAL_DMD_HELPTOPIC, "drv_sxf.html" );
+    poDriver->SetMetadataItem( GDAL_DMD_EXTENSION, "sxf" );
+    poDriver->SetMetadataItem( GDAL_DCAP_VIRTUALIO, "YES" );
+    poDriver->SetMetadataItem( GDAL_DMD_OPENOPTIONLIST,
         "<OpenOptionList>"
-        "  <Option name='SXF_LAYER_FULLNAME' type='string' description='Use "
-        "long layer names' default='NO'/>"
-        "  <Option name='SXF_RSC_FILENAME' type='string' description='RSC file "
-        "name' default=''/>"
-        "  <Option name='SXF_SET_VERTCS' type='string' description='Layers "
-        "spatial reference will include vertical coordinate system description "
-        "if exist' default='NO'/>"
+        "  <Option name='SXF_LAYER_FULLNAME' type='boolean' description='Use long layer names' default='NO'/>"
+        "  <Option name='SXF_RSC_FILENAME' type='string' description='RSC file name' default=''/>"
+        "  <Option name='SXF_SET_VERTCS' type='boolean' description='Layers spatial reference will include vertical coordinate system description if exist' default='NO'/>"
+        "  <Option name='SXF_NEW_BEHAVIOR' type='boolean' description='New behavior - vector object to lines, empty layers are presence' default='NO'/>"
+        "  <Option name='SXF_ENCODING' type='string' description='Character Encodings (ASCIIZ for format v3 and ANSI code page for format v4)' default=''/>"
+        "  <Option name='SXF_WRITE_RSC' type='boolean' description='Write RSC file. Always write file with same name as SXF but with RSC extension' default='YES'/>"
         "</OpenOptionList>");
+    poDriver->SetMetadataItem(GDAL_DMD_CREATIONFIELDDATATYPES,
+        "Integer Real String IntegerList RealList StringList");
+    poDriver->SetMetadataItem(GDAL_DMD_CREATIONOPTIONLIST,
+        "<CreationOptionList>"
+        "  <Option name='SXF_ENCODING' type='string' description='Character Encodings (Only format v4 and ANSI code page supported)' default='CP1251'/>"
+        "  <Option name='SXF_WRITE_RSC' type='boolean' description='Write RSC file' default='YES'/>"
+        "  <Option name='SXF_MAP_NAME' type='string' description='Override metadata item SHEET_NAME' default=''/>"
+        "  <Option name='SXF_SHEET_KEY' type='string' description='Override metadata item SHEET' default=''/>"
+        "  <Option name='SXF_MAP_SCALE' type='int' description='Override metadata item SCALE' default='1000000'/>"
+        "</CreationOptionList>");
+    poDriver->SetMetadataItem(GDAL_DS_LAYER_CREATIONOPTIONLIST,
+        "<LayerCreationOptionList>"
+        "  <Option name='SXF_NEW_BEHAVIOR' type='boolean' description='New behavior - vector object to lines, empty layers are presence' default='NO'/>"
+        "</LayerCreationOptionList>");
 
-    poDriver->pfnOpen = OGRSXFDriverOpen;
-    poDriver->pfnDelete = OGRSXFDriverDelete;
-    poDriver->pfnIdentify = OGRSXFDriverIdentify;
+    poDriver->pfnOpen = OGRSXFDriver::Open;
+    poDriver->pfnDelete = OGRSXFDriver::DeleteDataSource;
+    poDriver->pfnIdentify = OGRSXFDriver::Identify;
+    poDriver->pfnCreate = OGRSXFDriver::Create;
 
-    GetGDALDriverManager()->RegisterDriver(poDriver);
+    GetGDALDriverManager()->RegisterDriver( poDriver );
 }

@@ -1,4 +1,4 @@
-add_gdal_driver(TARGET ogr_SXF SOURCES ogr_sxf.h ogrsxfdatasource.cpp ogrsxflayer.cpp ogrsxfdriver.cpp PLUGIN_CAPABLE
+add_gdal_driver(TARGET ogr_SXF SOURCES ogr_sxf.h ogr_mem.h ogrsxfdatasource.cpp ogrsxflayer.cpp ogrsxfdriver.cpp ogrmemlayer.cpp rscfile.cpp sxffile.cpp util.cpp PLUGIN_CAPABLE
   NO_DEPS
   NO_WFLAG_OLD_STYLE_CAST
 )
