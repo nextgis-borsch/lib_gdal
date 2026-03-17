@@ -880,8 +880,6 @@ int OGRNGWLayer::TestCapability(const char *pszCap) const
                                           // introduced in NGW v3.1
     else if (EQUAL(pszCap, OLCFastSpatialFilter))
         return poDS->HasFeaturePaging();
-    else if (EQUAL(pszCap, OLCRename))
-        return poDS->IsUpdateMode();
     else if (EQUAL(pszCap, OLCZGeometries))
         return TRUE;
     return FALSE;
