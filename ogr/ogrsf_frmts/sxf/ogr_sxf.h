@@ -41,7 +41,7 @@
 
 #include "ogrsf_frmts.h"
 #include "org_sxf_defs.h"
-#include "ogr_mem.h"
+#include "memdataset.h"
 
 constexpr double TO_DEGREES = 57.2957795130823208766;
 constexpr double TO_RADIANS = 0.017453292519943295769;
