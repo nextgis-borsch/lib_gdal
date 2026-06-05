@@ -13,14 +13,6 @@ endif()
 # setup cmake modules paths
 include(cmake/modules/init.cmake)
 
-# Prefer NextGIS borsch dependency resolution when submodule is available.
-if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/cmake/borsch/cmake/FindAnyProject.cmake")
-  list(INSERT CMAKE_MODULE_PATH 0
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/borsch/cmake"
-    "${CMAKE_CURRENT_LIST_DIR}/cmake/borsch/cmake/modules")
-  include(FindAnyProject)
-endif()
-
 #
 # template files path
 set(GDAL_CMAKE_TEMPLATE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake/template)
@@ -278,20 +270,6 @@ endif()
 
 #
 include(${CMAKE_CURRENT_SOURCE_DIR}/gdal.cmake)
-
-include(version)
-report_version(${PROJECT_NAME} ${GDAL_VERSION})
-set(GDAL_VERSION_FILE "${CMAKE_CURRENT_BINARY_DIR}/Version.txt")
-file(WRITE "${GDAL_VERSION_FILE}"
-  "GDAL_VERSION_MAJOR=${GDAL_VERSION_MAJOR}\n"
-  "GDAL_VERSION_MINOR=${GDAL_VERSION_MINOR}\n"
-  "GDAL_VERSION_PATCH=${GDAL_VERSION_REV}\n"
-)
-write_version("${GDAL_VERSION_FILE}"
-  ${GDAL_VERSION_MAJOR}
-  ${GDAL_VERSION_MINOR}
-  ${GDAL_VERSION_REV}
-)
 
 if (BUILD_TESTING AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/autotest")
   # unit tests

@@ -112,56 +112,6 @@ macro (gdal_check_package name purpose)
   if(FIND_PACKAGE2_${name}_ENABLED)
     find_package2(${name} QUIET OUT_DEPENDENCY _find_dependency)
   else()
-    set(_find_anyproject_args QUIET)
-    if (_GCP_VERSION AND NOT ("${name}" STREQUAL "TileDB") AND NOT ("${name}" STREQUAL "HDF5"))
-      list(APPEND _find_anyproject_args VERSION ${_GCP_VERSION})
-    endif ()
-    if (_GCP_MODULE)
-      list(APPEND _find_anyproject_args MODULE)
-    endif ()
-    if (_GCP_COMPONENTS)
-      list(APPEND _find_anyproject_args COMPONENTS ${_GCP_COMPONENTS})
-    endif ()
-    if (_GCP_NAMES)
-      list(APPEND _find_anyproject_args NAMES ${_GCP_NAMES})
-    endif ()
-    find_anyproject(${name} ${_find_anyproject_args})
-    set(_gdal_pkg_found FALSE)
-    if ((DEFINED ${name}_FOUND AND ${name}_FOUND) OR (DEFINED ${key}_FOUND AND ${key}_FOUND))
-      set(_gdal_pkg_found TRUE)
-    endif()
-    if (_gdal_pkg_found)
-      set(_candidate_targets ${_GCP_TARGETS})
-      set(_candidate_target_vars
-        "${name}_LIBRARIES"
-        "${name}_LIBRARY"
-        "${UPPER_NAME}_LIBRARIES"
-        "${UPPER_NAME}_LIBRARY")
-      foreach(_candidate_var IN LISTS _candidate_target_vars)
-        if (DEFINED ${_candidate_var})
-          list(APPEND _candidate_targets ${${_candidate_var}})
-        endif ()
-      endforeach ()
-
-      if (_candidate_targets)
-        gdal_check_package_target(${name} ${_candidate_targets})
-        if ((NOT (DEFINED ${name}_FOUND AND ${name}_FOUND)) AND (DEFINED ${key}_FOUND AND ${key}_FOUND))
-          gdal_check_package_target(${key} ${_candidate_targets})
-          set(${name}_FOUND "${key}_FOUND")
-        endif ()
-        # If find_anyproject() reported the package as found but none of the
-        # candidate CMake targets exists, retry with regular find_package().
-        if ((NOT (DEFINED ${name}_FOUND AND ${name}_FOUND)) AND
-            (NOT (DEFINED ${key}_FOUND AND ${key}_FOUND)))
-          set(_gdal_pkg_found FALSE)
-        endif ()
-      endif ()
-
-      if (_gdal_pkg_found)
-        string(REPLACE ";" " " _find_dependency_args "${name}")
-      endif ()
-    endif ()
-    if ((NOT (DEFINED ${name}_FOUND AND ${name}_FOUND)) AND (NOT (DEFINED ${key}_FOUND AND ${key}_FOUND)))
     set(_find_package_args)
     # For some reason passing the HDF5 version requirement cause a linking error of the libkea driver on Conda Windows builds...
     if (_GCP_VERSION AND NOT ("${name}" STREQUAL "TileDB") AND NOT ("${name}" STREQUAL "HDF5"))
@@ -207,7 +157,6 @@ macro (gdal_check_package name purpose)
         string(REPLACE ";" " " _find_dependency_args "${name} ${_find_package_args}")
       endif()
     endif ()
-    endif()
   endif ()
   if (${key}_FOUND OR ${name}_FOUND)
     if(_GCP_VERSION)
@@ -279,7 +228,7 @@ macro (gdal_check_package name purpose)
     set(HAVE_${key} OFF)
   endif ()
 
-  # find_anyproject() may report *_FOUND and library/include variables without
+  # find_package() may report *_FOUND and library/include variables without
   # defining imported targets. Create compatibility imported targets expected
   # by the rest of GDAL CMake logic.
   if(HAVE_${key})
